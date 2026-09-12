@@ -16,13 +16,6 @@ suspend fun nativePaymentSettingsStrings(): Map<String, String> = mapOf(
         nativeString(
             NativeStringResource(table = "PaymentSettings", key = "settings_payments_option_above")
         ),
-    "confirmManual" to
-        nativeString(
-            NativeStringResource(
-                table = "PaymentSettings",
-                key = "settings_payments_confirm_manual_entry"
-            )
-        ),
     "lnurlTitle" to
         nativeString(
             NativeStringResource(table = "PaymentSettings", key = "settings_payments_lnurl_review")

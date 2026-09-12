@@ -6,6 +6,17 @@ import kotlin.test.assertTrue
 
 class PaymentConfirmationTest {
     @Test
+    fun manualSubmissionDoesNotOpenAnotherConfirmation() {
+        assertFalse(
+            requiresPreparedPaymentConfirmation(
+                engineRequiresConfirmation = true,
+                isPresetTarget = true,
+                amountEnteredManually = true
+            )
+        )
+    }
+
+    @Test
     fun presetTargetRequiresConfirmationWhenEngineAllowsAutoPay() {
         assertTrue(
             requiresPreparedPaymentConfirmation(

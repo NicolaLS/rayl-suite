@@ -18,8 +18,6 @@ interface PaymentPreferencesRepository {
 
     suspend fun setConfirmationThreshold(thresholdSats: Long)
 
-    suspend fun setConfirmManualEntry(enabled: Boolean)
-
     suspend fun setOfferToSaveNewTargets(enabled: Boolean)
 
     suspend fun setShowLnurlPayDetails(enabled: Boolean)
@@ -57,13 +55,6 @@ class DefaultPaymentPreferencesRepository(private val settings: Settings) :
         update(
             transform = { it.copy(thresholdSats = thresholdSats) },
             persist = { settings.putLong(KEY_CONFIRM_THRESHOLD_SATS, it.thresholdSats) }
-        )
-    }
-
-    override suspend fun setConfirmManualEntry(enabled: Boolean) {
-        update(
-            transform = { it.copy(confirmManualEntry = enabled) },
-            persist = { settings.putBoolean(KEY_CONFIRM_MANUAL_ENTRY, it.confirmManualEntry) }
         )
     }
 
@@ -125,7 +116,6 @@ class DefaultPaymentPreferencesRepository(private val settings: Settings) :
         return PaymentPreferences(
             confirmationMode = confirmationMode,
             thresholdSats = thresholdSats,
-            confirmManualEntry = settings.getBoolean(KEY_CONFIRM_MANUAL_ENTRY, false),
             offerToSaveNewTargets = settings.getBoolean(KEY_OFFER_TO_SAVE_NEW_TARGETS, true),
             showLnurlPayDetails = settings.getBoolean(KEY_SHOW_LNURL_PAY_DETAILS, false),
             vibrateOnScan = settings.getBoolean(KEY_VIBRATE_SCAN, true),
@@ -136,7 +126,6 @@ class DefaultPaymentPreferencesRepository(private val settings: Settings) :
     private companion object {
         const val KEY_CONFIRM_MODE = "payments.confirmationMode"
         const val KEY_CONFIRM_THRESHOLD_SATS = "payments.confirmationThresholdSats"
-        const val KEY_CONFIRM_MANUAL_ENTRY = "payments.confirmManualEntry"
         const val KEY_OFFER_TO_SAVE_NEW_TARGETS = "payments.offerToSaveNewTargets"
         const val KEY_SHOW_LNURL_PAY_DETAILS = "payments.showLnurlPayDetails"
         const val KEY_VIBRATE_SCAN = "payments.vibrateOnScan"

@@ -4,7 +4,6 @@
     <string name="settings_payments_confirm_threshold">Above %1$s</string>
     <string name="settings_payments_option_always">Always</string>
     <string name="settings_payments_option_above">Above</string>
-    <string name="settings_payments_confirm_manual_entry">Confirm amounts I enter manually</string>
     <string name="settings_payments_lnurl_review">LNURL payments</string>
     <string name="settings_payments_lnurl_review_description">Show the recipient domain and description before requesting an invoice</string>
     <string name="settings_payments_haptics_title">Vibrations</string>

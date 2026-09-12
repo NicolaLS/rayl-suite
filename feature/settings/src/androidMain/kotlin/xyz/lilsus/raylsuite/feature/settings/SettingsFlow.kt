@@ -158,8 +158,6 @@ fun SettingsFlow(
                 onModeSelected = paymentSettingsViewModel::selectConfirmationMode,
                 onThresholdChanged =
                     paymentSettingsViewModel::updateConfirmationThreshold,
-                onConfirmManualEntryChanged =
-                    paymentSettingsViewModel::setConfirmManualEntry,
                 onShowLnurlPayDetailsChanged =
                     paymentSettingsViewModel::setShowLnurlPayDetails,
                 onOfferToSaveNewTargetsChanged =

@@ -311,14 +311,6 @@ private struct NativePaymentSettingsView: View {
                     .accessibilityValue(thresholdDescription)
                 }
             }
-
-            Toggle(
-                snapshot.text.paymentConfirmManual,
-                isOn: Binding(
-                    get: { payment.confirmManualEntry },
-                    set: controller.setConfirmManualEntry
-                )
-            )
         }
     }
 

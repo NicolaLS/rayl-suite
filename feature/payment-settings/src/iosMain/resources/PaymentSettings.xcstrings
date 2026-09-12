@@ -47,29 +47,6 @@
         }
       }
     },
-    "settings_payments_confirm_manual_entry" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manuell eingegebene Beträge bestätigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Confirm amounts I enter manually"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Confirmar importes introducidos manualmente"
-          }
-        }
-      }
-    },
     "settings_payments_confirm_threshold" : {
       "extractionState" : "stale",
       "localizations" : {

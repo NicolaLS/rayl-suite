@@ -38,7 +38,6 @@ data class NativePaymentSettingsSnapshot(
     val thresholdSats: Long,
     val thresholdSteps: List<Long>,
     val thresholdEquivalent: NativeSettingsAmount?,
-    val confirmManualEntry: Boolean,
     val offerToSaveNewTargets: Boolean,
     val showLnurlPayDetails: Boolean,
     val vibrateOnScan: Boolean,
@@ -59,7 +58,6 @@ data class NativeSettingsText(
     val paymentConfirmTitle: String,
     val paymentAlways: String,
     val paymentAbove: String,
-    val paymentConfirmManual: String,
     val paymentLnurlTitle: String,
     val paymentLnurlDescription: String,
     val paymentHubTitle: String,
@@ -141,7 +139,6 @@ class NativeSettingsController(
                                             fractionDigits = info.fractionDigits
                                         )
                                     },
-                                confirmManualEntry = paymentState.confirmManualEntry,
                                 offerToSaveNewTargets = paymentState.offerToSaveNewTargets,
                                 showLnurlPayDetails = paymentState.showLnurlPayDetails,
                                 vibrateOnScan = paymentState.vibrateOnScan,
@@ -186,10 +183,6 @@ class NativeSettingsController(
     fun selectThresholdStep(index: Int) {
         val threshold = PaymentPreferences.THRESHOLD_STEPS.getOrNull(index) ?: return
         payment.updateConfirmationThreshold(threshold)
-    }
-
-    fun setConfirmManualEntry(enabled: Boolean) {
-        payment.setConfirmManualEntry(enabled)
     }
 
     fun setOfferToSaveNewTargets(enabled: Boolean) {
@@ -351,7 +344,6 @@ private suspend fun loadResources(
                 paymentConfirmTitle = paymentStrings.getValue("confirmTitle"),
                 paymentAlways = paymentStrings.getValue("always"),
                 paymentAbove = paymentStrings.getValue("above"),
-                paymentConfirmManual = paymentStrings.getValue("confirmManual"),
                 paymentLnurlTitle = paymentStrings.getValue("lnurlTitle"),
                 paymentLnurlDescription = paymentStrings.getValue("lnurlDescription"),
                 paymentHubTitle = paymentStrings.getValue("hubTitle"),

@@ -261,7 +261,8 @@ class PaymentCoordinator(
         result: PreparePaymentResult,
         targetContext: HubTargetContext?,
         requestedAmountMsats: Long?,
-        paymentQuote: PaymentAmountQuote? = null
+        paymentQuote: PaymentAmountQuote? = null,
+        amountEnteredManually: Boolean = false
     ) {
         when (result) {
             is PreparePaymentResult.AmountRequired -> {
@@ -300,7 +301,12 @@ class PaymentCoordinator(
             }
 
             is PreparePaymentResult.Ready ->
-                handlePreparedPayment(result.payment, targetContext, paymentQuote)
+                handlePreparedPayment(
+                    result.payment,
+                    targetContext,
+                    paymentQuote,
+                    amountEnteredManually
+                )
 
             is PreparePaymentResult.Existing -> {
                 sessionAttemptIds += result.activity.attemptId
@@ -325,7 +331,8 @@ class PaymentCoordinator(
     private suspend fun handlePreparedPayment(
         payment: PreparedPayment,
         targetContext: HubTargetContext?,
-        paymentQuote: PaymentAmountQuote?
+        paymentQuote: PaymentAmountQuote?,
+        amountEnteredManually: Boolean
     ) {
         interaction.reset()
         if (
@@ -340,7 +347,8 @@ class PaymentCoordinator(
         // require review because their resolved amount can depend on an exchange rate.
         val requiresConfirmation = requiresPreparedPaymentConfirmation(
             engineRequiresConfirmation = payment.requiresConfirmation,
-            isPresetTarget = targetContext?.isPreset == true
+            isPresetTarget = targetContext?.isPreset == true,
+            amountEnteredManually = amountEnteredManually
         )
         val confirmationAmount =
             if (requiresConfirmation) {
@@ -357,7 +365,13 @@ class PaymentCoordinator(
                 PaymentUiState.Loading()
             }
         if (!requiresConfirmation) {
-            applyConfirmResult(engine.autoPay(payment.handle), draft)
+            // Manual submission already authorizes this amount, regardless of scan policy.
+            val result = if (amountEnteredManually) {
+                engine.confirm(payment.handle)
+            } else {
+                engine.autoPay(payment.handle)
+            }
+            applyConfirmResult(result, draft)
         }
     }
 
@@ -468,7 +482,8 @@ class PaymentCoordinator(
             engine.prepareAmount(request.payment.handle, sats),
             request.targetContext,
             requestedAmountMsats = null,
-            paymentQuote = paymentQuote
+            paymentQuote = paymentQuote,
+            amountEnteredManually = true
         )
     }
 
@@ -892,8 +907,9 @@ private fun PaymentPreferences.toFlintConfirmationPolicy(): PaymentConfirmationP
 
 internal fun requiresPreparedPaymentConfirmation(
     engineRequiresConfirmation: Boolean,
-    isPresetTarget: Boolean
-): Boolean = engineRequiresConfirmation || isPresetTarget
+    isPresetTarget: Boolean,
+    amountEnteredManually: Boolean = false
+): Boolean = !amountEnteredManually && (engineRequiresConfirmation || isPresetTarget)
 
 private fun LnurlPayReviewDetails.toDisplay(): LnurlPayDisplay? = LnurlPayDisplay.fromUntrusted(
     domain = domain,

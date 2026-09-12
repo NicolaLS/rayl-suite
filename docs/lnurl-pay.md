@@ -43,3 +43,9 @@ details appear in an otherwise-required confirmation. Existing Auto Pay limits,
 manual-entry policy, preset-target confirmations, and deep-link confirmations
 remain provider-owned. A fixed payment eligible for Auto Pay can proceed without
 a review screen when the extra LNURL review setting is off.
+
+Submitting a manually entered amount never opens a separate confirmation sheet,
+including when confirmation is set to Always or the amount exceeds the Auto Pay
+threshold. This also applies after an amountless deep link asks for an amount.
+Amounts supplied by deep links still require confirmation; scanned invoice
+amounts follow the Always or Auto Pay threshold setting.

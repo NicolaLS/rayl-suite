@@ -74,7 +74,7 @@ internal class PaymentConfirmationPhase(
                 request.origin == PendingOrigin.ManualEntry ||
                     request.origin == PendingOrigin.LnurlManual
             val requiresConfirmation =
-                !request.lnurlAuthorized &&
+                !isManualEntry && !request.lnurlAuthorized &&
                     (
                         request.source == PaymentRequestSource.DeepLink ||
                             (

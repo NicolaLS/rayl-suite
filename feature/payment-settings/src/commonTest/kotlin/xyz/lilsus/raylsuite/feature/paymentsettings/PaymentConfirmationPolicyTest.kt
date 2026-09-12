@@ -16,29 +16,35 @@ class PaymentConfirmationPolicyTest {
         assertTrue(
             policy.shouldConfirm(
                 amountMsats = 1_000L,
-                isManualEntry = true,
+                isManualEntry = false,
                 isPresetTarget = true
             )
         )
     }
 
     @Test
-    fun alwaysModeCannotBeBypassedByManualEntryPreference() = runTest {
+    fun alwaysModeOnlyRequiresConfirmationForSuppliedAmounts() = runTest {
         val repository = DefaultPaymentPreferencesRepository(MapSettings())
         repository.setConfirmationMode(PaymentConfirmationMode.Always)
-        repository.setConfirmManualEntry(false)
         val policy = PaymentConfirmationPolicy(repository)
 
+        assertFalse(
+            policy.shouldConfirm(
+                amountMsats = 20_000_000L,
+                isManualEntry = true,
+                isPresetTarget = true
+            )
+        )
         assertTrue(
             policy.shouldConfirm(
                 amountMsats = 1_000L,
-                isManualEntry = true
+                isManualEntry = false
             )
         )
     }
 
     @Test
-    fun aboveModeAppliesManualEntryPreferenceAndThreshold() = runTest {
+    fun aboveModeSkipsManualEntryAndAppliesThresholdToScannedAmounts() = runTest {
         val repository = DefaultPaymentPreferencesRepository(MapSettings())
         val policy = PaymentConfirmationPolicy(repository)
 

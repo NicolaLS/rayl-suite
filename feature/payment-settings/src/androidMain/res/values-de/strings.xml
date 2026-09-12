@@ -4,7 +4,6 @@
     <string name="settings_payments_confirm_threshold">Über %1$s</string>
     <string name="settings_payments_option_always">Immer</string>
     <string name="settings_payments_option_above">Über</string>
-    <string name="settings_payments_confirm_manual_entry">Manuell eingegebene Beträge bestätigen</string>
     <string name="settings_payments_lnurl_review">LNURL-Zahlungen</string>
     <string name="settings_payments_lnurl_review_description">Empfängerdomain und Beschreibung anzeigen, bevor eine Rechnung angefordert wird</string>
     <string name="settings_payments_haptics_title">Vibrationen</string>

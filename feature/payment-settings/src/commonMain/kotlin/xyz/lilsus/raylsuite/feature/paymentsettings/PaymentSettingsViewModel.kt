@@ -41,7 +41,6 @@ class PaymentSettingsViewModel(
                     mutableUiState.value.copy(
                         confirmationMode = preferences.confirmationMode,
                         thresholdSats = preferences.thresholdSats,
-                        confirmManualEntry = preferences.confirmManualEntry,
                         offerToSaveNewTargets = preferences.offerToSaveNewTargets,
                         showLnurlPayDetails = preferences.showLnurlPayDetails,
                         vibrateOnScan = preferences.vibrateOnScan,
@@ -64,12 +63,6 @@ class PaymentSettingsViewModel(
     fun updateConfirmationThreshold(thresholdSats: Long) {
         scope.launch {
             paymentPreferences.setConfirmationThreshold(thresholdSats)
-        }
-    }
-
-    fun setConfirmManualEntry(enabled: Boolean) {
-        scope.launch {
-            paymentPreferences.setConfirmManualEntry(enabled)
         }
     }
 
@@ -132,7 +125,6 @@ class PaymentSettingsViewModel(
 data class PaymentSettingsUiState(
     val confirmationMode: PaymentConfirmationMode = PaymentPreferences().confirmationMode,
     val thresholdSats: Long = PaymentPreferences.DEFAULT_CONFIRMATION_THRESHOLD_SATS,
-    val confirmManualEntry: Boolean = PaymentPreferences().confirmManualEntry,
     val offerToSaveNewTargets: Boolean = PaymentPreferences().offerToSaveNewTargets,
     val showLnurlPayDetails: Boolean = PaymentPreferences().showLnurlPayDetails,
     val vibrateOnScan: Boolean = PaymentPreferences().vibrateOnScan,

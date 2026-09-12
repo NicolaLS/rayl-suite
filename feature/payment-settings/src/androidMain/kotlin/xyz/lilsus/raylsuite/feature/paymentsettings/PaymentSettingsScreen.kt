@@ -3,11 +3,9 @@ package xyz.lilsus.raylsuite.feature.paymentsettings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
@@ -49,7 +47,6 @@ fun PaymentSettingsScreen(
     onBack: () -> Unit,
     onModeSelected: (PaymentConfirmationMode) -> Unit,
     onThresholdChanged: (Long) -> Unit,
-    onConfirmManualEntryChanged: (Boolean) -> Unit,
     onShowLnurlPayDetailsChanged: (Boolean) -> Unit,
     onOfferToSaveNewTargetsChanged: (Boolean) -> Unit,
     onVibrateOnScanChanged: (Boolean) -> Unit,
@@ -98,8 +95,7 @@ fun PaymentSettingsScreen(
                 state = state,
                 thresholdText = thresholdText,
                 onModeSelected = onModeSelected,
-                onThresholdChanged = onThresholdChanged,
-                onConfirmManualEntryChanged = onConfirmManualEntryChanged
+                onThresholdChanged = onThresholdChanged
             )
             SettingsSection(title = stringResource(R.string.settings_payments_lnurl_review)) {
                 SettingsToggle(
@@ -142,8 +138,7 @@ private fun ConfirmationSection(
     state: PaymentSettingsUiState,
     thresholdText: String,
     onModeSelected: (PaymentConfirmationMode) -> Unit,
-    onThresholdChanged: (Long) -> Unit,
-    onConfirmManualEntryChanged: (Boolean) -> Unit
+    onThresholdChanged: (Long) -> Unit
 ) {
     SettingsSection(
         title = stringResource(R.string.settings_payments_confirm_label)
@@ -162,15 +157,7 @@ private fun ConfirmationSection(
                 thresholdSats = state.thresholdSats,
                 onThresholdChanged = onThresholdChanged
             )
-        } else {
-            Spacer(modifier = Modifier.height(8.dp))
         }
-        SettingsToggle(
-            label = stringResource(R.string.settings_payments_confirm_manual_entry),
-            checked = state.confirmManualEntry,
-            onCheckedChange = onConfirmManualEntryChanged,
-            modifier = Modifier.testTag(PaymentSettingsTestTags.CONFIRM_MANUAL_ENTRY)
-        )
     }
 }
 
@@ -291,7 +278,6 @@ object PaymentSettingsTestTags {
     const val SCREEN = "payment_settings"
     const val MODE_ALWAYS = "payment_settings_mode_always"
     const val MODE_ABOVE = "payment_settings_mode_above"
-    const val CONFIRM_MANUAL_ENTRY = "payment_settings_confirm_manual_entry"
     const val LNURL_PAY_DETAILS = "payment_settings_lnurl_pay_details"
     const val OFFER_TO_SAVE_TARGETS = "payment_settings_offer_to_save_targets"
 }
