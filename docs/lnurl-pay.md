@@ -58,6 +58,13 @@ rate, the equivalent is unavailable and a newly selected currency starts empty;
 switching back can still restore the prior input. Background rate failures do
 not dismiss the sheet, and SAT entry works without a rate.
 
+Manual entry shows no minimum/maximum labels or preset buttons. Zero or empty
+input keeps Continue disabled without an error. A positive amount outside the
+allowed payment range disables Continue and shows a small inline “Amount is
+too low” or “Amount is too large” error. Validation uses the whole-satoshi payment
+amount, including conversion and upward rounding for fiat input. The error clears
+when the entry returns to the permitted range.
+
 Manual amount entry has two steps within the same sheet: enter an amount and tap
 Continue, then review the entered amount, currency, and available recipient
 details before tapping Pay. Edit amount returns to the keypad with the input

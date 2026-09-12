@@ -257,9 +257,6 @@ private class BlipPaymentFlow(
             is PaymentIntent.ManualAmountKeyPress ->
                 admission.updateManualAmount(intent.key)
 
-            is PaymentIntent.ManualAmountPreset ->
-                admission.presetManualAmount(intent.amount)
-
             PaymentIntent.ConfirmPaymentDismiss ->
                 handleConfirmationDismissal(confirmation.dismiss())
 

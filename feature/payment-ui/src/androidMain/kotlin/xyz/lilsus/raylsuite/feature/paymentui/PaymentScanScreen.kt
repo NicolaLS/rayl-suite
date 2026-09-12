@@ -301,7 +301,6 @@ fun PaymentScanScreen(
             state = enterAmount.entry,
             lnurlPayDisplay = enterAmount.lnurlPayDisplay,
             onKeyPress = { onIntent(PaymentIntent.ManualAmountKeyPress(it)) },
-            onRangeClick = { onIntent(PaymentIntent.ManualAmountPreset(it)) },
             onSubmit = { onIntent(PaymentIntent.ManualAmountSubmit) },
             onDismiss = { onIntent(PaymentIntent.ManualAmountDismiss) }
         )

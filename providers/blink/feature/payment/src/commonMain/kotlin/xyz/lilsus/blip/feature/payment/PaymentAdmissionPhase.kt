@@ -3,7 +3,6 @@ package xyz.lilsus.blip.feature.payment
 import fr.acinq.lightning.payment.Bolt11Invoice
 import fr.acinq.lightning.utils.currentTimestampSeconds
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
-import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.model.DisplayCurrency
 import xyz.lilsus.raylsuite.core.model.LightningAddress
 import xyz.lilsus.raylsuite.core.payment.DynamicPaymentSourceKey
@@ -317,15 +316,6 @@ internal class PaymentAdmissionPhase(
         )
     }
 
-    fun presetManualAmount(amount: DisplayAmount) {
-        val state = presentation.uiState.value as? PaymentUiState.EnterAmount ?: return
-        preparation.manualEntryContext ?: return
-        presentation.showManualAmount(
-            manualAmount.presetAmount(amount),
-            state.lnurlPayDisplay
-        )
-    }
-
     fun dismissManualAmount() {
         manualAmount.reset()
         preparation.manualEntryContext = null
@@ -366,16 +356,6 @@ internal class PaymentAdmissionPhase(
                     ManualAmountConfig(
                         info = manualCurrencyState.info,
                         exchangeRate = manualCurrencyState.exchangeRate,
-                        min =
-                            currencyManager.convertMsatsToDisplay(
-                                context.session.params.minSendable,
-                                manualCurrencyState
-                            ),
-                        max =
-                            currencyManager.convertMsatsToDisplay(
-                                context.session.params.maxSendable,
-                                manualCurrencyState
-                            ),
                         minMsats = context.session.params.minSendable,
                         maxMsats = context.session.params.maxSendable
                     )
@@ -672,16 +652,6 @@ internal class PaymentAdmissionPhase(
             ManualAmountConfig(
                 info = manualCurrencyState.info,
                 exchangeRate = manualCurrencyState.exchangeRate,
-                min =
-                    currencyManager.convertMsatsToDisplay(
-                        params.minSendable,
-                        manualCurrencyState
-                    ),
-                max =
-                    currencyManager.convertMsatsToDisplay(
-                        params.maxSendable,
-                        manualCurrencyState
-                    ),
                 minMsats = params.minSendable,
                 maxMsats = params.maxSendable
             )

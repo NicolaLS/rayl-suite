@@ -6,8 +6,6 @@ import xyz.lilsus.raylsuite.core.model.DisplayCurrency
 data class ManualAmountUiState(
     val amount: DisplayAmount?,
     val currency: DisplayCurrency,
-    val min: DisplayAmount? = null,
-    val max: DisplayAmount? = null,
     val allowDecimal: Boolean = true,
     val rawWhole: String = "0",
     val rawFraction: String = "",
@@ -22,9 +20,9 @@ sealed interface RangeStatus {
 
     data object Unknown : RangeStatus
 
-    data class BelowMin(val min: DisplayAmount) : RangeStatus
+    data object BelowMin : RangeStatus
 
-    data class AboveMax(val max: DisplayAmount) : RangeStatus
+    data object AboveMax : RangeStatus
 }
 
 sealed interface ManualAmountKey {

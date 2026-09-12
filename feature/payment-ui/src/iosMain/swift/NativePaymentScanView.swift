@@ -575,21 +575,6 @@ private struct NativePaymentScanSheetView: View {
             .accessibilityIdentifier("payment_manual_amount_equivalent")
         }
 
-        HStack(spacing: 8) {
-            if let minimum = sheet.minimumTitle {
-                Button(minimum) {
-                    controller.selectManualAmountPreset(preset: "minimum")
-                }
-                .buttonStyle(.bordered)
-            }
-            if let maximum = sheet.maximumTitle {
-                Button(maximum) {
-                    controller.selectManualAmountPreset(preset: "maximum")
-                }
-                .buttonStyle(.bordered)
-            }
-        }
-
         if let rangeMessage = sheet.rangeMessage {
             Text(rangeMessage)
                 .font(.footnote)

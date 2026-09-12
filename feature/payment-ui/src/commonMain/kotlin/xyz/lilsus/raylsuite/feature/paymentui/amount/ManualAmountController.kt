@@ -11,8 +11,6 @@ import xyz.lilsus.raylsuite.core.model.convertMsatsToDisplayAmount
 data class ManualAmountConfig(
     val info: CurrencyInfo,
     val exchangeRate: Double?,
-    val min: DisplayAmount? = null,
-    val max: DisplayAmount? = null,
     val minMsats: Long? = null,
     val maxMsats: Long? = null
 )
@@ -39,8 +37,6 @@ class ManualAmountController(private val defaultConfig: ManualAmountConfig) {
     private var state: ManualAmountUiState = ManualAmountUiState(
         amount = null,
         currency = defaultConfig.info.currency,
-        min = defaultConfig.min,
-        max = defaultConfig.max,
         allowDecimal = defaultConfig.info.fractionDigits > 0,
         rawWhole = whole,
         rawFraction = fraction,
@@ -71,8 +67,6 @@ class ManualAmountController(private val defaultConfig: ManualAmountConfig) {
         state = ManualAmountUiState(
             amount = null,
             currency = config.info.currency,
-            min = config.min,
-            max = config.max,
             allowDecimal = config.info.fractionDigits > 0,
             rawWhole = whole,
             rawFraction = fraction,
@@ -85,7 +79,7 @@ class ManualAmountController(private val defaultConfig: ManualAmountConfig) {
 
     fun current(): ManualAmountUiState = state
 
-    fun presetAmount(amount: DisplayAmount): ManualAmountUiState {
+    internal fun presetAmount(amount: DisplayAmount): ManualAmountUiState {
         if (amount.currency != activeInfo.currency) return state
         alternateInput = null
         val fractionDigits = activeInfo.fractionDigits
@@ -184,34 +178,20 @@ class ManualAmountController(private val defaultConfig: ManualAmountConfig) {
         val msats = minor?.takeIf { it > 0L }?.let { minorToMsats(it) }
         val minMsats = config.minMsats
         val maxMsats = config.maxMsats
-        val minDisplay = if (enteringSats) {
-            minMsats?.let { DisplayAmount(roundedUpSats(it), info.currency) }
-        } else {
-            config.min
-        }
-        val maxDisplay = if (enteringSats) {
-            maxMsats?.let { DisplayAmount(it / MSATS_PER_SAT, info.currency) }
-        } else {
-            config.max
-        }
+        // Validate the whole-satoshi amount that providers will submit, not a rounded display bound.
+        val paymentMsats = msats?.takeIf { it <= Long.MAX_VALUE - (MSATS_PER_SAT - 1) }
+            ?.let { roundedUpSats(it) * MSATS_PER_SAT }
         val rangeStatus = when {
             msats == null -> RangeStatus.Unknown
-
-            minMsats != null && minDisplay != null && msats < minMsats -> RangeStatus.BelowMin(
-                minDisplay
-            )
-
-            maxMsats != null && maxDisplay != null && msats > maxMsats -> RangeStatus.AboveMax(
-                maxDisplay
-            )
-
+            paymentMsats == null -> RangeStatus.AboveMax
+            paymentMsats <= 0 -> RangeStatus.BelowMin
+            minMsats != null && paymentMsats < minMsats -> RangeStatus.BelowMin
+            maxMsats != null && paymentMsats > maxMsats -> RangeStatus.AboveMax
             else -> RangeStatus.InRange
         }
         state = state.copy(
             amount = amount,
             currency = info.currency,
-            min = minDisplay,
-            max = maxDisplay,
             allowDecimal = info.fractionDigits > 0,
             rawWhole = whole,
             rawFraction = fraction,
@@ -273,7 +253,7 @@ class ManualAmountController(private val defaultConfig: ManualAmountConfig) {
                 if (!msats.isFinite() || msats <= 0 || msats >= Long.MAX_VALUE.toDouble()) {
                     null
                 } else {
-                    msats.roundToLong().takeIf { it > 0 }
+                    msats.roundToLong()
                 }
             }
         }

@@ -158,12 +158,6 @@ class NativePaymentScanController(
         onPaymentIntent(intent)
     }
 
-    fun selectManualAmountPreset(preset: String) {
-        val entry = (input?.payment as? PaymentScreenState.EnterAmount)?.entry ?: return
-        val amount = if (preset == "minimum") entry.min else entry.max
-        amount?.let { onPaymentIntent(PaymentIntent.ManualAmountPreset(it)) }
-    }
-
     fun submitManualAmount() {
         onPaymentIntent(PaymentIntent.ManualAmountSubmit)
     }

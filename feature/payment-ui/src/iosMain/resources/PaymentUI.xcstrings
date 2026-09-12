@@ -369,48 +369,48 @@
         }
       }
     },
-    "enter_amount_range_max" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Max %1$@"
+    "enter_amount_too_large": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amount is too large."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Max %1$@"
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Betrag ist zu hoch."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Máx %1$@"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El importe es demasiado alto."
           }
         }
       }
     },
-    "enter_amount_range_min" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Min %1$@"
+    "enter_amount_too_low": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Amount is too low."
           }
         },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Min %1$@"
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Betrag ist zu niedrig."
           }
         },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mín %1$@"
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El importe es demasiado bajo."
           }
         }
       }

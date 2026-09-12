@@ -59,8 +59,6 @@ data class NativePaymentScanSheet(
     val recipientDescription: String?,
     val recipientImageBase64: String?,
     val currencyLabel: String?,
-    val minimumTitle: String?,
-    val maximumTitle: String?,
     val rangeMessage: String?,
     val allowsDecimal: Boolean,
     val canSubmit: Boolean,
@@ -365,19 +363,7 @@ private suspend fun ManualAmountUiState.toNativeSheet(
     recipientDescription = recipient?.description,
     recipientImageBase64 = recipient?.image?.encodedBase64(),
     currencyLabel = currency.nativeLabel(),
-    minimumTitle = min?.let {
-        nativeString(
-            NativeStringResource(table = "PaymentUI", key = "enter_amount_range_min"),
-            formatter.format(it)
-        )
-    },
-    maximumTitle = max?.let {
-        nativeString(
-            NativeStringResource(table = "PaymentUI", key = "enter_amount_range_max"),
-            formatter.format(it)
-        )
-    },
-    rangeMessage = rangeStatus.message(formatter),
+    rangeMessage = rangeStatus.message(),
     allowsDecimal = allowDecimal,
     canSubmit = amount != null && amount.minor > 0L && rangeStatus == RangeStatus.InRange,
     primaryAction = "submit",
@@ -442,8 +428,6 @@ private suspend fun PaymentScreenState.Confirm.toNativeSheet(
     recipientDescription = lnurlPayDisplay?.description,
     recipientImageBase64 = lnurlPayDisplay?.image?.encodedBase64(),
     currencyLabel = null,
-    minimumTitle = null,
-    maximumTitle = null,
     rangeMessage = null,
     allowsDecimal = false,
     canSubmit = true,
@@ -488,8 +472,6 @@ private suspend fun PreviousPaymentSituation.toNativeSheet(
         recipientDescription = null,
         recipientImageBase64 = null,
         currencyLabel = null,
-        minimumTitle = null,
-        maximumTitle = null,
         rangeMessage = null,
         allowsDecimal = false,
         canSubmit = true,
@@ -544,8 +526,6 @@ private suspend fun HubSavePrompt.toNativeSheet(): NativePaymentScanSheet {
         recipientDescription = null,
         recipientImageBase64 = null,
         currencyLabel = null,
-        minimumTitle = null,
-        maximumTitle = null,
         rangeMessage = null,
         allowsDecimal = false,
         canSubmit = true,
@@ -561,21 +541,15 @@ private suspend fun HubSavePrompt.toNativeSheet(): NativePaymentScanSheet {
 private suspend fun LnurlPayDisplay.recipientTitle(): String =
     nativeString(NativeStringResource(table = "PaymentUI", key = "lnurl_payment_recipient"), domain)
 
-private suspend fun RangeStatus.message(formatter: AmountFormatter): String? = when (this) {
+private suspend fun RangeStatus.message(): String? = when (this) {
     RangeStatus.InRange,
     RangeStatus.Unknown -> null
 
-    is RangeStatus.BelowMin ->
-        nativeString(
-            NativeStringResource(table = "PaymentUI", key = "enter_amount_range_min"),
-            formatter.format(min)
-        )
+    RangeStatus.BelowMin ->
+        nativeString(NativeStringResource(table = "PaymentUI", key = "enter_amount_too_low"))
 
-    is RangeStatus.AboveMax ->
-        nativeString(
-            NativeStringResource(table = "PaymentUI", key = "enter_amount_range_max"),
-            formatter.format(max)
-        )
+    RangeStatus.AboveMax ->
+        nativeString(NativeStringResource(table = "PaymentUI", key = "enter_amount_too_large"))
 }
 
 private fun ManualAmountUiState.committedNumber(): String {

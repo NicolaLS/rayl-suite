@@ -1,6 +1,5 @@
 package xyz.lilsus.raylsuite.feature.paymentui
 
-import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountKey
 
 sealed interface PaymentToastMessage {
@@ -28,8 +27,6 @@ sealed interface PaymentIntent {
     data object DismissResult : PaymentIntent
 
     data class ManualAmountKeyPress(val key: ManualAmountKey) : PaymentIntent
-
-    data class ManualAmountPreset(val amount: DisplayAmount) : PaymentIntent
 
     data object ManualAmountSubmit : PaymentIntent
 

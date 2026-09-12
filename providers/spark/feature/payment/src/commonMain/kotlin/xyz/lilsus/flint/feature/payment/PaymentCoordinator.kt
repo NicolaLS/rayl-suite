@@ -215,8 +215,6 @@ class PaymentCoordinator(
 
             is PaymentIntent.ManualAmountKeyPress -> updateManualAmount(intent.key)
 
-            is PaymentIntent.ManualAmountPreset -> presetManualAmount(intent.amount)
-
             PaymentIntent.ConfirmPaymentDismiss -> dismissConfirmation()
 
             PaymentIntent.ConfirmPaymentSubmit -> submitConfirmation()
@@ -451,15 +449,6 @@ class PaymentCoordinator(
             )
     }
 
-    private fun presetManualAmount(amount: DisplayAmount) {
-        val state = mutableUiState.value as? PaymentUiState.EnterAmount ?: return
-        mutableUiState.value =
-            PaymentUiState.EnterAmount(
-                manualAmount.presetAmount(amount),
-                state.lnurlPayDisplay
-            )
-    }
-
     private suspend fun submitManualAmount() {
         val entryState = mutableUiState.value as? PaymentUiState.EnterAmount ?: return
         val request = interaction.manualRequest ?: return
@@ -516,11 +505,6 @@ class PaymentCoordinator(
         val currencyState = currencyManager.state.value
         val minMsats = payment.minimumAmountSats.toMsats()
         val maxMsats = payment.maximumAmountSats?.toMsats()
-        val min = currencyManager.convertMsatsToDisplay(minMsats, currencyState)
-            .takeIf { it.currency == currencyState.info.currency }
-        val max = maxMsats
-            ?.let { currencyManager.convertMsatsToDisplay(it, currencyState) }
-            ?.takeIf { it.currency == currencyState.info.currency }
         mutableUiState.value =
             PaymentUiState.EnterAmount(
                 manualAmount.reset(
@@ -528,8 +512,6 @@ class PaymentCoordinator(
                         ManualAmountConfig(
                             info = currencyState.info,
                             exchangeRate = currencyState.exchangeRate,
-                            min = min,
-                            max = max,
                             minMsats = minMsats,
                             maxMsats = maxMsats
                         ),
