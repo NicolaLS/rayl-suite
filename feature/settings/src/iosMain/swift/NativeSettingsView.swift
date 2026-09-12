@@ -397,7 +397,7 @@ private struct NativePaymentSettingsView: View {
 
     private func format(_ amount: NativeSettingsAmount) -> String {
         let value = Decimal(amount.minor) / pow10(Int(amount.fractionDigits))
-        if amount.currencyCode.count == 3, amount.currencyCode != "BTC" {
+        if amount.currencyCode != "SAT" {
             return value.formatted(
                 .currency(code: amount.currencyCode)
                     .precision(.fractionLength(Int(amount.fractionDigits)))

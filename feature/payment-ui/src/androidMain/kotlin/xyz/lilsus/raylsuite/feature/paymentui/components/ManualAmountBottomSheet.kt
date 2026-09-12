@@ -231,7 +231,6 @@ private fun formatWhole(raw: String): String {
 }
 
 private fun currencyLabel(currency: DisplayCurrency): String = when (currency) {
-    DisplayCurrency.Bitcoin -> "BTC"
     DisplayCurrency.Satoshi -> "sat"
     is DisplayCurrency.Fiat -> currency.iso4217.uppercase()
 }

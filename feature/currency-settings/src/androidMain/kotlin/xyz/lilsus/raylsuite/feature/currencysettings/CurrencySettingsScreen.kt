@@ -106,7 +106,6 @@ private data class CurrencyOption(val code: String, val label: String)
 @StringRes
 private fun currencyNameResource(code: String): Int = when (code) {
     "SAT" -> R.string.settings_currency_satoshi
-    "BTC" -> R.string.settings_currency_bitcoin
     "USD" -> R.string.settings_currency_usd
     "EUR" -> R.string.settings_currency_eur
     "GBP" -> R.string.settings_currency_gbp

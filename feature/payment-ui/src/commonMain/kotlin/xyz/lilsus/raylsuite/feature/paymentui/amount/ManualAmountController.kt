@@ -190,8 +190,6 @@ class ManualAmountController(private val defaultConfig: ManualAmountConfig) {
         return when (info.currency) {
             DisplayCurrency.Satoshi -> minor * MSATS_PER_SAT
 
-            DisplayCurrency.Bitcoin -> minor * MSATS_PER_SAT
-
             is DisplayCurrency.Fiat -> {
                 val rate = config.exchangeRate ?: return null
                 val major = minor.toDouble() / 10.0.pow(info.fractionDigits)

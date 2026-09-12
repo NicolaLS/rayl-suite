@@ -70,29 +70,6 @@
         }
       }
     },
-    "settings_currency_bitcoin" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bitcoin"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bitcoin"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bitcoin"
-          }
-        }
-      }
-    },
     "settings_currency_cad" : {
       "extractionState" : "stale",
       "localizations" : {

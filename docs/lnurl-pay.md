@@ -44,6 +44,10 @@ manual-entry policy, preset-target confirmations, and deep-link confirmations
 remain provider-owned. A fixed payment eligible for Auto Pay can proceed without
 a review screen when the extra LNURL review setting is off.
 
+Display and manual-entry currencies are Satoshi and the supported fiat currencies.
+Satoshi is the only Bitcoin denomination; amounts are never displayed or entered
+as fractional BTC. Fiat amounts use the current Bitcoin exchange rate for conversion.
+
 Manual amount entry has two steps within the same sheet: enter an amount and tap
 Continue, then review the entered amount, currency, and available recipient
 details before tapping Pay. Edit amount returns to the keypad with the input

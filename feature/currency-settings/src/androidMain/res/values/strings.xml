@@ -2,7 +2,6 @@
     <string name="settings_currency">Currency</string>
     <string name="search_placeholder">Search…</string>
     <string name="settings_currency_satoshi">Satoshi</string>
-    <string name="settings_currency_bitcoin">Bitcoin</string>
     <string name="settings_currency_usd">US Dollar</string>
     <string name="settings_currency_eur">Euro</string>
     <string name="settings_currency_gbp">British Pound</string>

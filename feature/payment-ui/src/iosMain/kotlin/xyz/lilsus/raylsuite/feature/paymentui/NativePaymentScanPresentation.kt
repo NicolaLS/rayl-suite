@@ -574,7 +574,6 @@ private fun ManualAmountUiState.committedNumber(): String {
 }
 
 private fun DisplayCurrency.nativeLabel(): String = when (this) {
-    DisplayCurrency.Bitcoin -> "BTC"
     DisplayCurrency.Satoshi -> "sat"
     is DisplayCurrency.Fiat -> iso4217.uppercase()
 }

@@ -74,8 +74,6 @@ class PaymentCurrencyManager(
         val info = when (val currency = amount.currency) {
             DisplayCurrency.Satoshi -> CurrencyCatalog.infoFor("SAT")
 
-            DisplayCurrency.Bitcoin -> CurrencyCatalog.infoFor("BTC")
-
             is DisplayCurrency.Fiat -> {
                 val code = currency.iso4217.trim().uppercase()
                 if (code !in CurrencyCatalog.supportedCodes) return null
@@ -83,9 +81,7 @@ class PaymentCurrencyManager(
             }
         }
         val rate = when (info.currency) {
-            DisplayCurrency.Satoshi,
-            DisplayCurrency.Bitcoin -> null
-
+            DisplayCurrency.Satoshi -> null
             is DisplayCurrency.Fiat -> freshExchangeRate(info) ?: return null
         }
         val amountMsats = amount.toRoundedMsats(info, rate) ?: return null
@@ -178,8 +174,7 @@ sealed interface CurrencyManagerError {
 
 private fun DisplayAmount.toRoundedMsats(info: CurrencyInfo, exchangeRate: Double?): Long? {
     val unroundedMsats = when (info.currency) {
-        DisplayCurrency.Satoshi,
-        DisplayCurrency.Bitcoin -> {
+        DisplayCurrency.Satoshi -> {
             if (minor > Long.MAX_VALUE / MSATS_PER_SAT) return null
             minor * MSATS_PER_SAT
         }

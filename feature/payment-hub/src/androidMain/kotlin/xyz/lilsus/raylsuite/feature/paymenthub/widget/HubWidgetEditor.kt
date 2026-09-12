@@ -448,7 +448,7 @@ private fun ShortcutFields(editor: HubWidgetEditor, viewModel: WidgetHubViewMode
                 }
             }
         }
-        if (editor.currencyCode != "SAT" && editor.currencyCode != "BTC") {
+        if (editor.currencyCode != "SAT") {
             Text(
                 stringResource(R.string.hub_target_amount_fiat_hint, editor.currencyCode),
                 style = MaterialTheme.typography.bodySmall,

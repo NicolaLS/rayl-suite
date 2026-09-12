@@ -10,10 +10,6 @@ suspend fun nativeCurrencyStrings(): Map<String, String> = mapOf(
         nativeString(
             NativeStringResource(table = "CurrencySettings", key = "settings_currency_satoshi")
         ),
-    "BTC" to
-        nativeString(
-            NativeStringResource(table = "CurrencySettings", key = "settings_currency_bitcoin")
-        ),
     "USD" to
         nativeString(
             NativeStringResource(table = "CurrencySettings", key = "settings_currency_usd")

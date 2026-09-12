@@ -13,19 +13,12 @@ internal actual fun createAmountFormatter(locale: AppLocale): AmountFormatter =
 private class AndroidAmountFormatter(locale: AppLocale) : AmountFormatter {
     private val javaLocale = locale.toLocale()
     private val fiatFormatters = mutableMapOf<String, NumberFormat>()
-    private val bitcoinFormatter by lazy {
-        NumberFormat.getNumberInstance(javaLocale).apply {
-            minimumFractionDigits = 2
-            maximumFractionDigits = 8
-        }
-    }
     private val satoshiFormatter by lazy {
         NumberFormat.getIntegerInstance(javaLocale)
     }
 
     override fun format(amount: DisplayAmount): String = when (val currency = amount.currency) {
         is DisplayCurrency.Fiat -> formatFiat(amount.minor, currency)
-        DisplayCurrency.Bitcoin -> formatBitcoin(amount.minor)
         DisplayCurrency.Satoshi -> formatSatoshi(amount.minor)
     }
 
@@ -47,16 +40,7 @@ private class AndroidAmountFormatter(locale: AppLocale) : AmountFormatter {
         return formatter.format(major)
     }
 
-    private fun formatBitcoin(minor: Long): String {
-        val bitcoin = BigDecimal.valueOf(minor, BITCOIN_FRACTION_DIGITS)
-        return "${bitcoinFormatter.format(bitcoin)} BTC"
-    }
-
     private fun formatSatoshi(minor: Long): String = "${satoshiFormatter.format(minor)} sat"
-
-    private companion object {
-        const val BITCOIN_FRACTION_DIGITS = 8
-    }
 }
 
 private fun AppLocale.toLocale(): Locale {

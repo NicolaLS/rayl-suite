@@ -10,11 +10,6 @@ object CurrencyCatalog {
                 currency = DisplayCurrency.Satoshi,
                 fractionDigits = 0
             ),
-            CurrencyInfo(
-                code = "BTC",
-                currency = DisplayCurrency.Bitcoin,
-                fractionDigits = 8
-            ),
             fiatCurrency("USD"),
             fiatCurrency("EUR"),
             fiatCurrency("GBP"),
@@ -38,7 +33,6 @@ object CurrencyCatalog {
 
     fun infoFor(currency: DisplayCurrency): CurrencyInfo = when (currency) {
         DisplayCurrency.Satoshi -> infoFor("SAT")
-        DisplayCurrency.Bitcoin -> infoFor("BTC")
         is DisplayCurrency.Fiat -> infoFor(currency.iso4217)
     }
 

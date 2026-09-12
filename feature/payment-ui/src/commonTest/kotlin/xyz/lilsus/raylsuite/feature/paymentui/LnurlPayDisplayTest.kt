@@ -41,7 +41,7 @@ class LnurlPayDisplayTest {
     @Test
     fun fixedAmountReviewCarriesLnurlDetails() {
         val display = assertNotNull(LnurlPayDisplay.fromUntrusted("pay.example", "Coffee"))
-        val amount = DisplayAmount(21, DisplayCurrency.Satoshi)
+        val amount = PaymentConfirmationAmount(DisplayAmount(21, DisplayCurrency.Satoshi))
 
         val state = PaymentScreenState.Confirm(amount, display)
 

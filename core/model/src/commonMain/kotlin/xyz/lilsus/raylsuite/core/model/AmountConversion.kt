@@ -14,12 +14,6 @@ fun convertMsatsToDisplayAmount(
             currency = currency
         )
 
-    DisplayCurrency.Bitcoin ->
-        DisplayAmount(
-            minor = msats / MSATS_PER_SAT,
-            currency = currency
-        )
-
     is DisplayCurrency.Fiat -> {
         val rate = fiatPricePerBitcoin ?: return null
         val bitcoin = msats.toDouble() / MSATS_PER_BITCOIN
