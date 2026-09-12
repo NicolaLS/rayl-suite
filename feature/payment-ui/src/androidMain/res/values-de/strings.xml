@@ -62,4 +62,5 @@
     <string name="retry_previous_invoice">Vorherige Rechnung erneut versuchen</string>
     <string name="create_additional_payment">Zusätzliche Zahlung erstellen</string>
     <string name="view_previous_payment">Vorherige Zahlung anzeigen</string>
+    <string name="enter_amount_switch_currency">Zu %1$s wechseln</string>
 </resources>

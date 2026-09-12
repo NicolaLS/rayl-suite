@@ -62,4 +62,5 @@
     <string name="retry_previous_invoice">Reintentar factura anterior</string>
     <string name="create_additional_payment">Crear pago adicional</string>
     <string name="view_previous_payment">Ver pago anterior</string>
+    <string name="enter_amount_switch_currency">Cambiar a %1$s</string>
 </resources>

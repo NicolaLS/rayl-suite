@@ -121,6 +121,32 @@ fun ManualAmountBottomSheet(
                 }
             } else {
                 AmountInputDisplay(state)
+                state.alternativeCurrency?.let { alternative ->
+                    TextButton(
+                        onClick = { onKeyPress(ManualAmountKey.SwitchCurrency) },
+                        modifier = Modifier.testTag(PaymentTestTags.MANUAL_AMOUNT_SWITCH_CURRENCY)
+                    ) {
+                        Text(
+                            "⇅  " + stringResource(
+                                R.string.enter_amount_switch_currency,
+                                currencyLabel(alternative).uppercase()
+                            )
+                        )
+                    }
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CurrencyTag(currencyLabel(alternative).uppercase(), active = false)
+                        Text(
+                            text =
+                                state.equivalentAmount?.let { "≈ ${formatter.format(it)}" } ?: "—",
+                            style = MaterialTheme.typography.titleLarge,
+                            modifier = Modifier.testTag(PaymentTestTags.MANUAL_AMOUNT_EQUIVALENT)
+                        )
+                    }
+                }
 
                 if (state.min != null || state.max != null) {
                     Spacer(modifier = Modifier.height(12.dp))
@@ -402,6 +428,7 @@ private fun AmountKeyButton(key: ManualAmountKey, enabled: Boolean, onClick: () 
                 is ManualAmountKey.Digit -> key.value.toString()
                 ManualAmountKey.Decimal -> "."
                 ManualAmountKey.Backspace -> "<"
+                ManualAmountKey.SwitchCurrency -> "⇅"
             },
             fontSize = 20.sp
         )
@@ -412,6 +439,7 @@ private fun ManualAmountKey.testTag(): String = when (this) {
     is ManualAmountKey.Digit -> PaymentTestTags.manualAmountDigitKey(value)
     ManualAmountKey.Decimal -> PaymentTestTags.MANUAL_AMOUNT_DECIMAL_KEY
     ManualAmountKey.Backspace -> PaymentTestTags.MANUAL_AMOUNT_BACKSPACE_KEY
+    ManualAmountKey.SwitchCurrency -> PaymentTestTags.MANUAL_AMOUNT_SWITCH_CURRENCY
 }
 
 @Preview

@@ -70,7 +70,14 @@ data class NativePaymentScanSheet(
     val tertiaryActionTitle: String?,
     val textFieldLabel: String?,
     val textFieldValue: String?,
-    val manualReview: NativeManualAmountReview? = null
+    val manualReview: NativeManualAmountReview? = null,
+    val currencySwitch: NativeManualCurrencySwitch? = null
+)
+
+data class NativeManualCurrencySwitch(
+    val title: String,
+    val currency: String,
+    val equivalent: String?
 )
 
 data class NativeManualAmountReview(
@@ -383,6 +390,16 @@ private suspend fun ManualAmountUiState.toNativeSheet(
     tertiaryActionTitle = null,
     textFieldLabel = null,
     textFieldValue = null,
+    currencySwitch = alternativeCurrency?.let { alternative ->
+        NativeManualCurrencySwitch(
+            title = nativeString(
+                NativeStringResource(table = "PaymentUI", key = "enter_amount_switch_currency"),
+                alternative.nativeLabel().uppercase()
+            ),
+            currency = alternative.nativeLabel().uppercase(),
+            equivalent = equivalentAmount?.let { "≈ ${formatter.format(it)}" }
+        )
+    },
     manualReview = NativeManualAmountReview(
         title = nativeString(
             NativeStringResource(table = "PaymentUI", key = "confirm_payment_title")

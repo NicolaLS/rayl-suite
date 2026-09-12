@@ -550,6 +550,31 @@ private struct NativePaymentScanSheetView: View {
             .accessibilityElement(children: .combine)
         }
 
+        if let currencySwitch = sheet.currencySwitch {
+            Button {
+                controller.manualAmountKey(key: "switchCurrency")
+            } label: {
+                Label(currencySwitch.title, systemImage: "arrow.up.arrow.down")
+            }
+            .buttonStyle(.bordered)
+            .accessibilityIdentifier("payment_manual_amount_switch_currency")
+
+            HStack {
+                Text(currencySwitch.currency)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text(currencySwitch.equivalent ?? "—")
+                    .font(.title3)
+                    .monospacedDigit()
+            }
+            .padding()
+            .background(Color(uiColor: .secondarySystemGroupedBackground),
+                        in: RoundedRectangle(cornerRadius: 16))
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("payment_manual_amount_equivalent")
+        }
+
         HStack(spacing: 8) {
             if let minimum = sheet.minimumTitle {
                 Button(minimum) {

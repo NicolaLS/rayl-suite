@@ -12,7 +12,9 @@ data class ManualAmountUiState(
     val rawWhole: String = "0",
     val rawFraction: String = "",
     val hasDecimal: Boolean = false,
-    val rangeStatus: RangeStatus = RangeStatus.InRange
+    val rangeStatus: RangeStatus = RangeStatus.InRange,
+    val alternativeCurrency: DisplayCurrency? = null,
+    val equivalentAmount: DisplayAmount? = null
 )
 
 sealed interface RangeStatus {
@@ -31,4 +33,6 @@ sealed interface ManualAmountKey {
     data object Decimal : ManualAmountKey
 
     data object Backspace : ManualAmountKey
+
+    data object SwitchCurrency : ManualAmountKey
 }

@@ -47,6 +47,16 @@ a review screen when the extra LNURL review setting is off.
 Display and manual-entry currencies are Satoshi and the supported fiat currencies.
 Satoshi is the only Bitcoin denomination; amounts are never displayed or entered
 as fractional BTC. Fiat amounts use the current Bitcoin exchange rate for conversion.
+With a fiat preference, each manual entry starts in that currency and offers a
+switch to SAT plus an estimated equivalent. Switching changes only this entry,
+not the saved preference. A Satoshi preference shows no switch or equivalent.
+The selected entry currency determines the amount submitted after review.
+Switching converts to the other currency's precision (upward to whole SAT);
+switching back without edits restores the exact original input to avoid rounding
+drift. Exchange-rate refreshes preserve the selected unit and input. Without a
+rate, the equivalent is unavailable and a newly selected currency starts empty;
+switching back can still restore the prior input. Background rate failures do
+not dismiss the sheet, and SAT entry works without a rate.
 
 Manual amount entry has two steps within the same sheet: enter an amount and tap
 Continue, then review the entered amount, currency, and available recipient

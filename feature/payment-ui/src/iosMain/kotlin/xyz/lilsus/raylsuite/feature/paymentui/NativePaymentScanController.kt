@@ -142,6 +142,10 @@ class NativePaymentScanController(
     fun manualAmountKey(key: String) {
         val intent =
             when (key) {
+                "switchCurrency" -> PaymentIntent.ManualAmountKeyPress(
+                    ManualAmountKey.SwitchCurrency
+                )
+
                 "decimal" -> PaymentIntent.ManualAmountKeyPress(ManualAmountKey.Decimal)
 
                 "backspace" -> PaymentIntent.ManualAmountKeyPress(ManualAmountKey.Backspace)

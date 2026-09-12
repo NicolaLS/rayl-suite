@@ -176,7 +176,8 @@ private class LasrPaymentFlow(
         }
         scope.launch {
             currencyManager.errors.collect { error ->
-                presentation.presentError(error.toPaymentUiError())
+                // A background quote failure must not interrupt SAT entry or payment submission.
+                presentation.emitErrorEvent(error.toPaymentUiError())
             }
         }
         scope.launch {

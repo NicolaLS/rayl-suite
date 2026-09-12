@@ -1,6 +1,8 @@
 package xyz.lilsus.raylsuite.feature.paymentui
 
 object PaymentTestTags {
+    const val MANUAL_AMOUNT_SWITCH_CURRENCY = "payment_manual_amount_switch_currency"
+    const val MANUAL_AMOUNT_EQUIVALENT = "payment_manual_amount_equivalent"
     const val SCREEN = "payment_screen"
     const val ACTIVE_CONTENT = "payment_active_content"
     const val SETTINGS_BUTTON = "payment_settings_button"
