@@ -56,7 +56,6 @@ internal class PaymentPreparation(lnurlPayClient: LnurlPayClient) {
 internal data class LnurlSession(
     val params: LnurlPayParams,
     val display: LnurlPayDisplay?,
-    val requiresDetailsReview: Boolean = false,
     val sourceKey: DynamicPaymentSourceKey?,
     val paymentSource: PaymentRequestSource,
     val targetContext: HubTargetContext?,

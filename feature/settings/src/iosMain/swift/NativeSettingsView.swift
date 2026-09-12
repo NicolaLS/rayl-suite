@@ -276,7 +276,6 @@ private struct NativePaymentSettingsView: View {
     var body: some View {
         Form {
             confirmationSection
-            lnurlSection
             hubSection
             hapticsSection
         }
@@ -334,18 +333,6 @@ private struct NativePaymentSettingsView: View {
             .contentShape(Rectangle())
         }
         .accessibilityAddTraits(payment.confirmationMode == mode ? .isSelected : [])
-    }
-
-    private var lnurlSection: some View {
-        Section(snapshot.text.paymentLnurlTitle) {
-            Toggle(
-                snapshot.text.paymentLnurlDescription,
-                isOn: Binding(
-                    get: { payment.showLnurlPayDetails },
-                    set: controller.setShowLnurlPayDetails
-                )
-            )
-        }
     }
 
     private var hubSection: some View {

@@ -162,52 +162,6 @@
         }
       }
     },
-    "settings_payments_lnurl_review" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "LNURL-Zahlungen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "LNURL payments"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pagos LNURL"
-          }
-        }
-      }
-    },
-    "settings_payments_lnurl_review_description" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Empfängerdomain und Beschreibung anzeigen, bevor eine Rechnung angefordert wird"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Show the recipient domain and description before requesting an invoice"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mostrar el dominio y la descripción del destinatario antes de solicitar una factura"
-          }
-        }
-      }
-    },
     "settings_payments_offer_save_targets" : {
       "extractionState" : "stale",
       "localizations" : {

@@ -279,20 +279,13 @@ class PaymentCoordinator(
                     }
                 val request = ManualRequest(result.payment, targetContext, lnurlPayDisplay)
                 interaction.requestManualAmount(request)
-                if (requestedAmountMsats != null && lnurlPayDisplay != null) {
-                    reviewLnurlAmount(request, requestedAmountMsats, paymentQuote)
-                } else if (requestedAmountMsats != null) {
+                if (requestedAmountMsats != null) {
                     prepareRequestedAmount(
                         result.payment,
                         requestedAmountMsats,
                         targetContext,
                         paymentQuote
                     )
-                } else if (
-                    lnurlPayDisplay != null &&
-                    result.payment.maximumAmountSats == result.payment.minimumAmountSats
-                ) {
-                    reviewLnurlAmount(request, result.payment.minimumAmountSats.toMsats())
                 } else {
                     showManualAmount(request, clearInput = true)
                 }
@@ -333,6 +326,12 @@ class PaymentCoordinator(
         amountEnteredManually: Boolean
     ) {
         interaction.reset()
+        val lnurlPayDisplay = payment.lnurlPayDetails?.toDisplay()
+        if (payment.lnurlPayDetails != null && lnurlPayDisplay == null) {
+            engine.cancel(payment.handle)
+            showError(PaymentUiError.InvalidInvoice("LNURL payment details are invalid"))
+            return
+        }
         if (
             paymentQuote != null &&
             payment.amountSats.toMsats() != paymentQuote.amountMsats
@@ -354,11 +353,17 @@ class PaymentCoordinator(
             } else {
                 null
             }
-        val draft = ActiveDraft(payment, targetContext, paymentQuote, confirmationAmount)
+        val draft = ActiveDraft(
+            payment,
+            targetContext,
+            paymentQuote,
+            confirmationAmount,
+            lnurlPayDisplay
+        )
         interaction.prepareDraft(draft)
         mutableUiState.value =
             if (requiresConfirmation) {
-                PaymentUiState.Confirm(requireNotNull(confirmationAmount))
+                PaymentUiState.Confirm(requireNotNull(confirmationAmount), lnurlPayDisplay)
             } else {
                 PaymentUiState.Loading()
             }
@@ -374,16 +379,6 @@ class PaymentCoordinator(
     }
 
     private suspend fun submitConfirmation() {
-        interaction.takeLnurlReview()?.let { review ->
-            mutableUiState.value = PaymentUiState.Loading(LoadingKind.Resolving)
-            applyPrepareResult(
-                engine.prepareAmount(review.request.payment.handle, review.amountSats),
-                review.request.targetContext,
-                requestedAmountMsats = null,
-                paymentQuote = review.paymentQuote
-            )
-            return
-        }
         val draft = interaction.activeDraft ?: return
         mutableUiState.value = PaymentUiState.Loading()
         applyConfirmResult(engine.confirm(draft.payment.handle), draft)
@@ -408,7 +403,7 @@ class PaymentCoordinator(
                         )
                 interaction.prepareDraft(draft.copy(confirmationAmount = confirmationAmount))
                 mutableUiState.value =
-                    PaymentUiState.Confirm(confirmationAmount)
+                    PaymentUiState.Confirm(confirmationAmount, draft.lnurlPayDisplay)
             }
 
             ConfirmPaymentResult.DraftUnavailable ->
@@ -431,11 +426,6 @@ class PaymentCoordinator(
     }
 
     private suspend fun dismissConfirmation() {
-        interaction.pendingLnurlReview?.let { review ->
-            engine.cancel(review.request.payment.handle)
-            finishPaymentInteraction()
-            return
-        }
         interaction.activeDraft?.payment?.handle?.let { engine.cancel(it) }
         finishPaymentInteraction()
     }
@@ -519,26 +509,6 @@ class PaymentCoordinator(
                 ),
                 request.lnurlPayDisplay
             )
-    }
-
-    private suspend fun reviewLnurlAmount(
-        request: ManualRequest,
-        amountMsats: Long,
-        paymentQuote: PaymentAmountQuote? = null
-    ) {
-        val amountSats = msatsToSatoshi(amountMsats)
-        if (
-            amountSats == null ||
-            amountSats.value < request.payment.minimumAmountSats.value ||
-            request.payment.maximumAmountSats?.let { amountSats.value > it.value } == true
-        ) {
-            showError(PaymentUiError.InvalidInvoice("Amount is outside the allowed range"))
-            return
-        }
-        val display = request.lnurlPayDisplay ?: return
-        val confirmationAmount = confirmationAmount(amountSats.toMsats(), paymentQuote)
-        interaction.reviewLnurl(PendingLnurlReview(request, amountSats, paymentQuote))
-        mutableUiState.value = PaymentUiState.Confirm(confirmationAmount, display)
     }
 
     private fun handleActivityUpdate(activity: List<PaymentActivity>) {
@@ -883,8 +853,7 @@ private fun PaymentPreferences.toFlintConfirmationPolicy(): PaymentConfirmationP
                 PaymentConfirmationMode.Above -> FlintConfirmationMode.THRESHOLD
             },
         amountThresholdSats = Satoshi.positive(thresholdSats),
-        feeThresholdSats = Satoshi.nonNegative(Long.MAX_VALUE),
-        showLnurlPayDetails = showLnurlPayDetails
+        feeThresholdSats = Satoshi.nonNegative(Long.MAX_VALUE)
     )
 
 internal fun requiresPreparedPaymentConfirmation(

@@ -29,7 +29,6 @@ internal class PaymentAdmissionPhase(
     private val pendingTracker: PendingPaymentTracker,
     private val presentation: PaymentPresentationPhase,
     private val confirmationIsIdle: () -> Boolean,
-    private val showLnurlPayDetails: () -> Boolean,
     private val notifyScanSuccess: () -> Unit
 ) {
     private val preparation = PaymentPreparation(lnurlPayClient)
@@ -264,17 +263,6 @@ internal class PaymentAdmissionPhase(
         }
     }
 
-    suspend fun resolveApprovedLnurl(
-        approval: ApprovedLnurlReview,
-        token: PaymentTaskToken
-    ): AdmissionResult = resolveLnurlInvoice(
-        session = approval.request.session,
-        amountMsats = approval.request.amountMsats,
-        isManualEntry = approval.request.isManualEntry,
-        paymentQuote = approval.request.paymentQuote,
-        token = token
-    )
-
     suspend fun continueDynamicPayment(
         recordId: String,
         continuation: PendingRetryContinuation,
@@ -322,14 +310,6 @@ internal class PaymentAdmissionPhase(
 
     fun restoreManualAmount() {
         presentation.showManualAmount(manualAmount.current())
-    }
-
-    fun restoreLnurlManualAmount() {
-        val display =
-            (preparation.manualEntryContext as? ManualEntryContext.Lnurl)
-                ?.session
-                ?.display
-        presentation.showManualAmount(manualAmount.current(), display)
     }
 
     fun refreshManualAmountState() {
@@ -565,7 +545,6 @@ internal class PaymentAdmissionPhase(
             LnurlSession(
                 params = params,
                 display = lnurlPayDisplay,
-                requiresDetailsReview = showLnurlPayDetails(),
                 sourceKey = sourceKey,
                 paymentSource = paymentSource,
                 targetContext = targetContext,
@@ -603,44 +582,23 @@ internal class PaymentAdmissionPhase(
                 )
                 return AdmissionResult.Presented
             }
-            return if (session.requiresDetailsReview) {
-                AdmissionResult.LnurlReview(
-                    LnurlReviewRequest(
-                        session = session,
-                        amountMsats = roundedAmount,
-                        isManualEntry = false,
-                        paymentQuote = paymentQuote
-                    )
-                )
-            } else {
-                resolveLnurlInvoice(
-                    session = session,
-                    amountMsats = roundedAmount,
-                    isManualEntry = false,
-                    paymentQuote = paymentQuote,
-                    token = token
-                )
-            }
+            return resolveLnurlInvoice(
+                session = session,
+                amountMsats = roundedAmount,
+                isManualEntry = false,
+                paymentQuote = paymentQuote,
+                token = token
+            )
         }
 
         if (params.minSendable == params.maxSendable) {
-            return if (session.requiresDetailsReview) {
-                AdmissionResult.LnurlReview(
-                    LnurlReviewRequest(
-                        session = session,
-                        amountMsats = params.minSendable,
-                        isManualEntry = false
-                    )
-                )
-            } else {
-                resolveLnurlInvoice(
-                    session = session,
-                    amountMsats = params.minSendable,
-                    isManualEntry = false,
-                    paymentQuote = null,
-                    token = token
-                )
-            }
+            return resolveLnurlInvoice(
+                session = session,
+                amountMsats = params.minSendable,
+                isManualEntry = false,
+                paymentQuote = null,
+                token = token
+            )
         }
 
         preparation.manualEntryContext = ManualEntryContext.Lnurl(session, inputInfo)
@@ -710,7 +668,6 @@ internal class PaymentAdmissionPhase(
                 dynamicSourceKey = session.sourceKey,
                 targetContext = session.targetContext,
                 replacesDynamicGuardId = session.replacesDynamicGuardId,
-                lnurlAuthorized = session.requiresDetailsReview,
                 lnurlPayDisplay = session.display,
                 paymentQuote = paymentQuote
             )

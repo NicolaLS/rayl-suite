@@ -100,8 +100,7 @@ internal data class VerifiedDraft(
 internal data class AmountDraft(
     val admission: Admission.Accepted,
     val projection: AmountRequiredPayment,
-    val origin: PaymentOrigin,
-    val lnurlAuthorized: Boolean = false
+    val origin: PaymentOrigin
 ) {
     fun isExpired(nowEpochSeconds: Long): Boolean =
         admission.expiresAtEpochSeconds?.let { it <= nowEpochSeconds } ?: false

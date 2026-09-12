@@ -27,18 +27,12 @@ internal class PaymentAdmissionSession {
     }
 }
 
-internal sealed interface PendingConfirmation {
-    data class Payment(val payment: ExecutablePayment) : PendingConfirmation
-
-    data class Lnurl(val approval: ApprovedLnurlReview) : PendingConfirmation
-}
-
 internal sealed interface PaymentConfirmationState {
     data object Idle : PaymentConfirmationState
 
     data class Preparing(val token: PaymentTaskToken) : PaymentConfirmationState
 
-    data class Awaiting(val confirmation: PendingConfirmation) : PaymentConfirmationState
+    data class Awaiting(val confirmation: ExecutablePayment) : PaymentConfirmationState
 }
 
 internal class PaymentConfirmationSession {
@@ -51,7 +45,7 @@ internal class PaymentConfirmationSession {
         return true
     }
 
-    fun await(token: PaymentTaskToken, confirmation: PendingConfirmation): Boolean {
+    fun await(token: PaymentTaskToken, confirmation: ExecutablePayment): Boolean {
         if ((state as? PaymentConfirmationState.Preparing)?.token !== token) return false
         state = PaymentConfirmationState.Awaiting(confirmation)
         return true
@@ -63,7 +57,7 @@ internal class PaymentConfirmationSession {
         }
     }
 
-    fun take(): PendingConfirmation? {
+    fun take(): ExecutablePayment? {
         val confirmation = (state as? PaymentConfirmationState.Awaiting)?.confirmation
             ?: return null
         state = PaymentConfirmationState.Idle

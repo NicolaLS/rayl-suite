@@ -112,7 +112,6 @@ private class BlipPaymentFlow(
             pendingTracker = pendingTracker,
             presentation = presentation,
             confirmationIsIdle = { confirmation.isIdle },
-            showLnurlPayDetails = { runtimePreferences.showLnurlPayDetails },
             notifyScanSuccess = ::notifyScanSuccess
         )
     private val reconciliation =
@@ -150,7 +149,6 @@ private class BlipPaymentFlow(
                     PaymentRuntimePreferences(
                         vibrateOnScan = preferences.vibrateOnScan,
                         vibrateOnPayment = preferences.vibrateOnPayment,
-                        showLnurlPayDetails = preferences.showLnurlPayDetails,
                         offerToSaveNewTargets = preferences.offerToSaveNewTargets
                     )
             }
@@ -312,12 +310,6 @@ private class BlipPaymentFlow(
                     token
                 )
 
-            is AdmissionResult.LnurlReview ->
-                handleConfirmationResult(
-                    confirmation.reviewLnurlPayment(result.review, token),
-                    token
-                )
-
             is AdmissionResult.PendingClarification ->
                 reconciliation.showPendingRetryPrompt(
                     record = result.record,
@@ -336,25 +328,14 @@ private class BlipPaymentFlow(
 
             is ConfirmationResult.Execute ->
                 execution.start(result.payment)
-
-            is ConfirmationResult.ResolveLnurl ->
-                handleAdmissionResult(
-                    admission.resolveApprovedLnurl(result.approval, token),
-                    token
-                )
         }
     }
 
     private fun handleConfirmationDismissal(dismissal: ConfirmationDismissal) {
         when (dismissal) {
             ConfirmationDismissal.None -> Unit
-
             ConfirmationDismissal.Active -> presentation.showActive()
-
             ConfirmationDismissal.ManualAmount -> admission.restoreManualAmount()
-
-            ConfirmationDismissal.LnurlManualAmount ->
-                admission.restoreLnurlManualAmount()
         }
     }
 
@@ -385,6 +366,5 @@ private class BlipPaymentFlow(
 private data class PaymentRuntimePreferences(
     val vibrateOnScan: Boolean = true,
     val vibrateOnPayment: Boolean = true,
-    val showLnurlPayDetails: Boolean = false,
     val offerToSaveNewTargets: Boolean = true
 )

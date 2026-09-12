@@ -39,7 +39,6 @@ data class NativePaymentSettingsSnapshot(
     val thresholdSteps: List<Long>,
     val thresholdEquivalent: NativeSettingsAmount?,
     val offerToSaveNewTargets: Boolean,
-    val showLnurlPayDetails: Boolean,
     val vibrateOnScan: Boolean,
     val vibrateOnPayment: Boolean
 )
@@ -58,8 +57,6 @@ data class NativeSettingsText(
     val paymentConfirmTitle: String,
     val paymentAlways: String,
     val paymentAbove: String,
-    val paymentLnurlTitle: String,
-    val paymentLnurlDescription: String,
     val paymentHubTitle: String,
     val paymentOfferSaveTargets: String,
     val paymentHapticsTitle: String,
@@ -140,7 +137,6 @@ class NativeSettingsController(
                                         )
                                     },
                                 offerToSaveNewTargets = paymentState.offerToSaveNewTargets,
-                                showLnurlPayDetails = paymentState.showLnurlPayDetails,
                                 vibrateOnScan = paymentState.vibrateOnScan,
                                 vibrateOnPayment = paymentState.vibrateOnPayment
                             ),
@@ -187,10 +183,6 @@ class NativeSettingsController(
 
     fun setOfferToSaveNewTargets(enabled: Boolean) {
         payment.setOfferToSaveNewTargets(enabled)
-    }
-
-    fun setShowLnurlPayDetails(enabled: Boolean) {
-        payment.setShowLnurlPayDetails(enabled)
     }
 
     fun setVibrateOnScan(enabled: Boolean) {
@@ -344,8 +336,6 @@ private suspend fun loadResources(
                 paymentConfirmTitle = paymentStrings.getValue("confirmTitle"),
                 paymentAlways = paymentStrings.getValue("always"),
                 paymentAbove = paymentStrings.getValue("above"),
-                paymentLnurlTitle = paymentStrings.getValue("lnurlTitle"),
-                paymentLnurlDescription = paymentStrings.getValue("lnurlDescription"),
                 paymentHubTitle = paymentStrings.getValue("hubTitle"),
                 paymentOfferSaveTargets = paymentStrings.getValue("offerSaveTargets"),
                 paymentHapticsTitle = paymentStrings.getValue("hapticsTitle"),

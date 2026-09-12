@@ -13,7 +13,6 @@ internal data class PreparedPayment(
     val dynamicSourceKey: DynamicPaymentSourceKey? = null,
     val targetContext: HubTargetContext? = null,
     val replacesDynamicGuardId: String? = null,
-    val lnurlAuthorized: Boolean = false,
     val lnurlPayDisplay: LnurlPayDisplay? = null,
     val paymentQuote: PaymentAmountQuote? = null
 )
@@ -27,21 +26,10 @@ internal data class ExecutablePayment(
     val replacesDynamicGuardId: String?
 )
 
-internal data class LnurlReviewRequest(
-    val session: LnurlSession,
-    val amountMsats: Long,
-    val isManualEntry: Boolean,
-    val paymentQuote: PaymentAmountQuote? = null
-)
-
-internal data class ApprovedLnurlReview(val request: LnurlReviewRequest)
-
 internal sealed interface AdmissionResult {
     data object Presented : AdmissionResult
 
     data class Payment(val payment: PreparedPayment) : AdmissionResult
-
-    data class LnurlReview(val review: LnurlReviewRequest) : AdmissionResult
 
     data class PendingClarification(
         val record: PendingRecord,
@@ -53,8 +41,6 @@ internal sealed interface ConfirmationResult {
     data object Presented : ConfirmationResult
 
     data class Execute(val payment: ExecutablePayment) : ConfirmationResult
-
-    data class ResolveLnurl(val approval: ApprovedLnurlReview) : ConfirmationResult
 }
 
 internal sealed interface ConfirmationDismissal {
@@ -63,8 +49,6 @@ internal sealed interface ConfirmationDismissal {
     data object Active : ConfirmationDismissal
 
     data object ManualAmount : ConfirmationDismissal
-
-    data object LnurlManualAmount : ConfirmationDismissal
 }
 
 internal data class PaymentExecutionAttempt(

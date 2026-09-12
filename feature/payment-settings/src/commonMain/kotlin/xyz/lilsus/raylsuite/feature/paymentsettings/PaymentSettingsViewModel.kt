@@ -42,7 +42,6 @@ class PaymentSettingsViewModel(
                         confirmationMode = preferences.confirmationMode,
                         thresholdSats = preferences.thresholdSats,
                         offerToSaveNewTargets = preferences.offerToSaveNewTargets,
-                        showLnurlPayDetails = preferences.showLnurlPayDetails,
                         vibrateOnScan = preferences.vibrateOnScan,
                         vibrateOnPayment = preferences.vibrateOnPayment
                     )
@@ -69,12 +68,6 @@ class PaymentSettingsViewModel(
     fun setOfferToSaveNewTargets(enabled: Boolean) {
         scope.launch {
             paymentPreferences.setOfferToSaveNewTargets(enabled)
-        }
-    }
-
-    fun setShowLnurlPayDetails(enabled: Boolean) {
-        scope.launch {
-            paymentPreferences.setShowLnurlPayDetails(enabled)
         }
     }
 
@@ -126,7 +119,6 @@ data class PaymentSettingsUiState(
     val confirmationMode: PaymentConfirmationMode = PaymentPreferences().confirmationMode,
     val thresholdSats: Long = PaymentPreferences.DEFAULT_CONFIRMATION_THRESHOLD_SATS,
     val offerToSaveNewTargets: Boolean = PaymentPreferences().offerToSaveNewTargets,
-    val showLnurlPayDetails: Boolean = PaymentPreferences().showLnurlPayDetails,
     val vibrateOnScan: Boolean = PaymentPreferences().vibrateOnScan,
     val vibrateOnPayment: Boolean = PaymentPreferences().vibrateOnPayment,
     val thresholdCurrencyEquivalent: DisplayAmount? = null

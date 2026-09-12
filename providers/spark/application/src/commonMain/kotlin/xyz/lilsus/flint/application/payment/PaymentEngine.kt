@@ -39,7 +39,8 @@ data class PreparedPayment(
     val amountSats: Satoshi,
     val feeSats: Satoshi,
     val expiresAtEpochSeconds: Long?,
-    val requiresConfirmation: Boolean = true
+    val requiresConfirmation: Boolean = true,
+    val lnurlPayDetails: LnurlPayReviewDetails? = null
 )
 
 data class AmountRequiredPayment(

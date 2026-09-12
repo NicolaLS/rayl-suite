@@ -10,8 +10,7 @@ enum class PaymentConfirmationMode {
 data class PaymentConfirmationPolicy(
     val mode: PaymentConfirmationMode,
     val amountThresholdSats: Satoshi,
-    val feeThresholdSats: Satoshi,
-    val showLnurlPayDetails: Boolean = false
+    val feeThresholdSats: Satoshi
 ) {
     fun requiresConfirmation(
         amountSats: Satoshi,
@@ -29,8 +28,7 @@ data class PaymentConfirmationPolicy(
         val Default = PaymentConfirmationPolicy(
             mode = PaymentConfirmationMode.ALWAYS,
             amountThresholdSats = Satoshi.positive(10_000),
-            feeThresholdSats = Satoshi.nonNegative(0),
-            showLnurlPayDetails = false
+            feeThresholdSats = Satoshi.nonNegative(0)
         )
     }
 }

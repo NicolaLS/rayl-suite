@@ -13,7 +13,6 @@ import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.model.DisplayCurrency
 import xyz.lilsus.raylsuite.core.model.convertMsatsToDisplayAmount
 import xyz.lilsus.raylsuite.core.payment.BitcoinPriceProvider
-import xyz.lilsus.raylsuite.core.payment.roundToFullSatoshis
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentAmountQuote
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentCurrencyManager
 import xyz.lilsus.raylsuite.feature.paymentsettings.PaymentConfirmationPolicy
@@ -47,9 +46,8 @@ internal class PaymentConfirmationPhase(
                 )
                 return ConfirmationResult.Presented
             }
-            val fundingWallet =
-                request.fundingWalletSnapshot ?: snapshotFundingWallet()
-                    ?: return ConfirmationResult.Presented
+            val fundingWallet = snapshotFundingWallet()
+                ?: return ConfirmationResult.Presented
             token.ensureCurrent()
             val fundingAmountCents =
                 if (
@@ -74,7 +72,7 @@ internal class PaymentConfirmationPhase(
                 request.origin == PendingOrigin.ManualEntry ||
                     request.origin == PendingOrigin.LnurlManual
             val requiresConfirmation =
-                !isManualEntry && !request.lnurlAuthorized &&
+                !isManualEntry &&
                     (
                         request.source == PaymentRequestSource.DeepLink ||
                             (
@@ -112,7 +110,7 @@ internal class PaymentConfirmationPhase(
             if (
                 !confirmationSession.await(
                     token,
-                    PendingConfirmation.Payment(payment)
+                    payment
                 )
             ) {
                 return ConfirmationResult.Presented
@@ -128,85 +126,16 @@ internal class PaymentConfirmationPhase(
         }
     }
 
-    suspend fun reviewLnurlPayment(
-        review: LnurlReviewRequest,
-        token: PaymentTaskToken
-    ): ConfirmationResult {
-        if (!confirmationSession.begin(token)) return ConfirmationResult.Presented
-        try {
-            val fundingWallet = snapshotFundingWallet()
-                ?: return ConfirmationResult.Presented
-            token.ensureCurrent()
-            val roundedAmount = roundToFullSatoshis(review.amountMsats)
-            if (
-                roundedAmount == null ||
-                review.amountMsats !in
-                review.session.params.minSendable..review.session.params.maxSendable ||
-                roundedAmount !in
-                review.session.params.minSendable..review.session.params.maxSendable
-            ) {
-                presentation.presentError(
-                    PaymentUiError.InvalidInvoice("Amount is outside the allowed range")
-                )
-                return ConfirmationResult.Presented
-            }
-            val confirmationAmount =
-                confirmationAmount(
-                    amountMsats = roundedAmount,
-                    paymentQuote = review.paymentQuote,
-                    token = token
-                )
-            val approval =
-                ApprovedLnurlReview(
-                    request = review.copy(amountMsats = roundedAmount),
-                    fundingWallet = fundingWallet
-                )
-            if (
-                !confirmationSession.await(
-                    token,
-                    PendingConfirmation.Lnurl(approval)
-                )
-            ) {
-                return ConfirmationResult.Presented
-            }
-            presentation.showConfirmation(
-                amount = confirmationAmount,
-                fundingWallet = fundingWallet,
-                lnurlPayDisplay = review.session.display
-            )
-            return ConfirmationResult.Presented
-        } finally {
-            confirmationSession.finishPreparation(token)
-        }
-    }
+    fun submit(): ConfirmationResult = confirmationSession.take()?.let {
+        ConfirmationResult.Execute(it)
+    } ?: ConfirmationResult.Presented
 
-    fun submit(): ConfirmationResult = when (val confirmation = confirmationSession.take()) {
-        is PendingConfirmation.Lnurl ->
-            ConfirmationResult.ResolveLnurl(confirmation.approval)
+    fun dismiss(): ConfirmationDismissal = when (confirmationSession.take()?.origin) {
+        PendingOrigin.Invoice,
+        PendingOrigin.LnurlFixed -> ConfirmationDismissal.Active
 
-        is PendingConfirmation.Payment ->
-            ConfirmationResult.Execute(confirmation.payment)
-
-        null -> ConfirmationResult.Presented
-    }
-
-    fun dismiss(): ConfirmationDismissal = when (val confirmation = confirmationSession.take()) {
-        is PendingConfirmation.Lnurl ->
-            if (confirmation.approval.request.isManualEntry) {
-                ConfirmationDismissal.LnurlManualAmount
-            } else {
-                ConfirmationDismissal.Active
-            }
-
-        is PendingConfirmation.Payment ->
-            when (confirmation.payment.origin) {
-                PendingOrigin.Invoice,
-                PendingOrigin.LnurlFixed -> ConfirmationDismissal.Active
-
-                PendingOrigin.ManualEntry,
-                PendingOrigin.LnurlManual ->
-                    ConfirmationDismissal.ManualAmount
-            }
+        PendingOrigin.ManualEntry,
+        PendingOrigin.LnurlManual -> ConfirmationDismissal.ManualAmount
 
         null -> ConfirmationDismissal.None
     }

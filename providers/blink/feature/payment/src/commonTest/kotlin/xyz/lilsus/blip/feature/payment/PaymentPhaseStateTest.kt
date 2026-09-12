@@ -80,17 +80,15 @@ class PaymentPhaseStateTest {
         val token = PaymentTaskToken(registry, 0L, "confirmation")
         val session = PaymentConfirmationSession()
         val pending =
-            PendingConfirmation.Payment(
-                ExecutablePayment(
-                    invoice = invoice(),
-                    amountOverrideMsats = null,
-                    fundingWallet = TEST_FUNDING_WALLET,
-                    fundingAmountCents = null,
-                    origin = PendingOrigin.Invoice,
-                    dynamicSourceKey = null,
-                    targetContext = null,
-                    replacesDynamicGuardId = null
-                )
+            ExecutablePayment(
+                invoice = invoice(),
+                amountOverrideMsats = null,
+                fundingWallet = TEST_FUNDING_WALLET,
+                fundingAmountCents = null,
+                origin = PendingOrigin.Invoice,
+                dynamicSourceKey = null,
+                targetContext = null,
+                replacesDynamicGuardId = null
             )
 
         assertTrue(session.begin(token))

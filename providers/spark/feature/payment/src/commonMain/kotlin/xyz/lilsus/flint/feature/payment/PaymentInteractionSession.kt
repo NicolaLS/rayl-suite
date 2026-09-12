@@ -4,7 +4,6 @@ import xyz.lilsus.flint.application.payment.AmountRequiredPayment
 import xyz.lilsus.flint.application.payment.PaymentActivity
 import xyz.lilsus.flint.application.payment.PreparedPayment
 import xyz.lilsus.raylsuite.core.model.LightningAddress
-import xyz.lilsus.raylsuite.core.model.Satoshi
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentAmountQuote
 import xyz.lilsus.raylsuite.feature.paymenthub.HubItemId
 import xyz.lilsus.raylsuite.feature.paymentui.LnurlPayDisplay
@@ -24,14 +23,7 @@ internal class PaymentInteractionSession {
         get() = (phase as? PaymentInteractionPhase.Draft)?.draft
 
     val manualRequest: ManualRequest?
-        get() = when (val current = phase) {
-            is PaymentInteractionPhase.ManualAmount -> current.request
-            is PaymentInteractionPhase.LnurlReview -> current.review.request
-            else -> null
-        }
-
-    val pendingLnurlReview: PendingLnurlReview?
-        get() = (phase as? PaymentInteractionPhase.LnurlReview)?.review
+        get() = (phase as? PaymentInteractionPhase.ManualAmount)?.request
 
     val activeAttemptId: String?
         get() = (phase as? PaymentInteractionPhase.Attempt)?.attemptId
@@ -45,16 +37,6 @@ internal class PaymentInteractionSession {
 
     fun requestManualAmount(request: ManualRequest) {
         phase = PaymentInteractionPhase.ManualAmount(request)
-    }
-
-    fun reviewLnurl(review: PendingLnurlReview) {
-        phase = PaymentInteractionPhase.LnurlReview(review)
-    }
-
-    fun takeLnurlReview(): PendingLnurlReview? {
-        val review = pendingLnurlReview ?: return null
-        phase = PaymentInteractionPhase.ManualAmount(review.request)
-        return review
     }
 
     fun prepareDraft(draft: ActiveDraft) {
@@ -96,8 +78,6 @@ internal sealed interface PaymentInteractionPhase {
 
     data class ManualAmount(val request: ManualRequest) : PaymentInteractionPhase
 
-    data class LnurlReview(val review: PendingLnurlReview) : PaymentInteractionPhase
-
     data class Draft(val draft: ActiveDraft) : PaymentInteractionPhase
 
     data class Attempt(val attemptId: String, val visibleActivity: VisibleActivity? = null) :
@@ -110,19 +90,14 @@ internal data class ActiveDraft(
     val payment: PreparedPayment,
     val targetContext: HubTargetContext?,
     val paymentQuote: PaymentAmountQuote?,
-    val confirmationAmount: PaymentConfirmationAmount?
+    val confirmationAmount: PaymentConfirmationAmount?,
+    val lnurlPayDisplay: LnurlPayDisplay?
 )
 
 internal data class ManualRequest(
     val payment: AmountRequiredPayment,
     val targetContext: HubTargetContext?,
     val lnurlPayDisplay: LnurlPayDisplay?
-)
-
-internal data class PendingLnurlReview(
-    val request: ManualRequest,
-    val amountSats: Satoshi,
-    val paymentQuote: PaymentAmountQuote?
 )
 
 internal data class VisibleActivity(val activity: PaymentActivity, val wasAlreadyPaid: Boolean)

@@ -37,12 +37,13 @@ plaintext description; absent plaintext metadata never permits an arbitrary
 invoice description.
 
 The payment's domain and sanitized description are shown on amount entry and
-confirmation screens by default. The existing LNURL setting still adds a review
-before requesting an invoice for fixed amounts. It does not control whether
-details appear in an otherwise-required confirmation. Existing Auto Pay limits,
-manual-entry policy, preset-target confirmations, and deep-link confirmations
-remain provider-owned. A fixed payment eligible for Auto Pay can proceed without
-a review screen when the extra LNURL review setting is off.
+confirmation screens. LNURL codes and Lightning addresses use the same payment
+confirmation and Auto Pay policy as invoices; there is no separate LNURL review
+setting. Once an amount is known, the app requests and validates the invoice
+before applying the normal payment confirmation policy. A scanned fixed-amount
+LNURL payment eligible for Auto Pay proceeds without a review screen. Manual-entry
+policy, preset-target confirmations, and deep-link confirmations remain
+provider-owned. Destination and invoice validation always apply.
 
 Display and manual-entry currencies are Satoshi and the supported fiat currencies.
 Satoshi is the only Bitcoin denomination; amounts are never displayed or entered

@@ -10,7 +10,6 @@ data class PaymentPreferences(
     val thresholdSats: Long = DEFAULT_CONFIRMATION_THRESHOLD_SATS,
     /** Offer to add an unknown Lightning Address to the payment hub after a successful payment. */
     val offerToSaveNewTargets: Boolean = true,
-    val showLnurlPayDetails: Boolean = false,
     val vibrateOnScan: Boolean = true,
     val vibrateOnPayment: Boolean = true
 ) {

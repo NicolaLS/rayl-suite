@@ -29,7 +29,6 @@ internal class PaymentAdmissionPhase(
     private val pendingTracker: PendingPaymentTracker,
     private val presentation: PaymentPresentationPhase,
     private val confirmationIsIdle: () -> Boolean,
-    private val showLnurlPayDetails: () -> Boolean,
     private val notifyScanSuccess: () -> Unit
 ) {
     private val preparation = PaymentPreparation(lnurlPayClient)
@@ -257,25 +256,12 @@ internal class PaymentAdmissionPhase(
                         amountMsats = roundedAmount,
                         isManualEntry = true,
                         paymentQuote = paymentQuote,
-                        fundingWallet = null,
                         token = token
                     )
                 }
             }
         }
     }
-
-    suspend fun resolveApprovedLnurl(
-        approval: ApprovedLnurlReview,
-        token: PaymentTaskToken
-    ): AdmissionResult = resolveLnurlInvoice(
-        session = approval.request.session,
-        amountMsats = approval.request.amountMsats,
-        isManualEntry = approval.request.isManualEntry,
-        paymentQuote = approval.request.paymentQuote,
-        fundingWallet = approval.fundingWallet,
-        token = token
-    )
 
     suspend fun continueDynamicPayment(
         recordId: String,
@@ -324,14 +310,6 @@ internal class PaymentAdmissionPhase(
 
     fun restoreManualAmount() {
         presentation.showManualAmount(manualAmount.current())
-    }
-
-    fun restoreLnurlManualAmount() {
-        val display =
-            (preparation.manualEntryContext as? ManualEntryContext.Lnurl)
-                ?.session
-                ?.display
-        presentation.showManualAmount(manualAmount.current(), display)
     }
 
     fun refreshManualAmountState() {
@@ -567,7 +545,6 @@ internal class PaymentAdmissionPhase(
             LnurlSession(
                 params = params,
                 display = lnurlPayDisplay,
-                requiresDetailsReview = showLnurlPayDetails(),
                 sourceKey = sourceKey,
                 paymentSource = paymentSource,
                 targetContext = targetContext,
@@ -605,46 +582,23 @@ internal class PaymentAdmissionPhase(
                 )
                 return AdmissionResult.Presented
             }
-            return if (session.requiresDetailsReview) {
-                AdmissionResult.LnurlReview(
-                    LnurlReviewRequest(
-                        session = session,
-                        amountMsats = roundedAmount,
-                        isManualEntry = false,
-                        paymentQuote = paymentQuote
-                    )
-                )
-            } else {
-                resolveLnurlInvoice(
-                    session = session,
-                    amountMsats = roundedAmount,
-                    isManualEntry = false,
-                    paymentQuote = paymentQuote,
-                    fundingWallet = null,
-                    token = token
-                )
-            }
+            return resolveLnurlInvoice(
+                session = session,
+                amountMsats = roundedAmount,
+                isManualEntry = false,
+                paymentQuote = paymentQuote,
+                token = token
+            )
         }
 
         if (params.minSendable == params.maxSendable) {
-            return if (session.requiresDetailsReview) {
-                AdmissionResult.LnurlReview(
-                    LnurlReviewRequest(
-                        session = session,
-                        amountMsats = params.minSendable,
-                        isManualEntry = false
-                    )
-                )
-            } else {
-                resolveLnurlInvoice(
-                    session = session,
-                    amountMsats = params.minSendable,
-                    isManualEntry = false,
-                    paymentQuote = null,
-                    fundingWallet = null,
-                    token = token
-                )
-            }
+            return resolveLnurlInvoice(
+                session = session,
+                amountMsats = params.minSendable,
+                isManualEntry = false,
+                paymentQuote = null,
+                token = token
+            )
         }
 
         preparation.manualEntryContext = ManualEntryContext.Lnurl(session, inputInfo)
@@ -665,7 +619,6 @@ internal class PaymentAdmissionPhase(
         amountMsats: Long,
         isManualEntry: Boolean,
         paymentQuote: PaymentAmountQuote?,
-        fundingWallet: xyz.lilsus.blip.integration.blink.BlinkFundingWallet?,
         token: PaymentTaskToken
     ): AdmissionResult {
         presentation.showLoading()
@@ -677,8 +630,7 @@ internal class PaymentAdmissionPhase(
                     session = session,
                     invoice = result.invoice,
                     isManualEntry = isManualEntry,
-                    paymentQuote = paymentQuote,
-                    fundingWallet = fundingWallet
+                    paymentQuote = paymentQuote
                 )
 
             is LnurlInvoiceResolution.Failure -> {
@@ -693,8 +645,7 @@ internal class PaymentAdmissionPhase(
         session: LnurlSession,
         invoice: Bolt11Invoice,
         isManualEntry: Boolean,
-        paymentQuote: PaymentAmountQuote?,
-        fundingWallet: xyz.lilsus.blip.integration.blink.BlinkFundingWallet?
+        paymentQuote: PaymentAmountQuote?
     ): AdmissionResult {
         pendingTracker.findLatestByPaymentHash(invoice.paymentHash.toHex())?.let { existing ->
             preparation.manualEntryContext = null
@@ -717,10 +668,8 @@ internal class PaymentAdmissionPhase(
                 dynamicSourceKey = session.sourceKey,
                 targetContext = session.targetContext,
                 replacesDynamicGuardId = session.replacesDynamicGuardId,
-                lnurlAuthorized = session.requiresDetailsReview,
                 lnurlPayDisplay = session.display,
-                paymentQuote = paymentQuote,
-                fundingWalletSnapshot = fundingWallet
+                paymentQuote = paymentQuote
             )
         )
     }

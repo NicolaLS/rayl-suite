@@ -104,11 +104,7 @@ class DefaultPaymentEngine(
 
             draftRegistry.reusable(admitted.fingerprint, now)?.let { return@withLock it }
 
-            val lnurlReviewDetails =
-                admitted.lnurlRequest
-                    ?.takeIf { currentPolicy().showLnurlPayDetails }
-                    ?.reviewDetails
-            if (admitted.amountSats == null || lnurlReviewDetails != null) {
+            if (admitted.amountSats == null) {
                 val handle = PaymentAmountHandle(Uuid.random().toString())
                 val projection = AmountRequiredPayment(
                     handle = handle,
@@ -116,15 +112,14 @@ class DefaultPaymentEngine(
                     expiresAtEpochSeconds = admitted.expiresAtEpochSeconds,
                     minimumAmountSats = admitted.minimumAmountSats,
                     maximumAmountSats = admitted.maximumAmountSats,
-                    lnurlPayDetails = lnurlReviewDetails
+                    lnurlPayDetails = admitted.lnurlRequest?.reviewDetails
                 )
                 draftRegistry.registerAmount(
                     handle,
                     AmountDraft(
                         admission = admitted,
                         projection = projection,
-                        origin = origin,
-                        lnurlAuthorized = lnurlReviewDetails != null
+                        origin = origin
                     )
                 )
                 return@withLock PreparePaymentResult.AmountRequired(projection)
@@ -175,7 +170,8 @@ class DefaultPaymentEngine(
                     feeSats = prepared.feeSats,
                     origin = origin,
                     amountEnteredByUser = false
-                )
+                ),
+                lnurlPayDetails = admitted.lnurlRequest?.reviewDetails
             )
             draftRegistry.register(
                 handle,
@@ -257,7 +253,8 @@ class DefaultPaymentEngine(
                 feeSats = prepared.feeSats,
                 origin = amountDraft.origin,
                 amountEnteredByUser = true
-            ) && !amountDraft.lnurlAuthorized
+            ),
+            lnurlPayDetails = amountDraft.admission.lnurlRequest?.reviewDetails
         )
         draftRegistry.register(
             draftHandle,
@@ -516,7 +513,7 @@ class DefaultPaymentEngine(
                     return Admission.Rejected(PaymentRejection.INVALID_AMOUNT)
                 }
                 Satoshi.positive(it)
-            }
+            } ?: bounds.first.takeIf { it == bounds.second }
             Admission.Accepted(
                 invoice = "",
                 fingerprint = parsed.requestFingerprint,
