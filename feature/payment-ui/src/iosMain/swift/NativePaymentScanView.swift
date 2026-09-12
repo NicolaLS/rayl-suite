@@ -399,6 +399,7 @@ private struct NativePaymentScanSheetView: View {
     let sheet: NativePaymentScanSheet
     let controller: NativePaymentScanController
     @State private var contentHeight: CGFloat = 320
+    @State private var reviewingManualAmount = false
 
     var body: some View {
         if sheet.kind == "manualAmount" {
@@ -461,8 +462,18 @@ private struct NativePaymentScanSheetView: View {
                             .foregroundStyle(.secondary)
                             .multilineTextAlignment(.center)
                     }
-                    manualAmountContent
-                    NativePaymentAmountKeypad(controller: controller, allowsDecimal: sheet.allowsDecimal)
+                    if reviewingManualAmount, let review = sheet.manualReview {
+                        if let amount = review.amount {
+                            Text(amount)
+                                .font(.largeTitle.weight(.semibold))
+                                .multilineTextAlignment(.center)
+                                .accessibilityIdentifier("payment_manual_amount_review")
+                        }
+                    } else {
+                        manualAmountContent
+                        NativePaymentAmountKeypad(
+                            controller: controller, allowsDecimal: sheet.allowsDecimal)
+                    }
                 }
                 .padding(24)
                 .frame(maxWidth: 480)
@@ -470,24 +481,47 @@ private struct NativePaymentScanSheetView: View {
             }
             .background(Color(uiColor: .systemGroupedBackground))
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                Button(action: primaryAction) {
-                    Text(sheet.primaryActionTitle)
+                VStack(spacing: 8) {
+                    if reviewingManualAmount, let review = sheet.manualReview {
+                        Button(review.editTitle) {
+                            reviewingManualAmount = false
+                        }
+                        .accessibilityIdentifier("payment_manual_amount_edit_button")
+                    }
+                    Button(action: primaryAction) {
+                        Text(
+                            reviewingManualAmount
+                                ? sheet.manualReview?.payTitle ?? sheet.primaryActionTitle
+                                : sheet.primaryActionTitle
+                        )
                         .font(.headline)
                         .frame(maxWidth: .infinity, minHeight: 28)
                         .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .buttonBorderShape(.roundedRectangle(radius: 16))
+                    .controlSize(.large)
+                    .disabled(!sheet.canSubmit)
+                    .accessibilityIdentifier(
+                        reviewingManualAmount
+                            ? "payment_manual_amount_pay_button"
+                            : "payment_manual_amount_continue_button")
                 }
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.roundedRectangle(radius: 16))
-                .controlSize(.large)
-                .disabled(!sheet.canSubmit)
                 .padding(.horizontal, 24)
                 .padding(.vertical, 16)
                 .frame(maxWidth: 480)
                 .frame(maxWidth: .infinity)
                 .background(Color(uiColor: .systemGroupedBackground))
             }
-            .navigationTitle(sheet.title)
+            .navigationTitle(
+                reviewingManualAmount ? sheet.manualReview?.title ?? sheet.title : sheet.title
+            )
             .navigationBarTitleDisplayMode(.inline)
+            .onChange(of: sheet.amount) { _, _ in reviewingManualAmount = false }
+            .onChange(of: sheet.currencyLabel) { _, _ in reviewingManualAmount = false }
+            .onChange(of: sheet.canSubmit) { _, canSubmit in
+                if !canSubmit { reviewingManualAmount = false }
+            }
             .toolbar {
                 if let cancel = sheet.secondaryActionTitle {
                     ToolbarItem(placement: .cancellationAction) {
@@ -604,7 +638,13 @@ private struct NativePaymentScanSheetView: View {
 
     private func primaryAction() {
         switch sheet.kind {
-        case "manualAmount": controller.submitManualAmount()
+        case "manualAmount":
+            guard sheet.canSubmit else { return }
+            if reviewingManualAmount {
+                controller.submitManualAmount()
+            } else if sheet.manualReview != nil {
+                reviewingManualAmount = true
+            }
         case "confirmation": controller.submitConfirmation()
         case "repeatPayment":
             controller.chooseRepeatPayment(action: sheet.primaryAction)

@@ -69,7 +69,15 @@ data class NativePaymentScanSheet(
     val secondaryActionTitle: String?,
     val tertiaryActionTitle: String?,
     val textFieldLabel: String?,
-    val textFieldValue: String?
+    val textFieldValue: String?,
+    val manualReview: NativeManualAmountReview? = null
+)
+
+data class NativeManualAmountReview(
+    val title: String,
+    val amount: String?,
+    val payTitle: String,
+    val editTitle: String
 )
 
 /**
@@ -367,14 +375,24 @@ private suspend fun ManualAmountUiState.toNativeSheet(
     canSubmit = amount != null && amount.minor > 0L && rangeStatus == RangeStatus.InRange,
     primaryAction = "submit",
     primaryActionTitle = nativeString(
-        NativeStringResource(table = "PaymentUI", key = "pay_button")
+        NativeStringResource(table = "PaymentUI", key = "continue_button")
     ),
     secondaryActionTitle = nativeString(
         NativeStringResource(table = "PaymentUI", key = "dismiss_button")
     ),
     tertiaryActionTitle = null,
     textFieldLabel = null,
-    textFieldValue = null
+    textFieldValue = null,
+    manualReview = NativeManualAmountReview(
+        title = nativeString(
+            NativeStringResource(table = "PaymentUI", key = "confirm_payment_title")
+        ),
+        amount = amount?.let(formatter::format),
+        payTitle = nativeString(NativeStringResource(table = "PaymentUI", key = "pay_button")),
+        editTitle = nativeString(
+            NativeStringResource(table = "PaymentUI", key = "edit_amount_button")
+        )
+    )
 )
 
 private suspend fun PaymentScreenState.Confirm.toNativeSheet(

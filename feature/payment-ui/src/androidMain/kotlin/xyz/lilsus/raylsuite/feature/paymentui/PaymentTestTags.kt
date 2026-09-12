@@ -14,6 +14,9 @@ object PaymentTestTags {
 
     const val MANUAL_AMOUNT_SHEET = "payment_manual_amount_sheet"
     const val MANUAL_AMOUNT_DISPLAY = "payment_manual_amount_display"
+    const val MANUAL_AMOUNT_CONTINUE_BUTTON = "payment_manual_amount_continue_button"
+    const val MANUAL_AMOUNT_REVIEW = "payment_manual_amount_review"
+    const val MANUAL_AMOUNT_EDIT_BUTTON = "payment_manual_amount_edit_button"
     const val MANUAL_AMOUNT_PAY_BUTTON = "payment_manual_amount_pay_button"
     const val MANUAL_AMOUNT_DECIMAL_KEY = "payment_manual_amount_key_decimal"
     const val MANUAL_AMOUNT_BACKSPACE_KEY = "payment_manual_amount_key_backspace"

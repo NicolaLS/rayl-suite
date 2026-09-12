@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -23,8 +25,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -61,6 +68,10 @@ fun ManualAmountBottomSheet(
     onDismiss: () -> Unit
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var reviewing by rememberSaveable(state.amount, state.rangeStatus) { mutableStateOf(false) }
+    val canContinue = state.amount?.minor?.let { it > 0 } == true &&
+        state.rangeStatus == RangeStatus.InRange
+    val formatter = rememberAmountFormatter()
     ModalBottomSheet(
         modifier = Modifier.enableTestTagsAsResourceId(),
         sheetState = sheetState,
@@ -70,12 +81,15 @@ fun ManualAmountBottomSheet(
             modifier = Modifier
                 .fillMaxWidth()
                 .testTag(PaymentTestTags.MANUAL_AMOUNT_SHEET)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 24.dp, vertical = 16.dp)
                 .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = stringResource(R.string.enter_amount_title),
+                text = stringResource(
+                    if (reviewing) R.string.confirm_payment_title else R.string.enter_amount_title
+                ),
                 style = MaterialTheme.typography.headlineSmall,
                 textAlign = TextAlign.Center
             )
@@ -87,33 +101,59 @@ fun ManualAmountBottomSheet(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            AmountInputDisplay(state)
+            if (reviewing) {
+                state.amount?.let { amount ->
+                    Text(
+                        text = formatter.format(amount),
+                        style = MaterialTheme.typography.displaySmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.testTag(PaymentTestTags.MANUAL_AMOUNT_REVIEW)
+                    )
+                }
+                Spacer(modifier = Modifier.height(24.dp))
+                TextButton(
+                    onClick = { reviewing = false },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .testTag(PaymentTestTags.MANUAL_AMOUNT_EDIT_BUTTON)
+                ) {
+                    Text(stringResource(R.string.edit_amount_button))
+                }
+            } else {
+                AmountInputDisplay(state)
 
-            if (state.min != null || state.max != null) {
-                Spacer(modifier = Modifier.height(12.dp))
-                RangeHint(state.min, state.max, onRangeClick)
+                if (state.min != null || state.max != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    RangeHint(state.min, state.max, onRangeClick)
+                }
+
+                RangeFeedback(state.rangeStatus)
+                Spacer(modifier = Modifier.height(16.dp))
+                AmountKeypad(
+                    onKeyPress = onKeyPress,
+                    enableDecimal = state.allowDecimal
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
 
-            RangeFeedback(state.rangeStatus)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AmountKeypad(
-                onKeyPress = onKeyPress,
-                enableDecimal = state.allowDecimal
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
-
             Button(
-                onClick = onSubmit,
-                enabled = state.amount?.minor?.let { it > 0 } == true &&
-                    state.rangeStatus == RangeStatus.InRange,
+                onClick = {
+                    if (reviewing) onSubmit() else reviewing = true
+                },
+                enabled = canContinue,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .testTag(PaymentTestTags.MANUAL_AMOUNT_PAY_BUTTON)
+                    .testTag(
+                        if (reviewing) {
+                            PaymentTestTags.MANUAL_AMOUNT_PAY_BUTTON
+                        } else {
+                            PaymentTestTags.MANUAL_AMOUNT_CONTINUE_BUTTON
+                        }
+                    )
             ) {
-                Text(text = stringResource(R.string.pay_button))
+                Text(
+                    stringResource(if (reviewing) R.string.pay_button else R.string.continue_button)
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))

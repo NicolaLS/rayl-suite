@@ -44,8 +44,11 @@ manual-entry policy, preset-target confirmations, and deep-link confirmations
 remain provider-owned. A fixed payment eligible for Auto Pay can proceed without
 a review screen when the extra LNURL review setting is off.
 
-Submitting a manually entered amount never opens a separate confirmation sheet,
-including when confirmation is set to Always or the amount exceeds the Auto Pay
-threshold. This also applies after an amountless deep link asks for an amount.
-Amounts supplied by deep links still require confirmation; scanned invoice
-amounts follow the Always or Auto Pay threshold setting.
+Manual amount entry has two steps within the same sheet: enter an amount and tap
+Continue, then review the entered amount, currency, and available recipient
+details before tapping Pay. Edit amount returns to the keypad with the input
+preserved. Continue does not submit a payment; Pay invokes provider validation,
+amount conversion, and payment submission. No separate confirmation sheet opens,
+regardless of Always or the Auto Pay threshold, including after an amountless
+deep link. Amounts supplied by deep links still require confirmation; scanned
+invoice amounts follow the Always or Auto Pay threshold setting.
