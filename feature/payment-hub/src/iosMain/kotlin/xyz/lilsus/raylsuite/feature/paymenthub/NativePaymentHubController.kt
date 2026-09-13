@@ -161,6 +161,13 @@ class NativePaymentHubController(
                     variantId = editor.variantId,
                     title = editor.title,
                     amount = editor.amountInput,
+                    fiatAmountHint = if (
+                        editor.kind == HubWidgetKind.Shortcut && editor.currencyCode != "SAT"
+                    ) {
+                        nativeString(resource("hub_target_amount_fiat_hint"), editor.currencyCode)
+                    } else {
+                        null
+                    },
                     currencyCode = editor.currencyCode,
                     currencyCodes = CurrencyCatalog.supportedCodes,
                     comment = editor.comment,
@@ -450,6 +457,7 @@ data class NativeHubEditor(
     val variantId: String,
     val title: String,
     val amount: String,
+    val fiatAmountHint: String?,
     val currencyCode: String,
     val currencyCodes: List<String>,
     val comment: String,

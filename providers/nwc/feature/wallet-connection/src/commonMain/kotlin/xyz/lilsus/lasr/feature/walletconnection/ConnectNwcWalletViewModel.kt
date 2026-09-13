@@ -160,6 +160,7 @@ class ConnectNwcWalletViewModel(
     }
 
     fun cancel() {
+        if (mutableUiState.value.isSaving) return
         reset()
         mutableEvents.tryEmit(ConnectNwcWalletEvent.Cancelled)
     }

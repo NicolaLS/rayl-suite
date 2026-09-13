@@ -1,6 +1,7 @@
 package xyz.lilsus.raylsuite.feature.paymentui
 
 import androidx.compose.animation.Crossfade
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -29,9 +30,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
@@ -78,6 +81,7 @@ fun PaymentScanScreen(
     val lifecycleState by lifecycleOwner.lifecycle.currentStateAsState()
     val screenResumed = lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
     val snackbarHostState = remember { SnackbarHostState() }
+    val latestOnIntent by rememberUpdatedState(onIntent)
 
     var scannerStarted by remember { mutableStateOf(false) }
     var scannerRestartRequest by remember { mutableStateOf(0) }
@@ -217,6 +221,8 @@ fun PaymentScanScreen(
         } else {
             cameraPermission.authorization
         }
+    val canDismissResult = savePrompt == null &&
+        (state.payment is PaymentScreenState.Success || state.payment is PaymentScreenState.Error)
 
     Scaffold(
         modifier = modifier.testTag(PaymentTestTags.SCREEN),
@@ -243,7 +249,14 @@ fun PaymentScanScreen(
         }
     ) { paddingValues ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .pointerInput(canDismissResult) {
+                    if (canDismissResult) {
+                        detectTapGestures { latestOnIntent(PaymentIntent.DismissResult) }
+                    }
+                },
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             PaymentHero(

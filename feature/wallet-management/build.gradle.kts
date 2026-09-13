@@ -14,6 +14,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.compose.foundation)
+            implementation(libs.compose.material.icons.extended)
             implementation(libs.compose.material3)
             implementation(libs.compose.runtime)
             implementation(libs.compose.ui)

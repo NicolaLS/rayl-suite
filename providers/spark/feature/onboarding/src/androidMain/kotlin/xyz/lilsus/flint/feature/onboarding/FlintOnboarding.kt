@@ -66,8 +66,6 @@ fun NavGraphBuilder.flintOnboarding(
             title = stringResource(R.string.onboarding_welcome_title),
             subtitle = stringResource(R.string.onboarding_welcome_subtitle_line1),
             description = stringResource(R.string.onboarding_welcome_subtitle_line2),
-            stepIndex = OnboardingStep.Welcome.index,
-            totalSteps = ONBOARDING_STEP_COUNT,
             onGetStarted = { navController.navigate(FlintOnboardingDestination.Features) }
         )
     }

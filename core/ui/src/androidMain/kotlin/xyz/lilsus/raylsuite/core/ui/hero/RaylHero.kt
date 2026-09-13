@@ -60,17 +60,17 @@ fun RaylHero(
     }
 
     BoxWithConstraints(modifier = modifier) {
-        val canvasSide = minOf(maxWidth * RaylHeroGeometry.CANVAS_WIDTH_FRACTION, maxHeight)
         if (qrContent != null) {
             HeroQrCode(
                 content = qrContent,
                 modifier = Modifier
                     .align(Alignment.Center)
-                    .size(canvasSide)
+                    .size(minOf(maxWidth, maxHeight))
             )
             return@BoxWithConstraints
         }
 
+        val canvasSide = minOf(maxWidth * RaylHeroGeometry.CANVAS_WIDTH_FRACTION, maxHeight)
         Canvas(
             modifier = Modifier
                 .align(Alignment.Center)

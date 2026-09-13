@@ -113,26 +113,29 @@ class DefaultWalletAccess(
             }
         }
 
-    override suspend fun retryConnection() = operationMutex.withLock {
-        disconnectCurrent()
-        restoreOrResumeReset()
+    override suspend fun retryConnection() {
+        operationMutex.withLock {
+            if (mutableState.value == WalletAccessState.ResetRequired) {
+                removeLocalWallet()
+            } else {
+                disconnectCurrent()
+                restoreOrResumeReset()
+            }
+        }
     }
 
     override suspend fun removeWallet(): RemoveWalletResult = operationMutex.withLock {
-        mutableState.value = WalletAccessState.Removing
-        val markerCreated = directories.beginReset()
-        val disconnected = disconnectCurrent()
-        val credentialDeleted = vault.delete() != CredentialDeleteResult.FAILED
-        val dataDeleted = directories.deleteWalletData()
-        val markerFinished = directories.finishReset()
+        removeLocalWallet()
+    }
 
-        if (markerCreated && disconnected && credentialDeleted && dataDeleted && markerFinished) {
-            mutableState.value = WalletAccessState.NoWallet
-            RemoveWalletResult.REMOVED
-        } else {
+    private suspend fun removeLocalWallet(): RemoveWalletResult {
+        mutableState.value = WalletAccessState.Removing
+        // Record removal before touching credentials so a restart can resume partial cleanup.
+        if (!directories.beginReset()) {
             mutableState.value = WalletAccessState.ResetRequired
-            RemoveWalletResult.RESET_REQUIRED
+            return RemoveWalletResult.RESET_REQUIRED
         }
+        return resumeReset()
     }
 
     private suspend fun restoreOrResumeReset() {
@@ -156,14 +159,15 @@ class DefaultWalletAccess(
         }
     }
 
-    private suspend fun resumeReset() {
+    private suspend fun resumeReset(): RemoveWalletResult {
         val disconnected = disconnectCurrent()
         val credentialDeleted = vault.delete() != CredentialDeleteResult.FAILED
         val dataDeleted = directories.deleteWalletData()
-        val markerFinished = directories.finishReset()
-        val finished = disconnected && credentialDeleted && dataDeleted && markerFinished
+        // Startup must keep seeing the marker until every cleanup step has succeeded.
+        val finished = disconnected && credentialDeleted && dataDeleted && directories.finishReset()
         mutableState.value =
             if (finished) WalletAccessState.NoWallet else WalletAccessState.ResetRequired
+        return if (finished) RemoveWalletResult.REMOVED else RemoveWalletResult.RESET_REQUIRED
     }
 
     private suspend fun connectApplicationSession(credential: WalletCredential): Boolean {

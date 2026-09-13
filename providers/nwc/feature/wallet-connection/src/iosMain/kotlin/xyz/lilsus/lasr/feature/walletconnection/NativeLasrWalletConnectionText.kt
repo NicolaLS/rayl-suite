@@ -14,6 +14,7 @@ data class NativeLasrWalletConnectionText(
     val scanAllowCamera: String,
     val scanOpenSettings: String,
     val scanRestricted: String,
+    val scanUnavailable: String,
     val confirmTitle: String,
     val confirmDescription: String,
     val cancel: String,
@@ -78,6 +79,12 @@ suspend fun nativeLasrWalletConnectionText(appName: String): NativeLasrWalletCon
         ),
         scanRestricted = nativeString(
             NativeStringResource(table = "LasrWalletConnection", key = "add_wallet_scan_restricted")
+        ),
+        scanUnavailable = nativeString(
+            NativeStringResource(
+                table = "LasrWalletConnection",
+                key = "add_wallet_scan_unavailable"
+            )
         ),
         confirmTitle = nativeString(
             NativeStringResource(table = "LasrWalletConnection", key = "connect_wallet_title")

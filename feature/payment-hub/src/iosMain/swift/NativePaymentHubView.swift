@@ -517,6 +517,11 @@ private struct WidgetConfigurationView: View {
                                 }
                                 .labelsHidden()
                             }
+                            if let hint = editor.fiatAmountHint {
+                                Text(hint)
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
                             TextField(
                                 state.text.comment,
                                 text: Binding(

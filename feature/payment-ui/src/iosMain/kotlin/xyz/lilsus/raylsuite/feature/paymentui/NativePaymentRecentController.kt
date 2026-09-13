@@ -33,8 +33,6 @@ data class NativePaymentRecentItem(
 data class NativePaymentRecentSnapshot(
     val title: String,
     val emptyMessage: String,
-    /** Title for the close control a product shows when it presents this outside a tab. */
-    val dismissTitle: String,
     val items: List<NativePaymentRecentItem>,
     val selectedDetail: NativePaymentRecentDetail?
 )
@@ -103,9 +101,6 @@ class NativePaymentRecentController(
                 ),
                 emptyMessage = nativeString(
                     NativeStringResource(table = "PaymentUI", key = "session_transactions_empty")
-                ),
-                dismissTitle = nativeString(
-                    NativeStringResource(table = "PaymentUI", key = "dismiss_button")
                 ),
                 items = items,
                 selectedDetail = detail

@@ -165,8 +165,6 @@ struct LasrNativeOnboardingView: View {
     private func wallet(_ snapshot: LasrNativeOnboardingSnapshot) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text(snapshot.addTitle)
-                    .font(.title2.bold())
                 Text(snapshot.addDescription)
                     .foregroundStyle(.secondary)
 
@@ -397,6 +395,9 @@ struct LasrNativeOnboardingView: View {
     }
 
     private func cameraMessage(_ snapshot: LasrNativeOnboardingSnapshot) -> String {
+        if snapshot.scannerUnavailable {
+            return snapshot.scanUnavailable
+        }
         switch snapshot.cameraAuthorization {
         case "restricted", "unavailable": return snapshot.scanRestricted
         default: return snapshot.scanPermission

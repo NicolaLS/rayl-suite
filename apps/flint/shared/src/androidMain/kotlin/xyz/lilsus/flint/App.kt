@@ -22,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import xyz.lilsus.flint.application.wallet.WalletAccessState
 import xyz.lilsus.flint.feature.onboarding.FlintOnboardingDestination
 import xyz.lilsus.flint.feature.onboarding.flintOnboarding
+import xyz.lilsus.flint.feature.walletconnection.WalletConnectionScreen
 import xyz.lilsus.flint.feature.walletconnection.WalletViewModel
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
@@ -60,6 +61,14 @@ fun App(host: FlintAppHost, performanceDiagnostics: PerformanceDiagnostics? = nu
     RaylSuiteTheme(themePreference = themePreference) {
         if (!navigationReady) {
             InitialWalletLoading()
+        } else if (walletState.access == WalletAccessState.Removing ||
+            walletState.access == WalletAccessState.ResetRequired
+        ) {
+            WalletConnectionScreen(
+                state = walletState,
+                onBack = null,
+                dispatch = walletViewModel::dispatch
+            )
         } else {
             val navController = rememberNavController()
             val startDestination =
@@ -87,6 +96,7 @@ fun App(host: FlintAppHost, performanceDiagnostics: PerformanceDiagnostics? = nu
                 )
                 flintHome(
                     runtime = runtime,
+                    walletViewModel = walletViewModel,
                     performanceDiagnostics = performanceDiagnostics,
                     onWalletRemoved = {
                         navController.navigate(FlintOnboardingDestination.Welcome) {

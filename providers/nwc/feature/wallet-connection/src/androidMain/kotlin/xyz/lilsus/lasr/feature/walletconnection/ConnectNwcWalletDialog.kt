@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -27,8 +28,8 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import xyz.lilsus.lasr.feature.walletconnection.R
 import xyz.lilsus.lasr.integration.nwc.NwcWalletDiscovery
 import xyz.lilsus.raylsuite.core.ui.keyboard.doneKeyboardPlatformImeOptions
@@ -43,7 +44,11 @@ fun ConnectNwcWalletDialog(
 ) {
     AlertDialog(
         modifier = Modifier.testTag(NwcWalletConnectionTestTags.CONFIRM_DIALOG),
-        onDismissRequest = onCancel,
+        onDismissRequest = { if (!state.isSaving) onCancel() },
+        properties = DialogProperties(
+            dismissOnBackPress = !state.isSaving,
+            dismissOnClickOutside = !state.isSaving
+        ),
         title = { Text(stringResource(R.string.connect_wallet_title)) },
         text = {
             ConnectDialogContent(
@@ -79,6 +84,7 @@ fun ConnectNwcWalletDialog(
         dismissButton = {
             TextButton(
                 onClick = onCancel,
+                enabled = !state.isSaving,
                 modifier =
                     Modifier.testTag(
                         NwcWalletConnectionTestTags.DIALOG_CANCEL_BUTTON
@@ -226,12 +232,7 @@ private fun WalletSummary(discovery: NwcWalletDiscovery) {
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        Text(
-            text = ellipsize(discovery.walletPublicKey),
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodyMedium
-        )
+        SelectableDetailValue(discovery.walletPublicKey)
         discovery.relayUrl?.let { relay ->
             Spacer(Modifier.size(4.dp))
             Text(
@@ -239,12 +240,7 @@ private fun WalletSummary(discovery: NwcWalletDiscovery) {
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Text(
-                text = relay,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            SelectableDetailValue(relay)
         }
         discovery.lightningAddress?.let { address ->
             Spacer(Modifier.size(4.dp))
@@ -253,12 +249,7 @@ private fun WalletSummary(discovery: NwcWalletDiscovery) {
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
-            Text(
-                text = address,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.bodyMedium
-            )
+            SelectableDetailValue(address)
         }
     }
 }
@@ -275,8 +266,15 @@ private fun CapabilitySection(title: String, values: Set<String>) {
                 ),
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
+        SelectableDetailValue(values.sorted().joinToString(separator = ", "))
+    }
+}
+
+@Composable
+private fun SelectableDetailValue(value: String) {
+    SelectionContainer {
         Text(
-            text = values.sorted().joinToString(separator = ", "),
+            text = value,
             style = MaterialTheme.typography.bodyMedium
         )
     }
@@ -361,12 +359,6 @@ private fun WarningSection(discovery: NwcWalletDiscovery) {
             }
         }
     }
-}
-
-private fun ellipsize(value: String): String = if (value.length <= 24) {
-    value
-} else {
-    value.take(12) + "…" + value.takeLast(6)
 }
 
 private fun formatEncryptionScheme(value: String): String = when (value.lowercase()) {

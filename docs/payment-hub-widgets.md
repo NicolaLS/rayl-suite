@@ -136,6 +136,18 @@ widgets can reference the same contact payment action, so placing or removing a
 widget does not duplicate or erase that action's history. Shortcut recipes with
 the same contact, amount, and comment reuse their payment action.
 
+Both native platforms show one widget grid with an **Add widget** tile at the end,
+including when no widgets exist. Creation starts with an adaptive grid of illustrated
+widget types, with titles and descriptions below the illustrations. Layout previews
+use saved contacts when available and localized placeholders for remaining slots;
+Shortcut previews also show the preset-amount label. Creation chooses the widget and
+layout once in the gallery, then opens its configuration. Contact selection has its
+own searchable picker: Single and Shortcut replace the selected contact, while Row
+and Card show their capacity and allow multiple selections. Search results remain
+scrollable above the keyboard. Custom widget titles do not replace the visible recipient name.
+Widgets can be reordered by dragging or through their native action menu; Android
+exposes that menu with a More button, and iOS uses a context menu.
+
 Removing a widget needs no confirmation and preserves contacts, payment actions,
 and history. Deleting a contact asks for confirmation, removes its payment
 actions and Shortcuts, and prunes Contacts memberships; an empty Contacts widget

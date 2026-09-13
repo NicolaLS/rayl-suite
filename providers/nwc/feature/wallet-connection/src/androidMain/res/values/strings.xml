@@ -4,7 +4,8 @@
     <string name="add_wallet_uri_label">Wallet Connect URI</string>
     <string name="add_wallet_uri_placeholder">nostr+walletconnect://your-wallet-public-key?relay=…</string>
     <string name="add_wallet_uri_paste">Paste from clipboard</string>
-    <string name="add_wallet_scan_instruction">Align the QR code within the frame.</string>
+    <string name="add_wallet_scan_instruction">Point your camera at the QR code. Scanning works without a camera preview.</string>
+    <string name="add_wallet_scan_unavailable">The camera could not start. Reopen this screen to try again, or paste the connection string.</string>
     <string name="add_wallet_scan_permission">Camera access is required to scan QR codes.</string>
     <string name="add_wallet_scan_allow_camera">Allow Camera Access</string>
     <string name="add_wallet_scan_open_settings">Open Settings</string>

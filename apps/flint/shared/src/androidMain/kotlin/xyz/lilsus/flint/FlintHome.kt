@@ -9,17 +9,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationEventHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import xyz.lilsus.flint.application.wallet.WalletAccessState
 import xyz.lilsus.flint.feature.onboarding.FlintOnboardingDestination
 import xyz.lilsus.flint.feature.onboarding.flintOnboarding
 import xyz.lilsus.flint.feature.payment.rememberPaymentFlowState
 import xyz.lilsus.flint.feature.payment.rememberPaymentMessages
 import xyz.lilsus.flint.feature.walletconnection.WalletAction
+import xyz.lilsus.flint.feature.walletconnection.WalletRemovalConfirmation
 import xyz.lilsus.flint.feature.walletconnection.WalletViewModel
 import xyz.lilsus.flint.shared.R
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
@@ -36,12 +39,14 @@ import xyz.lilsus.raylsuite.feature.walletmanagement.WalletManagementScreen
 
 internal fun NavGraphBuilder.flintHome(
     runtime: FlintRuntime,
+    walletViewModel: WalletViewModel,
     performanceDiagnostics: PerformanceDiagnostics?,
     onWalletRemoved: () -> Unit
 ) {
     composable<FlintDestination.Home> {
         FlintTabs(
             runtime = runtime,
+            walletViewModel = walletViewModel,
             performanceDiagnostics = performanceDiagnostics,
             onWalletRemoved = onWalletRemoved
         )
@@ -52,6 +57,7 @@ internal fun NavGraphBuilder.flintHome(
 @Composable
 private fun FlintTabs(
     runtime: FlintRuntime,
+    walletViewModel: WalletViewModel,
     performanceDiagnostics: PerformanceDiagnostics?,
     onWalletRemoved: () -> Unit
 ) {
@@ -68,6 +74,7 @@ private fun FlintTabs(
     ) { tab ->
         FlintTabContent(
             runtime = runtime,
+            walletViewModel = walletViewModel,
             tab = tab,
             performanceDiagnostics = performanceDiagnostics,
             onWalletRemoved = onWalletRemoved
@@ -79,6 +86,7 @@ private fun FlintTabs(
 @Composable
 internal fun FlintTabContent(
     runtime: FlintRuntime,
+    walletViewModel: WalletViewModel,
     tab: AppTab,
     performanceDiagnostics: PerformanceDiagnostics?,
     onWalletRemoved: () -> Unit
@@ -126,6 +134,7 @@ internal fun FlintTabContent(
         AppTab.Settings ->
             FlintSettingsTab(
                 runtime = runtime,
+                walletViewModel = walletViewModel,
                 performanceDiagnostics = performanceDiagnostics,
                 onWalletRemoved = onWalletRemoved
             )
@@ -135,12 +144,35 @@ internal fun FlintTabContent(
 @Composable
 private fun FlintSettingsTab(
     runtime: FlintRuntime,
+    walletViewModel: WalletViewModel,
     performanceDiagnostics: PerformanceDiagnostics?,
     onWalletRemoved: () -> Unit
 ) {
     var destination by rememberSaveable { mutableStateOf(FlintSettingsDestination.Root) }
-    val walletViewModel = viewModel { WalletViewModel(runtime.walletAccess) }
     val walletState by walletViewModel.state.collectAsStateWithLifecycle()
+    val isSubmitting by runtime.paymentCoordinator.isSubmitting.collectAsStateWithLifecycle()
+
+    NavigationEventHandler(
+        state = rememberNavigationEventState(
+            currentInfo = FlintSettingsNavigationInfo(destination)
+        ),
+        isForwardEnabled = false,
+        isBackEnabled = destination == FlintSettingsDestination.WalletManagement,
+        onBackCompleted = { destination = FlintSettingsDestination.Root }
+    )
+
+    if (walletState.confirmRemoval) {
+        WalletRemovalConfirmation(
+            dispatch = { action ->
+                if (action != WalletAction.ConfirmRemoval ||
+                    !runtime.paymentCoordinator.isSubmitting.value
+                ) {
+                    walletViewModel.dispatch(action)
+                }
+            },
+            canRemove = !isSubmitting
+        )
+    }
 
     LaunchedEffect(walletState.access) {
         if (walletState.access == WalletAccessState.NoWallet) onWalletRemoved()
@@ -188,7 +220,7 @@ private fun FlintSettingsTab(
                 onAddWallet = { destination = FlintSettingsDestination.WalletFlow },
                 onRemoveWallet = {
                     if (!runtime.paymentCoordinator.isSubmitting.value) {
-                        walletViewModel.dispatch(WalletAction.ConfirmRemoval)
+                        walletViewModel.dispatch(WalletAction.RequestRemoval)
                     }
                 }
             )
@@ -215,3 +247,6 @@ private enum class FlintSettingsDestination {
     WalletManagement,
     WalletFlow
 }
+
+private data class FlintSettingsNavigationInfo(val destination: FlintSettingsDestination) :
+    NavigationEventInfo()

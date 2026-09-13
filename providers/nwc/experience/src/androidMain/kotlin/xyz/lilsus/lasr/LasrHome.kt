@@ -1,6 +1,8 @@
 package xyz.lilsus.lasr
 
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -16,6 +18,9 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigationevent.NavigationEventInfo
+import androidx.navigationevent.compose.NavigationEventHandler
+import androidx.navigationevent.compose.rememberNavigationEventState
 import xyz.lilsus.lasr.feature.onboarding.LasrOnboardingDestination
 import xyz.lilsus.lasr.feature.onboarding.lasrOnboarding
 import xyz.lilsus.lasr.feature.payment.rememberPaymentFlowState
@@ -147,10 +152,18 @@ private fun LasrSettingsTab(runtime: LasrRuntime, performanceDiagnostics: Perfor
                 )
             },
             confirmButton = {
-                TextButton(enabled = !isSubmitting, onClick = {
-                    removeConfirmation = false
-                    runtime.removeWallet()
-                }) { Text(stringResource(WalletR.string.settings_manage_wallet_remove)) }
+                TextButton(
+                    enabled = !isSubmitting,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    ),
+                    onClick = {
+                        removeConfirmation = false
+                        runtime.removeWallet()
+                    }
+                ) {
+                    Text(stringResource(WalletR.string.settings_manage_wallet_remove))
+                }
             },
             dismissButton = {
                 TextButton(onClick = {
@@ -162,6 +175,19 @@ private fun LasrSettingsTab(runtime: LasrRuntime, performanceDiagnostics: Perfor
     var destination by rememberSaveable { mutableStateOf(LasrSettingsDestination.Root) }
     val connection by runtime.nwcWallet.connection.collectAsStateWithLifecycle()
     val walletFlowRequested by runtime.settingsWalletFlow.collectAsStateWithLifecycle()
+
+    NavigationEventHandler(
+        state = rememberNavigationEventState(currentInfo = LasrSettingsNavigationInfo(destination)),
+        isForwardEnabled = false,
+        isBackEnabled = destination == LasrSettingsDestination.WalletManagement ||
+            destination == LasrSettingsDestination.WalletDetails,
+        onBackCompleted = {
+            destination = when (destination) {
+                LasrSettingsDestination.WalletDetails -> LasrSettingsDestination.WalletManagement
+                else -> LasrSettingsDestination.Root
+            }
+        }
+    )
 
     LaunchedEffect(walletFlowRequested) {
         if (walletFlowRequested) destination = LasrSettingsDestination.WalletFlow
@@ -278,6 +304,9 @@ private enum class LasrSettingsDestination {
     WalletDetails,
     WalletFlow
 }
+
+private data class LasrSettingsNavigationInfo(val destination: LasrSettingsDestination) :
+    NavigationEventInfo()
 
 private fun formatWalletSubtitle(connection: NwcWalletConnection): String {
     connection.alias?.takeIf(String::isNotBlank)?.let { return it }

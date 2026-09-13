@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -174,8 +175,9 @@ private fun ReceiptPreimage(preimage: String) {
         )
         PaymentHero(
             modifier = Modifier
+                .widthIn(max = 280.dp)
                 .fillMaxWidth()
-                .height(280.dp)
+                .aspectRatio(1f)
                 .clickable(onClick = copyPreimage),
             phase = RaylHeroPhase.Succeeded,
             receiptPreimage = preimage

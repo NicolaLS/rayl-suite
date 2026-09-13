@@ -50,7 +50,8 @@ internal fun HubWidgetFace(
     onPay: (String) -> Unit,
     modifier: Modifier = Modifier,
     preview: Boolean = false,
-    interactive: Boolean = true
+    interactive: Boolean = true,
+    headerTrailingPadding: Dp = 0.dp
 ) {
     Surface(
         color = MaterialTheme.colorScheme.surfaceContainerLow,
@@ -58,9 +59,12 @@ internal fun HubWidgetFace(
         modifier = modifier
     ) {
         when {
-            tile.kind == HubWidgetKind.Metric -> MetricFace(tile)
-            tile.variant.capacity == 1 -> SingleContactFace(tile, onPay, preview, interactive)
-            else -> ContactCollectionFace(tile, onPay, preview, interactive)
+            tile.kind == HubWidgetKind.Metric -> MetricFace(tile, headerTrailingPadding)
+
+            tile.variant.capacity == 1 ->
+                SingleContactFace(tile, onPay, preview, interactive, headerTrailingPadding)
+
+            else -> ContactCollectionFace(tile, onPay, preview, interactive, headerTrailingPadding)
         }
     }
 }
@@ -70,18 +74,23 @@ private fun SingleContactFace(
     tile: HubWidgetTile,
     onPay: (String) -> Unit,
     preview: Boolean,
-    interactive: Boolean
+    interactive: Boolean,
+    headerTrailingPadding: Dp
 ) {
     val person = tile.people.firstOrNull()
     val amount = person?.amount?.let {
         rememberAmountFormatter().format(
             DisplayAmount(it.minor, CurrencyCatalog.infoFor(it.normalizedCurrencyCode).currency)
         )
+    } ?: if (preview && tile.kind == HubWidgetKind.Shortcut) {
+        stringResource(R.string.hub_widget_shortcut_amount)
+    } else {
+        null
     }
-    val label = person?.title ?: tile.title ?: tile.kind.label()
+    val label = person?.title ?: stringResource(R.string.hub_widget_contact_placeholder)
     val payLabel = stringResource(R.string.hub_canvas_pay, label)
-    BoxWithConstraints(
-        contentAlignment = Alignment.Center,
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxSize().then(
             if (interactive && person != null) {
                 Modifier.clickable(role = Role.Button) { onPay(person.actionId) }
@@ -89,44 +98,56 @@ private fun SingleContactFace(
             } else {
                 Modifier
             }
-        ).padding(12.dp)
+        ).padding(14.dp)
     ) {
-        val avatarSize = (maxHeight * 0.35f).coerceIn(28.dp, 56.dp)
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
+        Text(
+            text = tile.title?.takeIf { it.isNotBlank() } ?: tile.kind.label(),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(end = headerTrailingPadding)
+        )
+        BoxWithConstraints(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.weight(1f).fillMaxWidth()
         ) {
-            ContactAvatar(
-                title = person?.title,
-                size = avatarSize
-            )
-            Text(
-                text = tile.title?.takeIf { it.isNotBlank() } ?: label,
-                style = MaterialTheme.typography.titleSmall,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
-            Text(
-                text = amount ?: if (preview && tile.kind == HubWidgetKind.Shortcut) {
-                    stringResource(R.string.hub_widget_shortcut_amount)
-                } else {
-                    stringResource(R.string.hub_amount_ask)
-                },
-                style = if (amount != null) {
-                    MaterialTheme.typography.titleMedium
-                } else {
-                    MaterialTheme.typography.labelMedium
-                },
-                color = if (amount != null) {
-                    MaterialTheme.colorScheme.primary
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center
-            )
+            if (person == null && !preview) {
+                Text(
+                    stringResource(R.string.hub_widget_contacts_empty),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center
+                )
+            } else {
+                val textHeight = (if (amount == null) 20.dp else 44.dp) *
+                    LocalDensity.current.fontScale
+                val avatarSize = minOf(maxWidth * 0.5f, maxHeight - textHeight - 12.dp)
+                    .coerceIn(24.dp, 66.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    ContactAvatar(title = person?.title, size = avatarSize)
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.titleSmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
+                    amount?.let {
+                        Text(
+                            text = it,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
         }
     }
 }
@@ -136,7 +157,8 @@ private fun ContactCollectionFace(
     tile: HubWidgetTile,
     onPay: (String) -> Unit,
     preview: Boolean,
-    interactive: Boolean
+    interactive: Boolean,
+    headerTrailingPadding: Dp
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -146,7 +168,8 @@ private fun ContactCollectionFace(
             text = tile.title?.takeIf { it.isNotBlank() } ?: tile.kind.label(),
             style = MaterialTheme.typography.titleSmall,
             maxLines = 1,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(end = headerTrailingPadding)
         )
         if (tile.people.isEmpty() && !preview) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
@@ -224,35 +247,25 @@ private fun ContactCell(
                 title = person?.title,
                 size = avatarSize
             )
-            if (person != null) {
+            Text(
+                text = person?.title ?: stringResource(R.string.hub_widget_contact_placeholder),
+                style = MaterialTheme.typography.labelMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center
+            )
+            person?.amount?.let { amount ->
                 Text(
-                    text = person.title,
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
-                )
-                person.amount?.let { amount ->
-                    Text(
-                        text = rememberAmountFormatter().format(
-                            DisplayAmount(
-                                amount.minor,
-                                CurrencyCatalog.infoFor(amount.normalizedCurrencyCode).currency
-                            )
-                        ),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            } else {
-                Box(
-                    Modifier.fillMaxWidth(0.7f).height(7.dp)
-                        .background(
-                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
-                            CircleShape
+                    text = rememberAmountFormatter().format(
+                        DisplayAmount(
+                            amount.minor,
+                            CurrencyCatalog.infoFor(amount.normalizedCurrencyCode).currency
                         )
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
@@ -260,14 +273,19 @@ private fun ContactCell(
 }
 
 @Composable
-internal fun ContactAvatar(title: String?, modifier: Modifier = Modifier, size: Dp = 40.dp) {
+internal fun ContactAvatar(
+    title: String?,
+    modifier: Modifier = Modifier,
+    size: Dp = 40.dp,
+    seed: Int = title?.hashCode() ?: 0
+) {
     val colors = listOf(
         MaterialTheme.colorScheme.primaryContainer to MaterialTheme.colorScheme.onPrimaryContainer,
         MaterialTheme.colorScheme.secondaryContainer to
             MaterialTheme.colorScheme.onSecondaryContainer,
         MaterialTheme.colorScheme.tertiaryContainer to MaterialTheme.colorScheme.onTertiaryContainer
     )
-    val color = colors[(title?.hashCode()?.and(Int.MAX_VALUE) ?: 0) % colors.size]
+    val color = colors[(seed and Int.MAX_VALUE) % colors.size]
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier.size(size).background(color.first, CircleShape)
@@ -294,7 +312,7 @@ internal fun ContactAvatar(title: String?, modifier: Modifier = Modifier, size: 
 }
 
 @Composable
-private fun MetricFace(tile: HubWidgetTile) {
+private fun MetricFace(tile: HubWidgetTile, headerTrailingPadding: Dp) {
     Column(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Center,
@@ -304,7 +322,8 @@ private fun MetricFace(tile: HubWidgetTile) {
             tile.title ?: tile.kind.label(),
             style = MaterialTheme.typography.titleSmall,
             maxLines = 2,
-            overflow = TextOverflow.Ellipsis
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(end = headerTrailingPadding)
         )
         Spacer(Modifier.height(12.dp))
         when {

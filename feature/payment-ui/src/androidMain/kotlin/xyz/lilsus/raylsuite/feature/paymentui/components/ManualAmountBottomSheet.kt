@@ -1,16 +1,20 @@
 package xyz.lilsus.raylsuite.feature.paymentui.components
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
@@ -34,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -72,15 +77,13 @@ fun ManualAmountBottomSheet(
     ModalBottomSheet(
         modifier = Modifier.enableTestTagsAsResourceId(),
         sheetState = sheetState,
+        contentWindowInsets = { WindowInsets.safeDrawing },
         onDismissRequest = onDismiss
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .testTag(PaymentTestTags.MANUAL_AMOUNT_SHEET)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 24.dp, vertical = 16.dp)
-                .navigationBarsPadding(),
+                .fillMaxSize()
+                .testTag(PaymentTestTags.MANUAL_AMOUNT_SHEET),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -88,96 +91,129 @@ fun ManualAmountBottomSheet(
                     if (reviewing) R.string.confirm_payment_title else R.string.enter_amount_title
                 ),
                 style = MaterialTheme.typography.headlineSmall,
-                textAlign = TextAlign.Center
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Crossfade(
+                targetState = reviewing,
+                animationSpec = tween(durationMillis = 180),
+                modifier = Modifier.weight(1f).fillMaxWidth()
+            ) { showReview ->
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .then(
+                            if (showReview ==
+                                reviewing
+                            ) {
+                                Modifier
+                            } else {
+                                Modifier.clearAndSetSemantics {}
+                            }
+                        )
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    lnurlPayDisplay?.let {
+                        LnurlPayReviewSection(it)
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                    if (showReview) {
+                        state.amount?.let { amount ->
+                            Text(
+                                text = formatter.format(amount),
+                                style = MaterialTheme.typography.displaySmall,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.testTag(PaymentTestTags.MANUAL_AMOUNT_REVIEW)
+                            )
+                        }
+                    } else {
+                        ManualAmountEntryContent(
+                            state = state,
+                            onKeyPress = { if (!reviewing) onKeyPress(it) }
+                        )
+                    }
 
-            lnurlPayDisplay?.let {
-                LnurlPayReviewSection(it)
-                Spacer(modifier = Modifier.height(16.dp))
+                    RangeFeedback(state.rangeStatus)
+                }
             }
 
-            if (reviewing) {
-                state.amount?.let { amount ->
-                    Text(
-                        text = formatter.format(amount),
-                        style = MaterialTheme.typography.displaySmall,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.testTag(PaymentTestTags.MANUAL_AMOUNT_REVIEW)
-                    )
+            Column(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                if (reviewing) {
+                    TextButton(
+                        onClick = { reviewing = false },
+                        modifier = Modifier.fillMaxWidth()
+                            .testTag(PaymentTestTags.MANUAL_AMOUNT_EDIT_BUTTON)
+                    ) {
+                        Text(stringResource(R.string.edit_amount_button))
+                    }
                 }
-                Spacer(modifier = Modifier.height(24.dp))
-                TextButton(
-                    onClick = { reviewing = false },
+                Button(
+                    onClick = {
+                        if (reviewing) onSubmit() else reviewing = true
+                    },
+                    enabled = canContinue,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .testTag(PaymentTestTags.MANUAL_AMOUNT_EDIT_BUTTON)
+                        .testTag(
+                            if (reviewing) {
+                                PaymentTestTags.MANUAL_AMOUNT_PAY_BUTTON
+                            } else {
+                                PaymentTestTags.MANUAL_AMOUNT_CONTINUE_BUTTON
+                            }
+                        )
                 ) {
-                    Text(stringResource(R.string.edit_amount_button))
-                }
-            } else {
-                AmountInputDisplay(state)
-                state.alternativeCurrency?.let { alternative ->
-                    TextButton(
-                        onClick = { onKeyPress(ManualAmountKey.SwitchCurrency) },
-                        modifier = Modifier.testTag(PaymentTestTags.MANUAL_AMOUNT_SWITCH_CURRENCY)
-                    ) {
-                        Text(
-                            "⇅  " + stringResource(
-                                R.string.enter_amount_switch_currency,
-                                currencyLabel(alternative).uppercase()
-                            )
+                    Text(
+                        stringResource(
+                            if (reviewing) R.string.pay_button else R.string.continue_button
                         )
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CurrencyTag(currencyLabel(alternative).uppercase(), active = false)
-                        Text(
-                            text =
-                                state.equivalentAmount?.let { "≈ ${formatter.format(it)}" } ?: "—",
-                            style = MaterialTheme.typography.titleLarge,
-                            modifier = Modifier.testTag(PaymentTestTags.MANUAL_AMOUNT_EQUIVALENT)
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-                AmountKeypad(
-                    onKeyPress = onKeyPress,
-                    enableDecimal = state.allowDecimal
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-
-            RangeFeedback(state.rangeStatus)
-
-            Button(
-                onClick = {
-                    if (reviewing) onSubmit() else reviewing = true
-                },
-                enabled = canContinue,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(
-                        if (reviewing) {
-                            PaymentTestTags.MANUAL_AMOUNT_PAY_BUTTON
-                        } else {
-                            PaymentTestTags.MANUAL_AMOUNT_CONTINUE_BUTTON
-                        }
                     )
-            ) {
-                Text(
-                    stringResource(if (reviewing) R.string.pay_button else R.string.continue_button)
-                )
+                }
             }
-
-            Spacer(modifier = Modifier.height(16.dp))
         }
     }
+}
+
+@Composable
+private fun ManualAmountEntryContent(
+    state: ManualAmountUiState,
+    onKeyPress: (ManualAmountKey) -> Unit
+) {
+    val formatter = rememberAmountFormatter()
+    AmountInputDisplay(state)
+    state.alternativeCurrency?.let { alternative ->
+        TextButton(
+            onClick = { onKeyPress(ManualAmountKey.SwitchCurrency) },
+            modifier = Modifier.testTag(PaymentTestTags.MANUAL_AMOUNT_SWITCH_CURRENCY)
+        ) {
+            Text(
+                "⇅  " + stringResource(
+                    R.string.enter_amount_switch_currency,
+                    currencyLabel(alternative).uppercase()
+                )
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            CurrencyTag(currencyLabel(alternative).uppercase(), active = false)
+            Text(
+                text = state.equivalentAmount?.let { "≈ ${formatter.format(it)}" } ?: "—",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.testTag(PaymentTestTags.MANUAL_AMOUNT_EQUIVALENT)
+            )
+        }
+    }
+    Spacer(modifier = Modifier.height(16.dp))
+    AmountKeypad(onKeyPress = onKeyPress, enableDecimal = state.allowDecimal)
+    Spacer(modifier = Modifier.height(16.dp))
 }
 
 @Composable

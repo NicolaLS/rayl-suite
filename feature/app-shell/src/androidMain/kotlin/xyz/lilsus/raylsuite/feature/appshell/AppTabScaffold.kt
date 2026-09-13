@@ -13,6 +13,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -31,6 +32,7 @@ fun AppTabScaffold(
     recentBadgeCount: Int = 0,
     content: @Composable (AppTab) -> Unit
 ) {
+    val tabContentState = rememberSaveableStateHolder()
     Scaffold(
         modifier = modifier.testTag(AppShellTestTags.SCAFFOLD),
         bottomBar = {
@@ -65,7 +67,9 @@ fun AppTabScaffold(
                     .padding(padding)
                     .consumeWindowInsets(padding)
         ) {
-            content(selectedTab)
+            tabContentState.SaveableStateProvider(selectedTab.storedValue) {
+                content(selectedTab)
+            }
         }
     }
 }

@@ -52,8 +52,6 @@ fun BlipOnboarding(
             ),
             subtitle = stringResource(R.string.onboarding_welcome_subtitle_line1),
             description = stringResource(R.string.onboarding_welcome_subtitle_line2),
-            stepIndex = 0,
-            totalSteps = ONBOARDING_STEP_COUNT,
             onGetStarted = { onStepChanged(BlinkOnboardingStep.Connect) }
         )
 

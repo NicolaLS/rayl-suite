@@ -3,7 +3,6 @@ package xyz.lilsus.raylsuite.feature.onboarding
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,9 +25,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,8 +33,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 import xyz.lilsus.raylsuite.feature.onboarding.R
 
 data class OnboardingFeaturePage(val title: String, val subtitle: String, val body: String)
@@ -59,16 +53,6 @@ fun FeaturesScreen(
 
     val initialPage = currentPage.coerceIn(pages.indices)
     val pagerState = rememberPagerState(initialPage = initialPage) { pages.size }
-    var userHasInteracted by remember { mutableStateOf(false) }
-
-    LaunchedEffect(pagerState) {
-        pagerState.interactionSource.interactions.collectLatest { interaction ->
-            if (interaction is DragInteraction.Start) {
-                userHasInteracted = true
-            }
-        }
-    }
-
     LaunchedEffect(pagerState) {
         snapshotFlow { pagerState.currentPage }.collect(onPageChanged)
     }
@@ -77,19 +61,6 @@ fun FeaturesScreen(
         val requestedPage = currentPage.coerceIn(pages.indices)
         if (pagerState.currentPage != requestedPage) {
             pagerState.scrollToPage(requestedPage)
-        }
-    }
-
-    LaunchedEffect(pagerState, userHasInteracted, pages.size) {
-        if (userHasInteracted || pages.size < 2) return@LaunchedEffect
-
-        delay(INITIAL_DELAY_MS)
-        while (!userHasInteracted) {
-            pagerState.animateScrollToPage(
-                page = (pagerState.currentPage + 1) % pages.size,
-                animationSpec = tween(durationMillis = PAGE_ANIMATION_MS)
-            )
-            delay(AUTO_ADVANCE_INTERVAL_MS)
         }
     }
 
@@ -212,7 +183,3 @@ private fun PageIndicator(pagerState: PagerState, pageCount: Int, modifier: Modi
         }
     }
 }
-
-private const val INITIAL_DELAY_MS = 1_800L
-private const val AUTO_ADVANCE_INTERVAL_MS = 5_500L
-private const val PAGE_ANIMATION_MS = 600

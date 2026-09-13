@@ -63,7 +63,9 @@ private extension Int {
 private final class NativePaymentScanModel: ObservableObject {
     @Published private(set) var snapshot: NativePaymentScanSnapshot?
     @Published var message: String?
-    @Published private(set) var recentTransactionId: String?
+    @Published private(set) var recentSnapshot: NativePaymentRecentSnapshot?
+
+    var recentTransactionId: String? { recentSnapshot?.selectedDetail?.id }
 
     let controller: NativePaymentScanController
     private var cancels: [() -> Void] = []
@@ -79,7 +81,7 @@ private final class NativePaymentScanModel: ObservableObject {
         })
         if let recentController {
             cancels.append(recentController.observe { [weak self] snapshot in
-                self?.recentTransactionId = snapshot.selectedDetail?.id
+                self?.recentSnapshot = snapshot
             })
         }
         cancels.append(controller.observeMessages { [weak self] message in
@@ -100,6 +102,11 @@ private final class NativePaymentScanModel: ObservableObject {
     }
 }
 
+private enum ScanRecentRoute: Hashable {
+    case recent
+    case transaction(String)
+}
+
 /// Native Scan tab. The bounded animated hero is drawn by SwiftUI Canvas.
 struct NativePaymentScanView: View {
     @Environment(\.scenePhase) private var scenePhase
@@ -108,6 +115,7 @@ struct NativePaymentScanView: View {
 
     @State private var showsRecent = false
     @State private var seenRecentCount = 0
+    @State private var isVisible = false
 
     private let recentController: NativePaymentRecentController?
 
@@ -125,6 +133,63 @@ struct NativePaymentScanView: View {
     }
 
     var body: some View {
+        Group {
+            if recentController != nil {
+                NavigationStack(path: recentNavigationPath) {
+                    scanRoot
+                        .toolbar(.hidden, for: .navigationBar)
+                        .navigationDestination(for: ScanRecentRoute.self) { route in
+                            recentDestination(route)
+                                .toolbar(.visible, for: .navigationBar)
+                        }
+                }
+            } else {
+                scanRoot
+            }
+        }
+        .sheet(isPresented: sheetPresented) {
+            if let sheet = model.snapshot?.sheet {
+                NativePaymentScanSheetView(sheet: sheet, controller: model.controller)
+                    .presentationDragIndicator(.visible)
+            }
+        }
+        .onAppear {
+            isVisible = true
+            updateActivity()
+        }
+        .onDisappear {
+            isVisible = false
+            updateActivity()
+        }
+        .onChange(of: model.recentTransactionId, initial: true) { _, id in
+            if id != nil { showsRecent = true }
+            updateActivity()
+        }
+        .onChange(of: showsRecent) { _, shown in
+            if shown {
+                seenRecentCount = Int(model.snapshot?.recent?.transactionCount ?? 0)
+            } else {
+                recentController?.closeDetail()
+            }
+            updateActivity()
+        }
+        .onChange(of: model.snapshot?.recent?.transactionCount) { _, count in
+            guard let count else {
+                showsRecent = false
+                return
+            }
+            let total = Int(count)
+            seenRecentCount = showsRecent ? total : min(seenRecentCount, total)
+        }
+        .onChange(of: scenePhase) { _, _ in
+            updateActivity()
+        }
+        .onChange(of: isSelected) { _, _ in
+            updateActivity()
+        }
+    }
+
+    private var scanRoot: some View {
         Group {
             if let snapshot = model.snapshot {
                 scanContent(snapshot)
@@ -160,51 +225,49 @@ struct NativePaymentScanView: View {
             }
         }
         .animation(.snappy, value: model.message)
-        .sheet(isPresented: sheetPresented) {
-            if let sheet = model.snapshot?.sheet {
-                NativePaymentScanSheetView(sheet: sheet, controller: model.controller)
-                    .presentationDragIndicator(.visible)
+    }
+
+    private var recentNavigationPath: Binding<[ScanRecentRoute]> {
+        Binding(
+            get: {
+                guard showsRecent else { return [] }
+                var path: [ScanRecentRoute] = [.recent]
+                if let id = model.recentTransactionId { path.append(.transaction(id)) }
+                return path
+            },
+            set: { path in
+                guard let last = path.last else {
+                    showsRecent = false
+                    return
+                }
+                showsRecent = true
+                switch last {
+                case .recent:
+                    if model.recentTransactionId != nil { recentController?.closeDetail() }
+                case .transaction(let id):
+                    if model.recentTransactionId != id {
+                        recentController?.selectTransaction(id: id)
+                    }
+                }
             }
-        }
-        // A sheet gives Recent its own presentation context, so it keeps the navigation stack it
-        // already uses as a tab root instead of nesting one inside Scan's.
-        .sheet(isPresented: $showsRecent, onDismiss: {
-            recentController?.closeDetail()
-        }) {
-            if let recentController {
-                NativePaymentRecentView(
-                    controller: recentController,
-                    onClose: { showsRecent = false }
-                )
+        )
+    }
+
+    @ViewBuilder
+    private func recentDestination(_ route: ScanRecentRoute) -> some View {
+        if let snapshot = model.recentSnapshot, let recentController {
+            switch route {
+            case .recent:
+                NativePaymentRecentList(snapshot: snapshot, destination: ScanRecentRoute.transaction)
+            case .transaction(let id):
+                if let detail = snapshot.selectedDetail, detail.id == id {
+                    NativePaymentRecentDetailView(detail: detail, controller: recentController)
+                } else {
+                    ProgressView()
+                }
             }
-        }
-        .onAppear {
-            updateActivity()
-        }
-        .onDisappear {
-            model.controller.setActive(active: false)
-        }
-        .onChange(of: model.recentTransactionId, initial: true) { _, id in
-            if id != nil { showsRecent = true }
-            updateActivity()
-        }
-        .onChange(of: showsRecent) { _, _ in
-            if showsRecent { seenRecentCount = Int(model.snapshot?.recent?.transactionCount ?? 0) }
-            updateActivity()
-        }
-        .onChange(of: model.snapshot?.recent?.transactionCount) { _, count in
-            guard let count else {
-                showsRecent = false
-                return
-            }
-            let total = Int(count)
-            seenRecentCount = showsRecent ? total : min(seenRecentCount, total)
-        }
-        .onChange(of: scenePhase) { _, _ in
-            updateActivity()
-        }
-        .onChange(of: isSelected) { _, _ in
-            updateActivity()
+        } else {
+            ProgressView()
         }
     }
 
@@ -256,10 +319,11 @@ struct NativePaymentScanView: View {
     }
 
     private func updateActivity() {
+        let active = isVisible && isSelected && scenePhase == .active
+        recentController?.setActive(active: active && showsRecent)
         // Clear the previous selection before rearming the camera for another scan of that QR.
         model.controller.setActive(
-            active: isSelected && scenePhase == .active && !showsRecent
-                && model.recentTransactionId == nil
+            active: active && !showsRecent && model.recentTransactionId == nil
         )
     }
 }
@@ -268,6 +332,7 @@ private struct NativePaymentScanContentView: View {
     let content: NativePaymentScanContent
     let cameraPermission: NativeCameraPermissionContent?
     let onDismissResult: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         VStack(spacing: 12) {
@@ -306,7 +371,8 @@ private struct NativePaymentScanContentView: View {
         }
 
         if content.kind == "success", let amount = content.primaryAmount {
-            (Text(content.title).foregroundStyle(.tint) + Text(" \(amount)"))
+            (Text(content.title).foregroundStyle(paymentSuccessColor(colorScheme))
+                + Text(" \(amount)"))
                 .font(.largeTitle)
                 .multilineTextAlignment(.center)
         } else {
@@ -372,7 +438,7 @@ private struct NativePaymentScanContentView: View {
     private var titleColor: Color {
         switch content.kind {
         case "error": return .red
-        case "alreadyPaid", "receipt": return .orange
+        case "alreadyPaid", "receipt": return paymentSuccessColor(colorScheme)
         default: return .accentColor
         }
     }
@@ -746,22 +812,15 @@ struct NativePaymentRecentView: View {
     @Environment(\.appShellTabIsSelected) private var isSelected
     @StateObject private var model: NativePaymentRecentModel
 
-    private let onClose: (() -> Void)?
-
-    /// [onClose] is supplied only when a product presents this outside its own tab.
-    init(
-        controller: NativePaymentRecentController,
-        onClose: (() -> Void)? = nil
-    ) {
+    init(controller: NativePaymentRecentController) {
         _model = StateObject(wrappedValue: NativePaymentRecentModel(controller: controller))
-        self.onClose = onClose
     }
 
     var body: some View {
         NavigationStack(path: navigationPath) {
             Group {
                 if let snapshot = model.snapshot {
-                    recentList(snapshot)
+                    NativePaymentRecentList(snapshot: snapshot, destination: { $0 })
                         .navigationDestination(for: String.self) { id in
                             if let detail = snapshot.selectedDetail, detail.id == id {
                                 NativePaymentRecentDetailView(
@@ -790,33 +849,6 @@ struct NativePaymentRecentView: View {
         }
     }
 
-    private func recentList(_ snapshot: NativePaymentRecentSnapshot) -> some View {
-        Group {
-            if snapshot.items.isEmpty {
-                ContentUnavailableView(
-                    snapshot.emptyMessage,
-                    systemImage: "clock"
-                )
-            } else {
-                List(snapshot.items, id: \.id) { item in
-                    NavigationLink(value: item.id) {
-                        NativePaymentRecentRow(item: item)
-                    }
-                }
-                .listStyle(.insetGrouped)
-            }
-        }
-        .navigationTitle(snapshot.title)
-        .toolbar {
-            if let onClose {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(snapshot.dismissTitle, action: onClose)
-                }
-            }
-        }
-        .navigationBarTitleDisplayMode(.large)
-    }
-
     private var navigationPath: Binding<[String]> {
         Binding(
             get: {
@@ -834,6 +866,33 @@ struct NativePaymentRecentView: View {
 
     private func updateActivity() {
         model.controller.setActive(active: isSelected && scenePhase == .active)
+    }
+}
+
+/// The same native list participates in Scan's navigation stack or a dedicated Recent tab.
+private struct NativePaymentRecentList<Destination: Hashable>: View {
+    let snapshot: NativePaymentRecentSnapshot
+    let destination: (String) -> Destination
+
+    var body: some View {
+        Group {
+            if snapshot.items.isEmpty {
+                ContentUnavailableView(
+                    snapshot.emptyMessage,
+                    systemImage: "clock"
+                )
+            } else {
+                List(snapshot.items, id: \.id) { item in
+                    NavigationLink(value: destination(item.id)) {
+                        NativePaymentRecentRow(item: item)
+                    }
+                }
+                .listStyle(.insetGrouped)
+            }
+        }
+        .navigationTitle(snapshot.title)
+        .navigationBarTitleDisplayMode(.large)
+        .background(Color(uiColor: .systemGroupedBackground))
     }
 }
 
@@ -1016,18 +1075,22 @@ private struct NativePaymentReceiptView: View {
 private struct NativePaymentRecentResultContent: View {
     let content: NativePaymentScanContent
     let onDone: () -> Void
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         ScrollView {
             VStack(spacing: 12) {
                 if content.kind == "success", let amount = content.primaryAmount {
-                    (Text(content.title).foregroundStyle(.tint) + Text(" \(amount)"))
+                    (Text(content.title).foregroundStyle(paymentSuccessColor(colorScheme))
+                        + Text(" \(amount)"))
                         .font(.title)
                         .multilineTextAlignment(.center)
                 } else {
                     Text(content.title)
                         .font(.title3.weight(.semibold))
-                        .foregroundStyle(content.kind == "error" ? .red : .orange)
+                        .foregroundStyle(
+                            content.kind == "error" ? .red : paymentSuccessColor(colorScheme)
+                        )
                         .multilineTextAlignment(.center)
                 }
 
@@ -1053,4 +1116,9 @@ private struct NativePaymentRecentResultContent: View {
             .padding(.vertical, 16)
         }
     }
+}
+
+private func paymentSuccessColor(_ colorScheme: ColorScheme) -> Color {
+    let palette = NativeHeroPaletteKt.nativeHeroPalette(phaseValue: "succeeded")
+    return HeroTint(argb: colorScheme == .dark ? palette.darkArgb : palette.lightArgb).color
 }

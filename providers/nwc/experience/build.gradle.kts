@@ -40,6 +40,7 @@ kotlin {
             implementation(project(":feature:wallet-management"))
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.navigation.compose)
+            implementation(libs.navigation.event.compose)
             implementation(libs.compose.runtime)
             implementation(libs.compose.ui)
         }

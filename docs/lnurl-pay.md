@@ -68,9 +68,11 @@ when the entry returns to the permitted range.
 
 Manual amount entry has two steps within the same sheet: enter an amount and tap
 Continue, then review the entered amount, currency, and available recipient
-details before tapping Pay. Edit amount returns to the keypad with the input
-preserved. Continue does not submit a payment; Pay invokes provider validation,
-amount conversion, and payment submission. No separate confirmation sheet opens,
+details before tapping Pay. The sheet keeps its height across both steps, with
+Continue and Pay anchored at the bottom and scrollable content above. Edit amount
+returns to the keypad with the input preserved. Continue does not submit a payment;
+Pay invokes provider validation, amount conversion, and payment submission.
+No separate confirmation sheet opens,
 regardless of Always or the Auto Pay threshold, including after an amountless
 deep link. Amounts supplied by deep links still require confirmation; scanned
 invoice amounts follow the Always or Auto Pay threshold setting.

@@ -2,20 +2,24 @@ package xyz.lilsus.lasr.feature.walletconnection
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -24,6 +28,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
@@ -32,9 +43,14 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.currentStateAsState
 import xyz.lilsus.lasr.feature.walletconnection.R
 import xyz.lilsus.raylsuite.core.camera.CameraAuthorizationState
+import xyz.lilsus.raylsuite.core.camera.rememberQrScannerController
 import xyz.lilsus.raylsuite.core.ui.components.BackIconButton
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -53,9 +69,27 @@ fun AddNwcWalletScreen(
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val focusManager = LocalFocusManager.current
+    val scanner = rememberQrScannerController()
+    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
+    val screenResumed = lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
+    val currentOnQrCodeScanned by rememberUpdatedState(onQrCodeScanned)
+    val currentOnCameraPermissionAction by rememberUpdatedState(onCameraPermissionAction)
+    var scannerUnavailable by remember { mutableStateOf(false) }
     val submitOrClearFocus = {
         focusManager.clearFocus(force = true)
         onSubmit()
+    }
+
+    DisposableEffect(scanner, cameraAuthorization, screenResumed) {
+        scannerUnavailable = false
+        if (screenResumed && cameraAuthorization == CameraAuthorizationState.AUTHORIZED) {
+            scanner.start(
+                onQrCodeScanned = { currentOnQrCodeScanned(it) },
+                onCameraPermissionMissing = { currentOnCameraPermissionAction() },
+                onScannerUnavailable = { scannerUnavailable = true }
+            )
+        }
+        onDispose(scanner::stop)
     }
 
     Scaffold(
@@ -125,10 +159,20 @@ fun AddNwcWalletScreen(
                 )
             }
 
+            Button(
+                onClick = submitOrClearFocus,
+                enabled = state.isUriValid,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .testTag(NwcWalletConnectionTestTags.CONNECT_BUTTON)
+            ) {
+                Text(stringResource(R.string.add_wallet_title))
+            }
+
             CameraCard(
                 authorization = cameraAuthorization,
+                scannerUnavailable = scannerUnavailable,
                 canRequestPermission = canRequestCameraPermission,
-                onQrCodeScanned = onQrCodeScanned,
                 onCameraPermissionAction = onCameraPermissionAction
             )
         }
@@ -138,8 +182,8 @@ fun AddNwcWalletScreen(
 @Composable
 private fun CameraCard(
     authorization: CameraAuthorizationState,
+    scannerUnavailable: Boolean,
     canRequestPermission: Boolean,
-    onQrCodeScanned: (String) -> Unit,
     onCameraPermissionAction: () -> Unit
 ) {
     Surface(
@@ -151,41 +195,40 @@ private fun CameraCard(
                 .testTag(NwcWalletConnectionTestTags.CAMERA_CARD)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            modifier = Modifier.padding(24.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = stringResource(R.string.add_wallet_scan_instruction),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+            Icon(
+                imageVector = if (authorization == CameraAuthorizationState.AUTHORIZED) {
+                    Icons.Default.QrCodeScanner
+                } else {
+                    Icons.Default.PhotoCamera
+                },
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(48.dp)
             )
-            if (authorization == CameraAuthorizationState.AUTHORIZED) {
-                NwcConnectionQrScannerPreview(
-                    onQrCodeScanned = onQrCodeScanned,
-                    onCameraPermissionMissing = onCameraPermissionAction,
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1.3f)
-                            .testTag(NwcWalletConnectionTestTags.CAMERA_PREVIEW)
-                )
-            }
+            Text(
+                text = stringResource(
+                    when {
+                        scannerUnavailable -> R.string.add_wallet_scan_unavailable
+
+                        authorization == CameraAuthorizationState.AUTHORIZED ->
+                            R.string.add_wallet_scan_instruction
+
+                        authorization == CameraAuthorizationState.RESTRICTED ||
+                            authorization == CameraAuthorizationState.UNAVAILABLE ->
+                            R.string.add_wallet_scan_restricted
+
+                        else -> R.string.add_wallet_scan_permission
+                    }
+                ),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center
+            )
             if (authorization != CameraAuthorizationState.AUTHORIZED) {
-                Text(
-                    text =
-                        stringResource(
-                            if (
-                                authorization == CameraAuthorizationState.RESTRICTED ||
-                                authorization == CameraAuthorizationState.UNAVAILABLE
-                            ) {
-                                R.string.add_wallet_scan_restricted
-                            } else {
-                                R.string.add_wallet_scan_permission
-                            }
-                        ),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
                 if (
                     authorization == CameraAuthorizationState.NOT_DETERMINED ||
                     authorization == CameraAuthorizationState.DENIED
@@ -216,8 +259,8 @@ object NwcWalletConnectionTestTags {
     const val SCREEN = "nwc_wallet_screen"
     const val URI_FIELD = "nwc_wallet_uri_field"
     const val PASTE_BUTTON = "nwc_wallet_paste_button"
+    const val CONNECT_BUTTON = "nwc_wallet_connect_button"
     const val CAMERA_CARD = "nwc_wallet_camera_card"
-    const val CAMERA_PREVIEW = "nwc_wallet_camera_preview"
     const val CONFIRM_DIALOG = "nwc_wallet_confirm_dialog"
     const val DIALOG_LOADING = "nwc_wallet_dialog_loading"
     const val DIALOG_DETAILS = "nwc_wallet_dialog_details"

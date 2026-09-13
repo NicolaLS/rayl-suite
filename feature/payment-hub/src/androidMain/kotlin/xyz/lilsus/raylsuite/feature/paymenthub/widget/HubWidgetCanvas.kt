@@ -1,14 +1,13 @@
 package xyz.lilsus.raylsuite.feature.paymenthub.widget
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,18 +20,17 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DragIndicator
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
@@ -41,7 +39,12 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
@@ -51,9 +54,12 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import kotlinx.coroutines.delay
 import xyz.lilsus.raylsuite.feature.paymenthub.HubWidgetTile
+import xyz.lilsus.raylsuite.feature.paymenthub.HubWidgetVariant
 import xyz.lilsus.raylsuite.feature.paymenthub.R
 import xyz.lilsus.raylsuite.feature.paymenthub.WidgetHubState
 import xyz.lilsus.raylsuite.feature.paymenthub.WidgetHubViewModel
@@ -68,70 +74,28 @@ internal fun HubWidgetCanvas(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.End,
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp)
-        ) {
-            if (state.widgets.isNotEmpty()) {
-                TextButton(onClick = { viewModel.setArranging(!state.arranging) }) {
-                    Text(
-                        stringResource(
-                            if (state.arranging) {
-                                R.string.hub_canvas_done
-                            } else {
-                                R.string.hub_canvas_edit
-                            }
-                        )
-                    )
-                }
-            }
-            IconButton(onClick = viewModel::openGallery) {
-                Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.hub_widget_add))
-            }
-        }
         state.error?.let { error ->
             Text(
                 error.label(state.selectedVariant?.capacity ?: 1),
                 color = MaterialTheme.colorScheme.error,
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).semantics {
-                    liveRegion =
-                        LiveRegionMode.Assertive
+                    liveRegion = LiveRegionMode.Assertive
                 }
             )
         }
-        if (state.widgets.isEmpty()) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.fillMaxSize().padding(32.dp)
-            ) {
-                Text(
-                    stringResource(R.string.hub_widget_empty_title),
-                    style = MaterialTheme.typography.headlineSmall
-                )
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    stringResource(R.string.hub_widget_empty_body),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                Spacer(Modifier.height(24.dp))
-                OutlinedButton(onClick = viewModel::openGallery) {
-                    Icon(Icons.Filled.Add, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text(stringResource(R.string.hub_widget_add))
-                }
-            }
-        } else {
-            Box(contentAlignment = Alignment.TopCenter, modifier = Modifier.fillMaxSize()) {
+        Box(contentAlignment = Alignment.TopCenter, modifier = Modifier.fillMaxSize()) {
+            BoxWithConstraints(Modifier.widthIn(max = 1100.dp).fillMaxWidth()) {
+                val scrollState = rememberScrollState()
                 WidgetGrid(
                     state = state,
                     viewModel = viewModel,
-                    modifier = Modifier.widthIn(max = 1100.dp).fillMaxWidth()
-                        .verticalScroll(
-                            rememberScrollState()
-                        ).padding(horizontal = 16.dp, vertical = 12.dp)
+                    columns = if (maxWidth >= 700.dp) 4 else 2,
+                    scrollState = scrollState,
+                    viewportHeight = constraints.maxHeight.toFloat(),
+                    modifier = Modifier.fillMaxWidth()
+                        .verticalScroll(scrollState)
+                        .padding(horizontal = 16.dp, vertical = 16.dp)
                 )
             }
         }
@@ -139,22 +103,81 @@ internal fun HubWidgetCanvas(
 }
 
 @Composable
-private fun WidgetGrid(state: WidgetHubState, viewModel: WidgetHubViewModel, modifier: Modifier) {
+private fun WidgetGrid(
+    state: WidgetHubState,
+    viewModel: WidgetHubViewModel,
+    columns: Int,
+    scrollState: ScrollState,
+    viewportHeight: Float,
+    modifier: Modifier
+) {
     var draggingId by remember { mutableStateOf<String?>(null) }
     var dragOffset by remember { mutableStateOf(Offset.Zero) }
     var dragStart by remember { mutableStateOf(Offset.Zero) }
     var dropId by remember { mutableStateOf<String?>(null) }
+    var dragScrollStart by remember { mutableStateOf(0) }
+    DisposableEffect(viewModel) {
+        onDispose { viewModel.setArranging(false) }
+    }
     val gap = 12.dp
     BoxWithConstraints(modifier) {
-        val columns = if (maxWidth >= 700.dp) 4 else 2
         val unit = (maxWidth - gap * (columns - 1)) / columns
         val placements = remember(state.widgets, columns) {
             packHubGrid(state.widgets, columns) { HubGridSpan(it.variant.columns, it.variant.rows) }
         }
-        val rows = placements.gridRowCount()
+        val occupiedRows = placements.gridRowCount()
+        // The Add tile stays after the widgets, using a free cell on the final occupied row.
+        val lastRow = (occupiedRows - 1).coerceAtLeast(0)
+        val freeColumn = (0 until columns).firstOrNull { column ->
+            placements.none { placement ->
+                column in placement.column until placement.column + placement.columns &&
+                    lastRow in placement.row until placement.row + placement.rows
+            }
+        }
+        val addColumn = freeColumn ?: 0
+        val addRow = if (freeColumn != null) lastRow else occupiedRows
+        val rows = maxOf(occupiedRows, addRow + 1)
         val density = LocalDensity.current
         val stridePx = with(density) { (unit + gap).toPx() }
         val gapPx = with(density) { gap.toPx() }
+        val gutterPx = with(density) { 16.dp.toPx() }
+        val scrollEdgePx = with(density) { 64.dp.toPx() }
+        val maxScrollStepPx = with(density) { 12.dp.toPx() }
+
+        fun updateDropTarget() {
+            val dragged = placements.firstOrNull { it.value.id == draggingId } ?: return
+            val point = Offset(stridePx * dragged.column, stridePx * dragged.row) +
+                dragStart + dragOffset + Offset(0f, (scrollState.value - dragScrollStart).toFloat())
+            dropId = placements.firstOrNull { other ->
+                val left = stridePx * other.column
+                val top = stridePx * other.row
+                val right = stridePx * (other.column + other.columns) - gapPx
+                val bottom = stridePx * (other.row + other.rows) - gapPx
+                other.value.id != draggingId && point.x in left..right && point.y in top..bottom
+            }?.value?.id
+        }
+
+        LaunchedEffect(draggingId) {
+            while (draggingId != null) {
+                val dragged = placements.firstOrNull { it.value.id == draggingId } ?: break
+                val pointerY = stridePx * dragged.row + dragStart.y + dragOffset.y +
+                    gutterPx - dragScrollStart
+                val scroll = when {
+                    pointerY < scrollEdgePx ->
+                        -((scrollEdgePx - pointerY) / scrollEdgePx).coerceIn(0f, 1f)
+
+                    pointerY > viewportHeight - scrollEdgePx ->
+                        ((pointerY - viewportHeight + scrollEdgePx) / scrollEdgePx).coerceIn(0f, 1f)
+
+                    else -> 0f
+                }
+                if (scroll != 0f) {
+                    scrollState.scrollBy(scroll * maxScrollStepPx)
+                    updateDropTarget()
+                }
+                delay(16L)
+            }
+        }
         Box(Modifier.fillMaxWidth().height(unit * rows + gap * (rows - 1).coerceAtLeast(0))) {
             placements.forEachIndexed { index, placement ->
                 val tile = placement.value
@@ -165,39 +188,33 @@ private fun WidgetGrid(state: WidgetHubState, viewModel: WidgetHubViewModel, mod
                             viewModel.setArranging(true)
                             draggingId = tile.id
                             dragStart = offset
+                            dragScrollStart = scrollState.value
                             dragOffset = Offset.Zero
                             dropId = null
                         },
                         onDrag = { offset ->
                             dragOffset = offset
-                            val point =
-                                Offset(stridePx * placement.column, stridePx * placement.row) +
-                                    dragStart +
-                                    offset
-                            dropId = placements.firstOrNull { other ->
-                                val left = stridePx * other.column
-                                val top = stridePx * other.row
-                                val right = stridePx * (other.column + other.columns) - gapPx
-                                val bottom = stridePx * (other.row + other.rows) - gapPx
-                                other.value.id != tile.id &&
-                                    point.x in left..right && point.y in top..bottom
-                            }?.value?.id
+                            updateDropTarget()
                         },
                         onEnd = {
                             dropId?.let { viewModel.moveWidget(tile.id, it) }
                             draggingId = null
                             dragOffset = Offset.Zero
                             dropId = null
+                            viewModel.setArranging(false)
                         },
                         onCancel = {
                             draggingId = null
                             dragOffset = Offset.Zero
                             dropId = null
+                            viewModel.setArranging(false)
                         }
                     )
                     WidgetCanvasTile(
                         tile = tile,
-                        arranging = state.arranging,
+                        interactive = !state.busy && draggingId == null,
+                        variants = state.gallery.firstOrNull { it.id == tile.definitionId }
+                            ?.variants.orEmpty(),
                         canMoveUp = index > 0,
                         canMoveDown = index < placements.lastIndex,
                         dropTarget = dropId == tile.id,
@@ -212,14 +229,65 @@ private fun WidgetGrid(state: WidgetHubState, viewModel: WidgetHubViewModel, mod
                             .zIndex(if (dragging) 2f else 0f)
                             .graphicsLayer {
                                 translationX = if (dragging) dragOffset.x else 0f
-                                translationY = if (dragging) dragOffset.y else 0f
+                                translationY = if (dragging) {
+                                    dragOffset.y + scrollState.value - dragScrollStart
+                                } else {
+                                    0f
+                                }
                                 scaleX = if (dragging) 1.03f else 1f
                                 scaleY = if (dragging) 1.03f else 1f
                                 alpha = if (dragging) 0.9f else 1f
-                            }.then(dragModifier)
+                            }.then(if (state.busy) Modifier else dragModifier)
                     )
                 }
             }
+            AddWidgetTile(
+                enabled = !state.busy,
+                onClick = viewModel::openGallery,
+                modifier = Modifier.offset(
+                    x = (unit + gap) * addColumn,
+                    y = (unit + gap) * addRow
+                ).size(unit)
+            )
+        }
+    }
+}
+
+@Composable
+private fun AddWidgetTile(enabled: Boolean, onClick: () -> Unit, modifier: Modifier) {
+    val borderColor = MaterialTheme.colorScheme.outlineVariant
+    Surface(
+        onClick = onClick,
+        enabled = enabled,
+        shape = MaterialTheme.shapes.extraLarge,
+        color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.5f),
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = modifier.drawWithContent {
+            drawContent()
+            val stroke = 1.5.dp.toPx()
+            drawRoundRect(
+                color = borderColor,
+                topLeft = Offset(stroke / 2, stroke / 2),
+                size = Size(size.width - stroke, size.height - stroke),
+                cornerRadius = CornerRadius(28.dp.toPx()),
+                style = Stroke(
+                    width = stroke,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(6.dp.toPx(), 5.dp.toPx()))
+                )
+            )
+        }
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            modifier = Modifier.padding(12.dp)
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = null)
+            Text(
+                stringResource(R.string.hub_widget_add),
+                style = MaterialTheme.typography.titleSmall,
+                textAlign = TextAlign.Center
+            )
         }
     }
 }
@@ -227,7 +295,8 @@ private fun WidgetGrid(state: WidgetHubState, viewModel: WidgetHubViewModel, mod
 @Composable
 private fun WidgetCanvasTile(
     tile: HubWidgetTile,
-    arranging: Boolean,
+    interactive: Boolean,
+    variants: List<HubWidgetVariant>,
     canMoveUp: Boolean,
     canMoveDown: Boolean,
     dropTarget: Boolean,
@@ -235,6 +304,7 @@ private fun WidgetCanvasTile(
     modifier: Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var choosingLayout by remember { mutableStateOf(false) }
     val edit = stringResource(R.string.hub_widget_edit)
     val remove = stringResource(R.string.hub_configure_delete)
     val moveUp = stringResource(R.string.hub_action_move_up)
@@ -287,61 +357,78 @@ private fun WidgetCanvasTile(
             tile,
             onPay = viewModel::pay,
             modifier = Modifier.fillMaxSize(),
-            interactive = !arranging
+            interactive = interactive,
+            headerTrailingPadding = 24.dp
         )
-        if (arranging) {
-            Surface(
-                color = MaterialTheme.colorScheme.surface,
-                shape = MaterialTheme.shapes.small,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
-                modifier = Modifier.align(Alignment.TopEnd).padding(4.dp)
+        Box(modifier = Modifier.align(Alignment.TopEnd)) {
+            IconButton(
+                onClick = {
+                    choosingLayout = false
+                    expanded = true
+                },
+                enabled = interactive,
+                modifier = Modifier.size(48.dp)
             ) {
-                Box {
-                    IconButton(onClick = { expanded = true }, modifier = Modifier.size(48.dp)) {
-                        Icon(
-                            Icons.Filled.MoreHoriz,
-                            contentDescription = stringResource(R.string.hub_widget_options)
+                Icon(
+                    Icons.Filled.MoreHoriz,
+                    contentDescription = stringResource(R.string.hub_widget_options),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                if (choosingLayout) {
+                    DropdownMenuItem(text = {
+                        Text(stringResource(R.string.hub_new_back))
+                    }, onClick = {
+                        choosingLayout = false
+                    })
+                    variants.forEach { variant ->
+                        DropdownMenuItem(
+                            text = { Text(variant.title ?: variant.label()) },
+                            enabled = variant.id != tile.variant.id,
+                            onClick = {
+                                expanded = false
+                                viewModel.editWidget(tile.id)
+                                if (viewModel.state.value.editor?.existingWidgetId == tile.id) {
+                                    viewModel.selectVariant(variant.id)
+                                    viewModel.configureSelected()
+                                }
+                            }
                         )
                     }
-                    DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                        DropdownMenuItem(text = { Text(edit) }, onClick = {
-                            expanded = false
-                            viewModel.editWidget(tile.id)
-                        })
-                        if (tile.unavailable) {
-                            DropdownMenuItem(text = {
-                                Text(stringResource(R.string.hub_widget_retry))
-                            }, onClick = {
-                                expanded =
-                                    false
-                                viewModel.refreshContent()
-                            })
-                        }
-                        DropdownMenuItem(text = { Text(moveUp) }, enabled = canMoveUp, onClick = {
-                            expanded =
-                                false
-                            viewModel.moveWidgetBy(tile.id, -1)
-                        })
+                } else {
+                    DropdownMenuItem(text = { Text(edit) }, onClick = {
+                        expanded = false
+                        viewModel.editWidget(tile.id)
+                    })
+                    if (variants.size > 1) {
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.hub_widget_select_variant)) },
+                            onClick = { choosingLayout = true }
+                        )
+                    }
+                    if (tile.unavailable) {
                         DropdownMenuItem(text = {
-                            Text(moveDown)
-                        }, enabled = canMoveDown, onClick = {
-                            expanded =
-                                false
-                            viewModel.moveWidgetBy(tile.id, 1)
-                        })
-                        DropdownMenuItem(text = { Text(remove) }, onClick = {
+                            Text(stringResource(R.string.hub_widget_retry))
+                        }, onClick = {
                             expanded = false
-                            viewModel.removeWidget(tile.id)
+                            viewModel.refreshContent()
                         })
                     }
+                    DropdownMenuItem(text = { Text(moveUp) }, enabled = canMoveUp, onClick = {
+                        expanded = false
+                        viewModel.moveWidgetBy(tile.id, -1)
+                    })
+                    DropdownMenuItem(text = { Text(moveDown) }, enabled = canMoveDown, onClick = {
+                        expanded = false
+                        viewModel.moveWidgetBy(tile.id, 1)
+                    })
+                    DropdownMenuItem(text = { Text(remove) }, onClick = {
+                        expanded = false
+                        viewModel.removeWidget(tile.id)
+                    })
                 }
             }
-            Icon(
-                Icons.Filled.DragIndicator,
-                contentDescription = stringResource(R.string.hub_canvas_move),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.align(Alignment.TopStart).padding(10.dp).size(16.dp)
-            )
         }
     }
 }

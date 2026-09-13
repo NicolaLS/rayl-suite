@@ -11,6 +11,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -100,7 +101,7 @@ fun WalletConnectionContent(
         }
     }
     if (state.confirmRemoval) {
-        RemovalConfirmation(dispatch)
+        WalletRemovalConfirmation(dispatch)
     }
 }
 
@@ -228,13 +229,19 @@ private fun RecoveryContent(
 }
 
 @Composable
-private fun RemovalConfirmation(dispatch: (WalletAction) -> Unit) {
+fun WalletRemovalConfirmation(dispatch: (WalletAction) -> Unit, canRemove: Boolean = true) {
     AlertDialog(
         onDismissRequest = { dispatch(WalletAction.CancelRemoval) },
         title = { Text(stringResource(R.string.wallet_remove_title)) },
         text = { Text(stringResource(R.string.wallet_remove_body)) },
         confirmButton = {
-            TextButton(onClick = { dispatch(WalletAction.ConfirmRemoval) }) {
+            TextButton(
+                enabled = canRemove,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.error
+                ),
+                onClick = { dispatch(WalletAction.ConfirmRemoval) }
+            ) {
                 Text(stringResource(R.string.wallet_remove_confirm))
             }
         },

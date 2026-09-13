@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -40,6 +39,7 @@ import xyz.lilsus.rayl.shared.R
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
 import xyz.lilsus.raylsuite.core.ui.theme.RaylSuiteTheme
+import xyz.lilsus.raylsuite.feature.onboarding.WelcomeScreen
 import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
 
@@ -115,7 +115,15 @@ fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
                 )
 
                 null -> Surface(modifier = Modifier.fillMaxSize()) {
-                    if (welcomeCompleted && RAYL_AVAILABLE_WALLETS.size == 1) {
+                    if (!welcomeCompleted) {
+                        WelcomeScreen(
+                            title = stringResource(R.string.welcome_title),
+                            subtitle = "",
+                            description = stringResource(R.string.welcome_body),
+                            actionTitle = stringResource(R.string.get_started),
+                            onGetStarted = selection::completeWelcome
+                        )
+                    } else if (RAYL_AVAILABLE_WALLETS.size == 1) {
                         LaunchedEffect(selection) {
                             selection.choose(RAYL_AVAILABLE_WALLETS.single())
                         }
@@ -133,42 +141,19 @@ fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
                             verticalArrangement = Arrangement.spacedBy(20.dp)
                         ) {
                             Text(
-                                stringResource(
-                                    if (welcomeCompleted) {
-                                        R.string.choose_wallet
-                                    } else {
-                                        R.string.welcome_title
-                                    }
-                                ),
+                                stringResource(R.string.choose_wallet),
                                 style = MaterialTheme.typography.headlineLarge
                             )
-                            Text(
-                                stringResource(
-                                    if (welcomeCompleted) {
-                                        R.string.choose_body
-                                    } else {
-                                        R.string.welcome_body
-                                    }
-                                )
-                            )
-                            if (!welcomeCompleted) {
-                                Button(
-                                    onClick = selection::completeWelcome,
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(stringResource(R.string.get_started))
-                                }
-                            } else {
-                                RAYL_AVAILABLE_WALLETS.forEach { available ->
-                                    val (title, body) = when (available) {
-                                        RaylWallet.Blink ->
-                                            R.string.blink_title to
-                                                R.string.blink_body
+                            Text(stringResource(R.string.choose_body))
+                            RAYL_AVAILABLE_WALLETS.forEach { available ->
+                                val (title, body) = when (available) {
+                                    RaylWallet.Blink ->
+                                        R.string.blink_title to
+                                            R.string.blink_body
 
-                                        RaylWallet.Nwc -> R.string.nwc_title to R.string.nwc_body
-                                    }
-                                    WalletChoice(title, body) { selection.choose(available) }
+                                    RaylWallet.Nwc -> R.string.nwc_title to R.string.nwc_body
                                 }
+                                WalletChoice(title, body) { selection.choose(available) }
                             }
                         }
                     }

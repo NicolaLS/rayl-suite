@@ -53,19 +53,19 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Richte den QR-Code im Rahmen aus."
+            "value": "Richte die Kamera auf den QR-Code. Der Scan funktioniert ohne Kameravorschau."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Align the QR code within the frame."
+            "value": "Point your camera at the QR code. Scanning works without a camera preview."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Alinea el código QR dentro del marco."
+            "value": "Apunta la cámara al código QR. El escaneo funciona sin vista previa de la cámara."
           }
         }
       }
@@ -158,6 +158,29 @@
           "stringUnit": {
             "state": "translated",
             "value": "Intentar de nuevo"
+          }
+        }
+      }
+    },
+    "add_wallet_scan_unavailable": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The camera could not start. Reopen this screen to try again, or paste the connection string."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Kamera konnte nicht gestartet werden. Öffne diesen Bildschirm erneut, um es noch einmal zu versuchen, oder füge den Verbindungsstring ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo iniciar la cámara. Vuelve a abrir esta pantalla para reintentarlo o pega la cadena de conexión."
           }
         }
       }

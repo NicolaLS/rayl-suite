@@ -1,17 +1,20 @@
 package xyz.lilsus.blip.feature.walletconnection
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -86,6 +89,38 @@ fun AddBlinkWalletScreen(
                 },
                 scrollBehavior = scrollBehavior
             )
+        },
+        bottomBar = {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
+                    .imePadding(),
+                contentAlignment = Alignment.Center
+            ) {
+                Button(
+                    onClick = submitOrClearFocus,
+                    enabled = state.canSubmit,
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier
+                        .widthIn(max = 608.dp)
+                        .fillMaxWidth()
+                        .padding(24.dp)
+                        .heightIn(min = 48.dp)
+                        .testTag(BlinkWalletConnectionTestTags.CONNECT_BUTTON)
+                ) {
+                    if (state.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.padding(end = 8.dp).size(18.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.add_blink_wallet_connect),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                }
+            }
         }
     ) { padding ->
         Column(
@@ -93,10 +128,8 @@ fun AddBlinkWalletScreen(
                 .fillMaxSize()
                 .padding(padding)
                 .consumeWindowInsets(padding)
-                .navigationBarsPadding()
-                .imePadding()
-                .padding(horizontal = 16.dp, vertical = 24.dp)
                 .verticalScroll(rememberScrollState())
+                .padding(24.dp)
                 .testTag(BlinkWalletConnectionTestTags.SCREEN),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
@@ -209,24 +242,6 @@ fun AddBlinkWalletScreen(
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall
                 )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Button(
-                onClick = onSubmit,
-                enabled = state.canSubmit,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(BlinkWalletConnectionTestTags.CONNECT_BUTTON)
-            ) {
-                if (state.isSaving) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(end = 8.dp),
-                        strokeWidth = 2.dp
-                    )
-                }
-                Text(text = stringResource(R.string.add_blink_wallet_connect))
             }
         }
     }

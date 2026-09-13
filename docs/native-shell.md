@@ -2,12 +2,19 @@
 
 The suite defines four possible destinations: **Scan**, **Recent**, **Hub**, and **Settings**.
 Blip currently exposes Scan, Hub, and Settings and presents session history from Scan. Flint and
-Lasr expose all four destinations. Rayl mounts Blink’s three-tab experience or NWC’s
-four-tab experience, after a Rayl-owned wallet choice and provider-specific setup.
+Lasr expose all four destinations. Rayl 1.0 mounts Blink’s three-tab experience after
+its welcome and connection setup; NWC composition remains for future releases.
+
+In Rayl and Blip, the Recent button opens a session-history screen on both platforms.
+iOS uses one navigation stack from Scan through Recent to a receipt, with native
+Back and swipe-back navigation. Returning to Scan clears the previous transaction
+selection before the camera resumes. Flint and Lasr retain their dedicated Recent tabs.
 
 Android renders the selected product's destinations with the Material 3 shell in
 `feature:app-shell/androidMain`. Each app supplies its own Android tab content from its
-`androidMain` composition root.
+`androidMain` composition root. The shell saves each tab's local navigation state when
+switching away, so returning to Settings restores the open subpage. Wallet subpages
+handle Android system Back and toolbar Back with the same parent destination.
 
 iOS renders a real SwiftUI `TabView` from the single shared
 `feature/app-shell/src/iosMain/swift/NativeAppShell.swift` source. An app-local `ContentView`
