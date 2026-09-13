@@ -24,7 +24,14 @@
     <string name="result_paid_fee">Comisión: %1$s</string>
     <string name="result_already_paid_title">Ya pagada</string>
     <string name="result_already_paid_message">No se envió ningún pago. Esta factura ya fue pagada.</string>
-    <string name="result_view_receipt">Ver recibo</string>
+    <string name="receipt_amount">Importe</string>
+    <string name="receipt_fee">Comisión</string>
+    <string name="receipt_recipient">Destinatario</string>
+    <string name="receipt_domain">Dominio</string>
+    <string name="receipt_timestamp">Fecha y hora</string>
+    <string name="receipt_preimage">Preimagen</string>
+    <string name="receipt_copy_preimage">Copiar preimagen</string>
+    <string name="receipt_copied">Copiado</string>
     <string name="result_receipt_title">Recibo de pago</string>
     <string name="result_receipt_body_prefix">Este es el </string>
     <string name="result_receipt_body_preimage">preimage</string>

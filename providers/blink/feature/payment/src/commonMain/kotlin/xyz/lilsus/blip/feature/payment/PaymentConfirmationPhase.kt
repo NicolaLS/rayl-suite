@@ -84,7 +84,8 @@ internal class PaymentConfirmationPhase(
                 amountOverrideMsats = request.amountOverrideMsats,
                 fundingWallet = fundingWallet,
                 fundingAmountCents = fundingAmountCents,
-                targetContext = request.targetContext
+                targetContext = request.targetContext,
+                lnurlPayDisplay = request.lnurlPayDisplay
             )
         if (!requiresConfirmation) {
             return ConfirmationResult.Execute(payment)

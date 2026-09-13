@@ -42,9 +42,7 @@ suspend fun PaymentUiState.toNativePaymentScreenState(): PaymentScreenState = wh
         PaymentScreenState.Success(
             amountPaid = amountPaid,
             feePaid = feePaid,
-            showEstimatedFeeHint = showEstimatedFeeHint,
-            wasAlreadyPaid = wasAlreadyPaid,
-            preimage = preimage
+            wasAlreadyPaid = wasAlreadyPaid
         )
 
     is PaymentUiState.Error -> PaymentScreenState.Error(getBlipPaymentErrorMessageFor(error))
@@ -74,7 +72,8 @@ suspend fun SessionTransactionItem.toNativeRecentItem(
 
             TransactionStatus.AlreadyPaid -> null
         },
-    detailState = toDetailUiState().toNativePaymentScreenState()
+    detailState = toDetailUiState().toNativePaymentScreenState(),
+    receipt = receipt
 )
 
 private suspend fun TransactionStatus.nativeStatusLabel(): String = nativeString(

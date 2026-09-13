@@ -33,8 +33,6 @@ class NativePaymentScanController(
     private val messages = MutableSharedFlow<String>(extraBufferCapacity = 8)
 
     private var input: NativePaymentScanInput? = null
-    private var receiptVisible = false
-    private var lastReceiptPreimage: String? = null
     private var screenActive = false
     private var scannerStarted = false
     private var scannerRestartAttempts = 0
@@ -58,7 +56,6 @@ class NativePaymentScanController(
     suspend fun update(
         payment: PaymentScreenState,
         appTitle: String,
-        estimatedFeeHint: String?,
         savePrompt: HubSavePrompt?,
         recentCount: Int = 0,
         newRecentCount: Int = 0
@@ -82,18 +79,10 @@ class NativePaymentScanController(
                     publishSnapshot()
                 }
         }
-        val nextPreimage =
-            (payment as? PaymentScreenState.Success)
-                ?.preimage
-                ?.trim()
-                ?.takeIf(String::isNotEmpty)
-        if (nextPreimage != lastReceiptPreimage) receiptVisible = false
-        lastReceiptPreimage = nextPreimage
         input =
             NativePaymentScanInput(
                 payment = payment,
                 appTitle = appTitle,
-                estimatedFeeHint = estimatedFeeHint,
                 savePrompt = savePrompt,
                 recentCount = recentCount,
                 newRecentCount = newRecentCount
@@ -124,14 +113,7 @@ class NativePaymentScanController(
         scope.launch { publishSnapshot() }
     }
 
-    fun viewReceipt() {
-        if (lastReceiptPreimage == null) return
-        receiptVisible = true
-        scope.launch { publishSnapshot() }
-    }
-
     fun dismissResult() {
-        receiptVisible = false
         onPaymentIntent(PaymentIntent.DismissResult)
     }
 
@@ -195,9 +177,7 @@ class NativePaymentScanController(
             nativePaymentScanSnapshot(
                 payment = current.payment,
                 appTitle = current.appTitle,
-                estimatedFeeHint = current.estimatedFeeHint,
                 savePrompt = current.savePrompt,
-                receiptVisible = receiptVisible,
                 showResolvingContent = showResolvingContent,
                 recentCount = current.recentCount,
                 newRecentCount = current.newRecentCount,
@@ -289,7 +269,6 @@ class NativePaymentScanController(
 private data class NativePaymentScanInput(
     val payment: PaymentScreenState,
     val appTitle: String,
-    val estimatedFeeHint: String?,
     val savePrompt: HubSavePrompt?,
     val recentCount: Int,
     val newRecentCount: Int

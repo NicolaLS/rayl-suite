@@ -164,7 +164,6 @@ class FlintIosApp(host: FlintAppHost) {
                     appTitle = nativeString(
                         NativeStringResource(table = "FlintApp", key = "app_name")
                     ),
-                    estimatedFeeHint = null,
                     savePrompt = hubState.savePrompt
                 )
             }.collect {}
@@ -201,7 +200,7 @@ class FlintIosApp(host: FlintAppHost) {
                 controller.update(
                     items = transactions.map { it.toNativeRecentItem() },
                     selectedTransactionId = selectedId,
-                    estimatedFeeHint = null
+                    receiptFeeInformation = null
                 )
             }.collect {}
         }

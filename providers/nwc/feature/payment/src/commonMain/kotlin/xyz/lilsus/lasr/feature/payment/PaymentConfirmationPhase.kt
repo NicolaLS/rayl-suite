@@ -37,7 +37,8 @@ internal class PaymentConfirmationPhase(
         val payment = ExecutablePayment(
             invoice = request.invoice,
             amountOverrideMsats = request.amountOverrideMsats,
-            targetContext = request.targetContext
+            targetContext = request.targetContext,
+            lnurlPayDisplay = request.lnurlPayDisplay
         )
         if (!requiresConfirmation) return ConfirmationResult.Execute(payment)
 

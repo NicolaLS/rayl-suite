@@ -11,7 +11,6 @@ import UIKit
 /// from whatever was on screen at that instant.
 struct RaylHeroView: View {
     let phase: String
-    let receiptPreimage: String?
 
     @Environment(\.colorScheme) private var colorScheme
     @State private var phaseStart = Date()
@@ -19,31 +18,17 @@ struct RaylHeroView: View {
     @State private var fromTint: HeroTint?
 
     var body: some View {
-        Group {
-            if let receiptPreimage, !receiptPreimage.isEmpty {
-                GeometryReader { proxy in
-                    let side = min(
-                        proxy.size.width * heroGeometry.canvasWidthFraction,
-                        proxy.size.height
-                    )
-                    HeroQrCard(data: receiptPreimage)
-                        .frame(width: side, height: side)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            } else {
-                animation
+        animation
+            .onChange(of: phase) { previous, _ in
+                let elapsed = Date().timeIntervalSince(phaseStart)
+                fromFrame = heroFrame(
+                    phase: HeroPhase(previous),
+                    elapsed: elapsed,
+                    from: fromFrame
+                )
+                fromTint = tint(toward: targetTint(for: previous), elapsed: elapsed)
+                phaseStart = Date()
             }
-        }
-        .onChange(of: phase) { previous, _ in
-            let elapsed = Date().timeIntervalSince(phaseStart)
-            fromFrame = heroFrame(
-                phase: HeroPhase(previous),
-                elapsed: elapsed,
-                from: fromFrame
-            )
-            fromTint = tint(toward: targetTint(for: previous), elapsed: elapsed)
-            phaseStart = Date()
-        }
     }
 
     /// The canvas fills the whole hero area and the drawing is centred inside it. SwiftUI's
@@ -625,7 +610,7 @@ private func keyframe(_ time: Double, _ points: [(Double, Double)], eased: Bool)
 
 // MARK: - Receipt
 
-private struct HeroQrCard: View {
+struct NativePaymentPreimageQrCode: View {
     let data: String
 
     var body: some View {
@@ -702,15 +687,11 @@ private struct HeroPhasePreview: View {
     ]
 
     @State private var phase = "ready"
-    @State private var showsReceipt = false
 
     var body: some View {
         VStack(spacing: 24) {
-            RaylHeroView(
-                phase: phase,
-                receiptPreimage: showsReceipt ? String(repeating: "a1b2c3d4", count: 8) : nil
-            )
-            .frame(height: 360)
+            RaylHeroView(phase: phase)
+                .frame(height: 360)
 
             Picker("Phase", selection: $phase) {
                 ForEach(Self.phases, id: \.self) { value in
@@ -718,8 +699,6 @@ private struct HeroPhasePreview: View {
                 }
             }
             .pickerStyle(.segmented)
-
-            Toggle("Receipt", isOn: $showsReceipt)
 
             Spacer()
         }

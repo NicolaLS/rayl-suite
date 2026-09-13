@@ -18,7 +18,8 @@ data class NativePaymentRecentItem(
     val statusTone: String,
     val createdAtMs: Long,
     val supportingText: String?,
-    val detailState: PaymentScreenState
+    val detailState: PaymentScreenState,
+    val receipt: PaymentReceiptDetails? = null
 ) {
     init {
         require(
@@ -41,8 +42,8 @@ data class NativePaymentRecentSnapshot(
 data class NativePaymentRecentDetail(
     val id: String,
     val heroPhase: String,
-    val receiptPreimage: String?,
-    val content: NativePaymentScanContent
+    val content: NativePaymentScanContent,
+    val receipt: NativePaymentReceiptContent?
 )
 
 /** Native Recent host boundary. Its inputs are already localized, app-owned projections. */
@@ -55,9 +56,7 @@ class NativePaymentRecentController(
 
     private var items: List<NativePaymentRecentItem> = emptyList()
     private var selectedTransactionId: String? = null
-    private var estimatedFeeHint: String? = null
-    private var receiptVisible = false
-    private var lastReceiptPreimage: String? = null
+    private var receiptFeeInformation: String? = null
     private var active = false
 
     fun observe(onChange: (NativePaymentRecentSnapshot) -> Unit): () -> Unit {
@@ -68,17 +67,11 @@ class NativePaymentRecentController(
     suspend fun update(
         items: List<NativePaymentRecentItem>,
         selectedTransactionId: String?,
-        estimatedFeeHint: String?
+        receiptFeeInformation: String?
     ) {
-        val selected = items.firstOrNull { it.id == selectedTransactionId }
-        val nextPreimage = selected?.detailState?.receiptPreimage()
-        if (selected?.id != this.selectedTransactionId || nextPreimage != lastReceiptPreimage) {
-            receiptVisible = false
-        }
         this.items = items
         this.selectedTransactionId = selectedTransactionId
-        this.estimatedFeeHint = estimatedFeeHint
-        lastReceiptPreimage = nextPreimage
+        this.receiptFeeInformation = receiptFeeInformation
         publishSnapshot()
     }
 
@@ -88,20 +81,12 @@ class NativePaymentRecentController(
     }
 
     fun selectTransaction(id: String) {
-        receiptVisible = false
         onSelectTransaction(id)
     }
 
     fun closeDetail() {
-        receiptVisible = false
         onSelectTransaction(null)
         onIntent(PaymentIntent.DismissResult)
-    }
-
-    fun viewReceipt() {
-        if (lastReceiptPreimage == null) return
-        receiptVisible = true
-        scope.launch { publishSnapshot() }
     }
 
     fun clear() {
@@ -131,12 +116,7 @@ class NativePaymentRecentController(
         NativePaymentRecentDetail(
             id = id,
             heroPhase = detailState.toNativeHeroPhaseValue(),
-            receiptPreimage = detailState.receiptPreimage().takeIf { receiptVisible },
-            content = detailState.toNativeRecentDetailContent(estimatedFeeHint, receiptVisible)
+            content = detailState.toNativeRecentDetailContent(),
+            receipt = receipt?.toNativeContent(receiptFeeInformation)
         )
 }
-
-private fun PaymentScreenState.receiptPreimage(): String? = (this as? PaymentScreenState.Success)
-    ?.preimage
-    ?.trim()
-    ?.takeIf(String::isNotEmpty)

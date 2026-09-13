@@ -12,8 +12,8 @@ import xyz.lilsus.raylsuite.feature.paymentui.R
 import xyz.lilsus.raylsuite.feature.paymentui.components.SessionTransactionsScreen
 
 /**
- * This session's payments and the detail of one of them. The selected transaction is hoisted so a
- * result on the Scan tab can open its detail directly.
+ * This session's payments and their receipts. The selected transaction is hoisted so a result on
+ * the Scan tab can open its receipt directly.
  *
  * [onBack] is supplied only by a product that reaches this screen from Scan instead of a tab; it
  * adds the back control and makes system back leave the list.
@@ -21,7 +21,7 @@ import xyz.lilsus.raylsuite.feature.paymentui.components.SessionTransactionsScre
 @Composable
 fun PaymentRecentScreen(
     state: PaymentFlowState,
-    estimatedFeeHint: String?,
+    receiptFeeInformation: String?,
     selectedTransactionId: String?,
     onSelectTransaction: (String?) -> Unit,
     onIntent: (PaymentIntent) -> Unit,
@@ -55,7 +55,7 @@ fun PaymentRecentScreen(
     } else {
         PaymentTransactionDetail(
             detail = detail,
-            estimatedFeeHint = estimatedFeeHint,
+            receiptFeeInformation = receiptFeeInformation,
             onIntent = onIntent,
             onBack = { onSelectTransaction(null) }
         )

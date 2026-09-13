@@ -55,5 +55,6 @@ fun rememberPaymentMessages(coordinator: PaymentCoordinator): Flow<String> {
 @Composable
 private fun SessionTransactionItem.toPaymentTransactionDetail() = PaymentTransactionDetail(
     id = id,
-    state = toDetailUiState().toPaymentScreenState(::blipPaymentErrorMessageFor)
+    state = toDetailUiState().toPaymentScreenState(::blipPaymentErrorMessageFor),
+    receipt = receipt
 )

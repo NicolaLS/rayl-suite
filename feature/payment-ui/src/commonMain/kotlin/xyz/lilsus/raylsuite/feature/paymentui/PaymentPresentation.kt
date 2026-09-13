@@ -23,9 +23,7 @@ sealed interface PaymentScreenState {
     data class Success(
         val amountPaid: DisplayAmount,
         val feePaid: DisplayAmount,
-        val showEstimatedFeeHint: Boolean,
-        val wasAlreadyPaid: Boolean,
-        val preimage: String?
+        val wasAlreadyPaid: Boolean
     ) : PaymentScreenState
 
     data class Error(val message: String) : PaymentScreenState
@@ -51,7 +49,23 @@ data class PaymentSessionTransaction(
     val supportingText: String?
 )
 
-data class PaymentTransactionDetail(val id: String, val state: PaymentScreenState) {
+/** Provider-owned history projected into the values a native receipt renders. */
+data class PaymentReceiptDetails(
+    val amount: DisplayAmount,
+    val fee: DisplayAmount,
+    val amountSats: DisplayAmount,
+    val feeSats: DisplayAmount,
+    val createdAtMs: Long,
+    val recipient: String? = null,
+    val domain: String? = null,
+    val preimage: String? = null
+)
+
+data class PaymentTransactionDetail(
+    val id: String,
+    val state: PaymentScreenState,
+    val receipt: PaymentReceiptDetails? = null
+) {
     init {
         require(state is PaymentScreenState.Success || state is PaymentScreenState.Error) {
             "Recent payments must have a resolved result"

@@ -3,13 +3,13 @@ package xyz.lilsus.blip.feature.payment
 import kotlin.time.Clock
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import xyz.lilsus.raylsuite.core.model.DisplayAmount
+import xyz.lilsus.raylsuite.core.model.DisplayCurrency
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentCurrencyManager
+import xyz.lilsus.raylsuite.feature.paymentui.PaymentReceiptDetails
 
 /** Resolved receipts for this process only. In-flight or unconfirmed payments are never history. */
-internal class PaymentHistory(
-    private val currencyManager: PaymentCurrencyManager,
-    private val showEstimatedFeeHint: Boolean
-) {
+internal class PaymentHistory(private val currencyManager: PaymentCurrencyManager) {
     private val receipts = ArrayDeque<PaymentReceipt>()
     private var nextId = 0L
     private val mutableDisplayItems = MutableStateFlow<List<SessionTransactionItem>>(emptyList())
@@ -19,7 +19,9 @@ internal class PaymentHistory(
         paymentHash: String,
         amountMsats: Long,
         result: CompletedPayment? = null,
-        error: PaymentUiError? = null
+        error: PaymentUiError? = null,
+        recipient: String? = null,
+        domain: String? = null
     ) {
         require((result == null) != (error == null))
         receipts.addFirst(
@@ -29,7 +31,9 @@ internal class PaymentHistory(
                 amountMsats = amountMsats,
                 createdAtMs = Clock.System.now().toEpochMilliseconds(),
                 result = result,
-                error = error
+                error = error,
+                recipient = recipient,
+                domain = domain
             )
         )
         if (receipts.size > MAX_RECENT_PAYMENTS) receipts.removeLast()
@@ -60,9 +64,28 @@ internal class PaymentHistory(
                 },
                 fee = result?.let { currencyManager.convertMsatsToDisplay(it.feeMsats, currency) },
                 error = receipt.error,
-                showEstimatedFeeHint = showEstimatedFeeHint,
                 wasAlreadyPaid = result?.wasAlreadyPaid == true,
-                preimage = result?.preimage
+                receipt = result?.takeUnless { it.wasAlreadyPaid }?.let {
+                    PaymentReceiptDetails(
+                        amount = currencyManager.convertMsatsToDisplay(
+                            receipt.amountMsats,
+                            currency
+                        ),
+                        fee = currencyManager.convertMsatsToDisplay(it.feeMsats, currency),
+                        amountSats = DisplayAmount(
+                            receipt.amountMsats / MSATS_PER_SAT,
+                            DisplayCurrency.Satoshi
+                        ),
+                        feeSats = DisplayAmount(
+                            it.feeMsats / MSATS_PER_SAT,
+                            DisplayCurrency.Satoshi
+                        ),
+                        createdAtMs = receipt.createdAtMs,
+                        recipient = receipt.recipient,
+                        domain = receipt.domain,
+                        preimage = it.preimage
+                    )
+                }
             )
         }
     }
@@ -75,6 +98,7 @@ internal class PaymentHistory(
 
     private companion object {
         const val MAX_RECENT_PAYMENTS = 10
+        const val MSATS_PER_SAT = 1_000L
     }
 }
 
@@ -84,5 +108,7 @@ private data class PaymentReceipt(
     val amountMsats: Long,
     val createdAtMs: Long,
     val result: CompletedPayment?,
-    val error: PaymentUiError?
+    val error: PaymentUiError?,
+    val recipient: String?,
+    val domain: String?
 )

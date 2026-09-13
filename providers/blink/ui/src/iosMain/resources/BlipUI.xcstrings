@@ -484,25 +484,25 @@
         }
       }
     },
-    "result_paid_fee_blink_hint" : {
+    "receipt_fee_blink_hint" : {
       "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blink könnte diese Gebühr teilweise erstatten."
+            "value" : "Blink könnte die Gebühr teilweise erstatten. Prüfe deine Blink-Wallet."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blink might refund this fee partially."
+            "value" : "Blink might partially refund the fee. Check your Blink wallet."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blink podría reembolsar parcialmente esta comisión."
+            "value" : "Blink podría reembolsar parte de la comisión. Revisa tu billetera Blink."
           }
         }
       }

@@ -14,7 +14,6 @@ import xyz.lilsus.raylsuite.feature.paymentui.amount.RangeStatus
 
 data class NativePaymentScanSnapshot(
     val heroPhase: String,
-    val receiptPreimage: String?,
     val content: NativePaymentScanContent,
     val sheet: NativePaymentScanSheet?,
     val recent: NativePaymentScanRecentEntry?,
@@ -43,8 +42,6 @@ data class NativePaymentScanContent(
     val subtitle: String?,
     val primaryAmount: String?,
     val secondaryText: String?,
-    val feeHint: String?,
-    val actionTitle: String?,
     val tapToContinue: String?
 )
 
@@ -90,56 +87,44 @@ data class NativeManualAmountReview(
 suspend fun nativePaymentScanSnapshot(
     payment: PaymentScreenState,
     appTitle: String,
-    estimatedFeeHint: String?,
     savePrompt: HubSavePrompt?,
-    receiptVisible: Boolean,
     showResolvingContent: Boolean = true,
     recentCount: Int = 0,
     newRecentCount: Int = 0,
     offersRecentEntryPoint: Boolean = false,
     cameraAuthorization: CameraAuthorizationState = CameraAuthorizationState.AUTHORIZED,
     formatter: AmountFormatter = currentAmountFormatter()
-): NativePaymentScanSnapshot {
-    val receiptPreimage =
-        (payment as? PaymentScreenState.Success)
-            ?.preimage
-            ?.trim()
-            ?.takeIf(String::isNotEmpty)
-    return NativePaymentScanSnapshot(
-        heroPhase = payment.toNativeHeroPhaseValue(),
-        receiptPreimage = receiptPreimage.takeIf { receiptVisible },
-        content =
-            payment.toNativeContent(
-                appTitle = appTitle,
-                estimatedFeeHint = estimatedFeeHint,
-                receiptVisible = receiptVisible && receiptPreimage != null,
-                showResolvingContent = showResolvingContent,
-                formatter = formatter
-            ),
-        sheet = savePrompt?.toNativeSheet() ?: payment.toNativeSheet(formatter),
-        recent =
-            if (
-                offersRecentEntryPoint && recentCount > 0 &&
-                payment !is PaymentScreenState.Loading
-            ) {
-                NativePaymentScanRecentEntry(
-                    title = nativeString(
-                        NativeStringResource(table = "PaymentUI", key = "view_session_transactions")
-                    ),
-                    newTransactionCount = newRecentCount,
-                    transactionCount = recentCount
-                )
-            } else {
-                null
-            },
-        cameraPermission =
-            if (payment == PaymentScreenState.Active) {
-                cameraAuthorization.toNativePermissionContent()
-            } else {
-                null
-            }
-    )
-}
+): NativePaymentScanSnapshot = NativePaymentScanSnapshot(
+    heroPhase = payment.toNativeHeroPhaseValue(),
+    content =
+        payment.toNativeContent(
+            appTitle = appTitle,
+            showResolvingContent = showResolvingContent,
+            formatter = formatter
+        ),
+    sheet = savePrompt?.toNativeSheet() ?: payment.toNativeSheet(formatter),
+    recent =
+        if (
+            offersRecentEntryPoint && recentCount > 0 &&
+            payment !is PaymentScreenState.Loading
+        ) {
+            NativePaymentScanRecentEntry(
+                title = nativeString(
+                    NativeStringResource(table = "PaymentUI", key = "view_session_transactions")
+                ),
+                newTransactionCount = newRecentCount,
+                transactionCount = recentCount
+            )
+        } else {
+            null
+        },
+    cameraPermission =
+        if (payment == PaymentScreenState.Active) {
+            cameraAuthorization.toNativePermissionContent()
+        } else {
+            null
+        }
+)
 
 private suspend fun CameraAuthorizationState.toNativePermissionContent():
     NativeCameraPermissionContent? =
@@ -187,8 +172,6 @@ private suspend fun CameraAuthorizationState.toNativePermissionContent():
 
 private suspend fun PaymentScreenState.toNativeContent(
     appTitle: String,
-    estimatedFeeHint: String?,
-    receiptVisible: Boolean,
     showResolvingContent: Boolean,
     formatter: AmountFormatter
 ): NativePaymentScanContent = when (this) {
@@ -204,8 +187,6 @@ private suspend fun PaymentScreenState.toNativeContent(
                 ),
                 primaryAmount = null,
                 secondaryText = null,
-                feeHint = null,
-                actionTitle = null,
                 tapToContinue = null
             )
         } else {
@@ -214,9 +195,8 @@ private suspend fun PaymentScreenState.toNativeContent(
 
     is PaymentScreenState.Success ->
         when {
-            receiptVisible -> receiptContent()
-            wasAlreadyPaid -> alreadyPaidContent(preimage)
-            else -> successContent(formatter, estimatedFeeHint)
+            wasAlreadyPaid -> alreadyPaidContent()
+            else -> successContent(formatter)
         }
 
     is PaymentScreenState.Error ->
@@ -228,8 +208,6 @@ private suspend fun PaymentScreenState.toNativeContent(
             subtitle = message,
             primaryAmount = null,
             secondaryText = null,
-            feeHint = null,
-            actionTitle = null,
             tapToContinue = nativeString(
                 NativeStringResource(table = "PaymentUI", key = "tap_continue")
             )
@@ -239,13 +217,9 @@ private suspend fun PaymentScreenState.toNativeContent(
 }
 
 internal suspend fun PaymentScreenState.toNativeRecentDetailContent(
-    estimatedFeeHint: String?,
-    receiptVisible: Boolean,
     formatter: AmountFormatter = currentAmountFormatter()
 ): NativePaymentScanContent = toNativeContent(
     appTitle = "",
-    estimatedFeeHint = estimatedFeeHint,
-    receiptVisible = receiptVisible,
     showResolvingContent = true,
     formatter = formatter
 )
@@ -258,31 +232,25 @@ private suspend fun idleContent(appTitle: String) = NativePaymentScanContent(
     ),
     primaryAmount = null,
     secondaryText = null,
-    feeHint = null,
-    actionTitle = null,
     tapToContinue = null
 )
 
-private suspend fun PaymentScreenState.Success.successContent(
-    formatter: AmountFormatter,
-    estimatedFeeHint: String?
-) = NativePaymentScanContent(
-    kind = CONTENT_SUCCESS,
-    title = nativeString(NativeStringResource(table = "PaymentUI", key = "result_paid_title")),
-    subtitle = null,
-    primaryAmount = formatter.format(amountPaid),
-    secondaryText = nativeString(
-        NativeStringResource(table = "PaymentUI", key = "result_paid_fee"),
-        formatter.format(feePaid)
-    ),
-    feeHint = estimatedFeeHint.takeIf { showEstimatedFeeHint },
-    actionTitle =
-        nativeString(NativeStringResource(table = "PaymentUI", key = "result_view_receipt"))
-            .takeIf { !preimage.isNullOrBlank() },
-    tapToContinue = nativeString(NativeStringResource(table = "PaymentUI", key = "tap_continue"))
-)
+private suspend fun PaymentScreenState.Success.successContent(formatter: AmountFormatter) =
+    NativePaymentScanContent(
+        kind = CONTENT_SUCCESS,
+        title = nativeString(NativeStringResource(table = "PaymentUI", key = "result_paid_title")),
+        subtitle = null,
+        primaryAmount = formatter.format(amountPaid),
+        secondaryText = nativeString(
+            NativeStringResource(table = "PaymentUI", key = "result_paid_fee"),
+            formatter.format(feePaid)
+        ),
+        tapToContinue = nativeString(
+            NativeStringResource(table = "PaymentUI", key = "tap_continue")
+        )
+    )
 
-private suspend fun alreadyPaidContent(preimage: String?) = NativePaymentScanContent(
+private suspend fun alreadyPaidContent() = NativePaymentScanContent(
     kind = CONTENT_ALREADY_PAID,
     title = nativeString(
         NativeStringResource(table = "PaymentUI", key = "result_already_paid_title")
@@ -292,36 +260,6 @@ private suspend fun alreadyPaidContent(preimage: String?) = NativePaymentScanCon
     ),
     primaryAmount = null,
     secondaryText = null,
-    feeHint = null,
-    actionTitle =
-        nativeString(NativeStringResource(table = "PaymentUI", key = "result_view_receipt"))
-            .takeIf { !preimage.isNullOrBlank() },
-    tapToContinue = nativeString(NativeStringResource(table = "PaymentUI", key = "tap_continue"))
-)
-
-private suspend fun receiptContent() = NativePaymentScanContent(
-    kind = CONTENT_RECEIPT,
-    title = nativeString(NativeStringResource(table = "PaymentUI", key = "result_receipt_title")),
-    subtitle =
-        nativeString(
-            NativeStringResource(table = "PaymentUI", key = "result_receipt_body_prefix")
-        ) +
-            nativeString(
-                NativeStringResource(table = "PaymentUI", key = "result_receipt_body_preimage")
-            ) +
-            nativeString(
-                NativeStringResource(table = "PaymentUI", key = "result_receipt_body_middle")
-            ) +
-            nativeString(
-                NativeStringResource(table = "PaymentUI", key = "result_receipt_body_only")
-            ) +
-            nativeString(
-                NativeStringResource(table = "PaymentUI", key = "result_receipt_body_suffix")
-            ),
-    primaryAmount = null,
-    secondaryText = null,
-    feeHint = null,
-    actionTitle = null,
     tapToContinue = nativeString(NativeStringResource(table = "PaymentUI", key = "tap_continue"))
 )
 
@@ -481,7 +419,6 @@ private const val CONTENT_IDLE = "idle"
 private const val CONTENT_RESOLVING = "resolving"
 private const val CONTENT_SUCCESS = "success"
 private const val CONTENT_ALREADY_PAID = "alreadyPaid"
-private const val CONTENT_RECEIPT = "receipt"
 private const val CONTENT_ERROR = "error"
 
 private const val SHEET_MANUAL_AMOUNT = "manualAmount"

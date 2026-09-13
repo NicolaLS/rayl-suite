@@ -257,7 +257,6 @@ class NwcIosExperience(private val configuration: NwcExperienceConfiguration) {
                 controller.update(
                     payment = payment.toNativePaymentScreenState(),
                     appTitle = configuration.appName,
-                    estimatedFeeHint = null,
                     savePrompt = hubState.savePrompt
                 )
             }.collect {}
@@ -307,7 +306,7 @@ class NwcIosExperience(private val configuration: NwcExperienceConfiguration) {
                 controller.update(
                     items = transactions.map { it.toNativeRecentItem() },
                     selectedTransactionId = selectedId,
-                    estimatedFeeHint = null
+                    receiptFeeInformation = null
                 )
             }.collect {}
         }

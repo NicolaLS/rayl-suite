@@ -88,6 +88,12 @@ checked in that same foreground operation. Recent holds only the last ten resolv
 payments for the current process. If the outcome cannot be confirmed, check the
 original wallet before paying again; an uncertain outcome is not recorded as a
 failure in Recent.
+Opening a successful payment in Recent shows its receipt: amount and fee in the
+selected currency, SAT equivalents for fiat, the available LNURL recipient and
+domain, and a local timestamp. When the provider supplies a payment preimage,
+the receipt includes its QR code, copy action, and explanation. Blink receipts
+also explain that Blink may partially refund the fee. The immediate payment
+result has no receipt action or refund note.
 Removal does not cancel or reverse a payment.
 
 Keep imported contacts, onboarding completion, general preferences, and local Hub

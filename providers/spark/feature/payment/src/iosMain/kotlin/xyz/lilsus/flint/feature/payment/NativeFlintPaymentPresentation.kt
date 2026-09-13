@@ -29,9 +29,7 @@ suspend fun PaymentUiState.toNativePaymentScreenState(): PaymentScreenState = wh
         PaymentScreenState.Success(
             amountPaid = amountPaid,
             feePaid = feePaid,
-            showEstimatedFeeHint = showEstimatedFeeHint,
-            wasAlreadyPaid = wasAlreadyPaid,
-            preimage = preimage
+            wasAlreadyPaid = wasAlreadyPaid
         )
 
     is PaymentUiState.Error -> PaymentScreenState.Error(getFlintPaymentErrorMessageFor(error))
@@ -72,7 +70,8 @@ suspend fun SessionTransactionItem.toNativeRecentItem(
                     error ?: PaymentUiError.Unexpected()
                 )
         },
-    detailState = toDetailUiState().toNativePaymentScreenState()
+    detailState = toDetailUiState().toNativePaymentScreenState(),
+    receipt = receipt
 )
 
 private fun TransactionStatus.nativeStatusTone(): String = when (this) {

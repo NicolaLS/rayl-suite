@@ -20,5 +20,5 @@
     <string name="error_blink_limit_exceeded">This payment exceeds your account limits.</string>
     <string name="error_blink_rate_limited">Too many requests. Please wait a moment and try again.</string>
     <string name="error_blink_invalid_api_key">Invalid or revoked API key. Create a new key to continue.</string>
-    <string name="result_paid_fee_blink_hint">Blink might refund this fee partially.</string>
+    <string name="receipt_fee_blink_hint">Blink might partially refund the fee. Check your Blink wallet.</string>
 </resources>

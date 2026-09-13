@@ -64,7 +64,6 @@ fun PaymentScanScreen(
     state: PaymentFlowState,
     messageEvents: Flow<String>,
     appTitle: String,
-    estimatedFeeHint: String?,
     savePrompt: HubSavePrompt?,
     onIntent: (PaymentIntent) -> Unit,
     onHubIntent: (PaymentHubIntent) -> Unit,
@@ -212,14 +211,6 @@ fun PaymentScanScreen(
     } else {
         state.payment
     }
-    val receiptPreimage = (contentState as? PaymentScreenState.Success)
-        ?.preimage
-        ?.trim()
-        ?.takeIf(String::isNotEmpty)
-    var showReceipt by remember { mutableStateOf(false) }
-    LaunchedEffect(receiptPreimage) {
-        showReceipt = false
-    }
     val effectiveCameraAuthorization =
         if (scannerUnavailable) {
             CameraAuthorizationState.UNAVAILABLE
@@ -257,8 +248,7 @@ fun PaymentScanScreen(
         ) {
             PaymentHero(
                 modifier = Modifier.fillMaxWidth().fillMaxHeight(0.5f),
-                phase = state.payment.toHeroPhase(),
-                receiptPreimage = receiptPreimage.takeIf { showReceipt }
+                phase = state.payment.toHeroPhase()
             )
             Crossfade(targetState = contentState) { current ->
                 when {
@@ -266,9 +256,6 @@ fun PaymentScanScreen(
                         current is PaymentScreenState.Error -> ResultLayout(
                         modifier = Modifier.fillMaxSize(),
                         result = current.toResultPresentation(),
-                        receiptVisible = showReceipt,
-                        estimatedFeeHint = estimatedFeeHint,
-                        onViewReceipt = { showReceipt = true },
                         onContinue = { onIntent(PaymentIntent.DismissResult) }
                     )
 

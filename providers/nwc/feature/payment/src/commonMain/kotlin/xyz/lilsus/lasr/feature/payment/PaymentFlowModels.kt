@@ -17,7 +17,8 @@ internal data class PreparedPayment(
 internal data class ExecutablePayment(
     val invoice: Bolt11Invoice,
     val amountOverrideMsats: Long?,
-    val targetContext: HubTargetContext?
+    val targetContext: HubTargetContext?,
+    val lnurlPayDisplay: LnurlPayDisplay? = null
 )
 
 internal sealed interface AdmissionResult {

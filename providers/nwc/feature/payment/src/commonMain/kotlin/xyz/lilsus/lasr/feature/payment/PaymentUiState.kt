@@ -3,6 +3,7 @@ package xyz.lilsus.lasr.feature.payment
 import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.feature.paymentui.LnurlPayDisplay
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentConfirmationAmount
+import xyz.lilsus.raylsuite.feature.paymentui.PaymentReceiptDetails
 import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountUiState
 
 sealed interface PaymentUiState {
@@ -20,12 +21,7 @@ sealed interface PaymentUiState {
         val lnurlPayDisplay: LnurlPayDisplay? = null
     ) : PaymentUiState
 
-    data class Success(
-        val amountPaid: DisplayAmount,
-        val feePaid: DisplayAmount,
-        val showEstimatedFeeHint: Boolean = false,
-        val preimage: String? = null
-    ) : PaymentUiState
+    data class Success(val amountPaid: DisplayAmount, val feePaid: DisplayAmount) : PaymentUiState
 
     data class Error(val error: PaymentUiError) : PaymentUiState
 }
@@ -54,8 +50,7 @@ data class SessionTransactionItem(
     val createdAtMs: Long,
     val fee: DisplayAmount? = null,
     val error: PaymentUiError? = null,
-    val showEstimatedFeeHint: Boolean = false,
-    val preimage: String? = null
+    val receipt: PaymentReceiptDetails? = null
 )
 
 enum class TransactionStatus {
@@ -67,9 +62,7 @@ internal fun SessionTransactionItem.toDetailUiState(): PaymentUiState = when (st
     TransactionStatus.Success -> {
         PaymentUiState.Success(
             amountPaid = amount,
-            feePaid = fee ?: DisplayAmount(0, amount.currency),
-            showEstimatedFeeHint = showEstimatedFeeHint,
-            preimage = preimage
+            feePaid = fee ?: DisplayAmount(0, amount.currency)
         )
     }
 

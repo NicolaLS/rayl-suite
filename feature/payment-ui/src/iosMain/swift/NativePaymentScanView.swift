@@ -211,17 +211,13 @@ struct NativePaymentScanView: View {
     private func scanContent(_ snapshot: NativePaymentScanSnapshot) -> some View {
         GeometryReader { proxy in
             VStack(spacing: 0) {
-                RaylHeroView(
-                    phase: snapshot.heroPhase,
-                    receiptPreimage: snapshot.receiptPreimage
-                )
-                .frame(height: proxy.size.height * 0.5)
-                .allowsHitTesting(false)
+                RaylHeroView(phase: snapshot.heroPhase)
+                    .frame(height: proxy.size.height * 0.5)
+                    .allowsHitTesting(false)
 
                 NativePaymentScanContentView(
                     content: snapshot.content,
                     cameraPermission: snapshot.cameraPermission,
-                    onViewReceipt: model.controller.viewReceipt,
                     onDismissResult: model.controller.dismissResult
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -231,7 +227,7 @@ struct NativePaymentScanView: View {
             if snapshot.content.tapToContinue != nil && snapshot.cameraPermission == nil
                 && snapshot.sheet == nil
             {
-                // Keep this behind content so receipt and Recent buttons consume their own taps.
+                // Keep this behind content so the Recent button consumes its own taps.
                 Color.clear
                     .contentShape(Rectangle())
                     .onTapGesture(perform: model.controller.dismissResult)
@@ -271,7 +267,6 @@ struct NativePaymentScanView: View {
 private struct NativePaymentScanContentView: View {
     let content: NativePaymentScanContent
     let cameraPermission: NativeCameraPermissionContent?
-    let onViewReceipt: () -> Void
     let onDismissResult: () -> Void
 
     var body: some View {
@@ -293,14 +288,6 @@ private struct NativePaymentScanContentView: View {
             paymentSummary
         }
         .allowsHitTesting(false)
-
-        if let actionTitle = content.actionTitle {
-            Button(action: onViewReceipt) {
-                Label(actionTitle, systemImage: "receipt")
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.regular)
-        }
 
         if let tapToContinue = content.tapToContinue {
             Button(tapToContinue, action: onDismissResult)
@@ -349,13 +336,6 @@ private struct NativePaymentScanContentView: View {
             Text(secondary)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
-        }
-
-        if let hint = content.feeHint {
-            Text(hint)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
         }
     }
 
@@ -760,7 +740,7 @@ private final class NativePaymentRecentModel: ObservableObject {
     }
 }
 
-/// Native Recent tab. Transaction detail reuses the bounded native hero.
+/// Native Recent tab. Successful transactions open their receipt directly.
 struct NativePaymentRecentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.appShellTabIsSelected) private var isSelected
@@ -908,19 +888,21 @@ private struct NativePaymentRecentDetailView: View {
     let controller: NativePaymentRecentController
 
     var body: some View {
-        GeometryReader { proxy in
-            VStack(spacing: 0) {
-                RaylHeroView(
-                    phase: detail.heroPhase,
-                    receiptPreimage: detail.receiptPreimage
-                )
-                .frame(height: proxy.size.height * 0.48)
+        Group {
+            if let receipt = detail.receipt {
+                NativePaymentReceiptView(receipt: receipt)
+            } else {
+                GeometryReader { proxy in
+                    VStack(spacing: 0) {
+                        RaylHeroView(phase: detail.heroPhase)
+                            .frame(height: proxy.size.height * 0.48)
 
-                NativePaymentRecentResultContent(
-                    content: detail.content,
-                    onViewReceipt: controller.viewReceipt,
-                    onDone: controller.closeDetail
-                )
+                        NativePaymentRecentResultContent(
+                            content: detail.content,
+                            onDone: controller.closeDetail
+                        )
+                    }
+                }
             }
         }
         .background(Color(uiColor: .systemBackground))
@@ -928,9 +910,111 @@ private struct NativePaymentRecentDetailView: View {
     }
 }
 
+private struct NativePaymentReceiptView: View {
+    let receipt: NativePaymentReceiptContent
+    @State private var copied = false
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 24) {
+                VStack(alignment: .leading, spacing: 16) {
+                    receiptRow(receipt.amountLabel, value: receipt.amount)
+                    VStack(alignment: .leading, spacing: 8) {
+                        receiptRow(receipt.feeLabel, value: receipt.fee)
+                        if let hint = receipt.feeHint {
+                            Label(hint, systemImage: "info.circle")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    if let recipient = receipt.recipient {
+                        receiptRow(receipt.recipientLabel, value: recipient)
+                    }
+                    if let domain = receipt.domain {
+                        receiptRow(receipt.domainLabel, value: domain)
+                    }
+                    receiptRow(receipt.timestampLabel, value: receipt.timestamp)
+                }
+
+                if let preimage = receipt.preimage {
+                    Divider()
+                    VStack(spacing: 16) {
+                        Text(receipt.preimageLabel)
+                            .font(.headline)
+
+                        Button { copyPreimage(preimage) } label: {
+                            NativePaymentPreimageQrCode(data: preimage)
+                                .aspectRatio(1, contentMode: .fit)
+                                .frame(maxWidth: 280)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(receipt.copyTitle)
+                        .accessibilityIdentifier("payment_receipt_qr")
+
+                        Text(preimage)
+                            .font(.footnote.monospaced())
+                            .textSelection(.enabled)
+                            .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("payment_receipt_preimage")
+
+                        Button { copyPreimage(preimage) } label: {
+                            Label(
+                                copied ? receipt.copiedTitle : receipt.copyTitle,
+                                systemImage: copied ? "checkmark" : "doc.on.doc"
+                            )
+                        }
+                        .buttonStyle(.bordered)
+                        .accessibilityIdentifier("payment_receipt_copy")
+
+                        Text(receipt.explanation)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+            .frame(maxWidth: 560)
+            .padding(24)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .navigationTitle(receipt.title)
+        .onChange(of: receipt.preimage) { _, _ in copied = false }
+    }
+
+    private func receiptRow(_ label: String, value: String) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .firstTextBaseline, spacing: 16) {
+                Text(label)
+                    .foregroundStyle(.secondary)
+                    .fixedSize()
+                Spacer(minLength: 0)
+                Text(value)
+                    .fontWeight(.medium)
+                    .fixedSize()
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(label)
+                    .foregroundStyle(.secondary)
+                Text(value)
+                    .fontWeight(.medium)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .combine)
+    }
+
+    private func copyPreimage(_ preimage: String) {
+        UIPasteboard.general.string = preimage
+        copied = true
+    }
+}
+
 private struct NativePaymentRecentResultContent: View {
     let content: NativePaymentScanContent
-    let onViewReceipt: () -> Void
     let onDone: () -> Void
 
     var body: some View {
@@ -956,20 +1040,6 @@ private struct NativePaymentRecentResultContent: View {
                     Text(supporting)
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.secondary)
-                }
-                if let hint = content.feeHint {
-                    Text(hint)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                if let receipt = content.actionTitle {
-                    Button {
-                        onViewReceipt()
-                    } label: {
-                        Label(receipt, systemImage: "receipt")
-                    }
-                    .buttonStyle(.bordered)
                 }
                 if let done = content.tapToContinue {
                     Button(done, action: onDone)

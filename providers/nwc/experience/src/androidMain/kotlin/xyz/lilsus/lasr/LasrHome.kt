@@ -93,7 +93,6 @@ internal fun LasrTabContent(
                 state = flowState,
                 messageEvents = messages,
                 appTitle = runtime.configuration.appName,
-                estimatedFeeHint = null,
                 savePrompt = hubState.savePrompt,
                 onIntent = coordinator::dispatch,
                 onHubIntent = runtime.paymentHub::dispatch,
@@ -105,7 +104,7 @@ internal fun LasrTabContent(
         AppTab.Recent ->
             PaymentRecentScreen(
                 state = flowState,
-                estimatedFeeHint = null,
+                receiptFeeInformation = null,
                 selectedTransactionId = selectedTransactionId,
                 onSelectTransaction = { id ->
                     if (!coordinator.isSubmitting.value) tabState.selectTransaction(id)

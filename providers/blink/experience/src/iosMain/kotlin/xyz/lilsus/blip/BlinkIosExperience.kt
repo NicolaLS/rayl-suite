@@ -270,13 +270,6 @@ class BlinkIosExperience(private val configuration: BlinkExperienceConfiguration
                 controller.update(
                     payment = payment.toNativePaymentScreenState(),
                     appTitle = configuration.appName,
-                    estimatedFeeHint =
-                        nativeString(
-                            NativeStringResource(
-                                table = "BlipUI",
-                                key = "result_paid_fee_blink_hint"
-                            )
-                        ),
                     savePrompt = hubState.savePrompt,
                     recentCount = transactions.size,
                     newRecentCount = newTransactionCount
@@ -325,11 +318,11 @@ class BlinkIosExperience(private val configuration: BlinkExperienceConfiguration
                 controller.update(
                     items = transactions.map { it.toNativeRecentItem() },
                     selectedTransactionId = selectedId,
-                    estimatedFeeHint =
+                    receiptFeeInformation =
                         nativeString(
                             NativeStringResource(
                                 table = "BlipUI",
-                                key = "result_paid_fee_blink_hint"
+                                key = "receipt_fee_blink_hint"
                             )
                         )
                 )

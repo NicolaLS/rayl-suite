@@ -24,7 +24,14 @@
     <string name="result_paid_fee">Fee: %1$s</string>
     <string name="result_already_paid_title">Already Paid</string>
     <string name="result_already_paid_message">No payment was sent. This invoice was already paid.</string>
-    <string name="result_view_receipt">View receipt</string>
+    <string name="receipt_amount">Amount</string>
+    <string name="receipt_fee">Fee</string>
+    <string name="receipt_recipient">Recipient</string>
+    <string name="receipt_domain">Domain</string>
+    <string name="receipt_timestamp">Timestamp</string>
+    <string name="receipt_preimage">Preimage</string>
+    <string name="receipt_copy_preimage">Copy preimage</string>
+    <string name="receipt_copied">Copied</string>
     <string name="result_receipt_title">Payment receipt</string>
     <string name="result_receipt_body_prefix">This is the </string>
     <string name="result_receipt_body_preimage">preimage</string>

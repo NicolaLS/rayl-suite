@@ -24,9 +24,7 @@ internal fun PaymentUiState.toPaymentScreenState(
         PaymentScreenState.Success(
             amountPaid = amountPaid,
             feePaid = feePaid,
-            showEstimatedFeeHint = showEstimatedFeeHint,
-            wasAlreadyPaid = false,
-            preimage = preimage
+            wasAlreadyPaid = false
         )
 
     is PaymentUiState.Error -> PaymentScreenState.Error(errorMessageFor(error))

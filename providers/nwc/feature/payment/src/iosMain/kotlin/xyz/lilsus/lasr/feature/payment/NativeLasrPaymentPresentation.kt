@@ -29,9 +29,7 @@ suspend fun PaymentUiState.toNativePaymentScreenState(): PaymentScreenState = wh
         PaymentScreenState.Success(
             amountPaid = amountPaid,
             feePaid = feePaid,
-            showEstimatedFeeHint = showEstimatedFeeHint,
-            wasAlreadyPaid = false,
-            preimage = preimage
+            wasAlreadyPaid = false
         )
 
     is PaymentUiState.Error -> PaymentScreenState.Error(getLasrPaymentErrorMessageFor(error))
@@ -66,5 +64,6 @@ suspend fun SessionTransactionItem.toNativeRecentItem(
 
         TransactionStatus.Failure -> error?.let { getLasrPaymentErrorMessageFor(it) }
     },
-    detailState = toDetailUiState().toNativePaymentScreenState()
+    detailState = toDetailUiState().toNativePaymentScreenState(),
+    receipt = receipt
 )

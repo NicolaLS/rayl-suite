@@ -24,7 +24,14 @@
     <string name="result_paid_fee">Gebühr: %1$s</string>
     <string name="result_already_paid_title">Bereits bezahlt</string>
     <string name="result_already_paid_message">Es wurde keine Zahlung gesendet. Diese Rechnung wurde bereits bezahlt.</string>
-    <string name="result_view_receipt">Beleg anzeigen</string>
+    <string name="receipt_amount">Betrag</string>
+    <string name="receipt_fee">Gebühr</string>
+    <string name="receipt_recipient">Empfänger</string>
+    <string name="receipt_domain">Domain</string>
+    <string name="receipt_timestamp">Zeitpunkt</string>
+    <string name="receipt_preimage">Preimage</string>
+    <string name="receipt_copy_preimage">Preimage kopieren</string>
+    <string name="receipt_copied">Kopiert</string>
     <string name="result_receipt_title">Zahlungsbeleg</string>
     <string name="result_receipt_body_prefix">Dies ist das </string>
     <string name="result_receipt_body_preimage">Preimage</string>

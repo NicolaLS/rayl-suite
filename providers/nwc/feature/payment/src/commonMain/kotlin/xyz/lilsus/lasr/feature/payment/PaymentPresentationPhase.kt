@@ -142,9 +142,7 @@ internal class PaymentPresentationPhase(private val currencyManager: PaymentCurr
         val currencyState = currencyManager.state.value
         return PaymentUiState.Success(
             amountPaid = currencyManager.convertMsatsToDisplay(amountMsats, currencyState),
-            feePaid = currencyManager.convertMsatsToDisplay(feeMsats, currencyState),
-            showEstimatedFeeHint = showEstimatedFeeHint,
-            preimage = preimage
+            feePaid = currencyManager.convertMsatsToDisplay(feeMsats, currencyState)
         )
     }
 }
@@ -152,6 +150,5 @@ internal class PaymentPresentationPhase(private val currencyManager: PaymentCurr
 internal data class CompletedPayment(
     val amountMsats: Long,
     val feeMsats: Long,
-    val showEstimatedFeeHint: Boolean,
     val preimage: String?
 )

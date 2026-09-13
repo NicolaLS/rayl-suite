@@ -7,9 +7,7 @@ fun PaymentScreenState.toResultPresentation(): PaymentResultPresentation = when 
         PaymentResultPresentation.Success(
             amountPaid = amountPaid,
             feePaid = feePaid,
-            showEstimatedFeeHint = showEstimatedFeeHint,
-            wasAlreadyPaid = wasAlreadyPaid,
-            hasReceipt = !preimage.isNullOrBlank()
+            wasAlreadyPaid = wasAlreadyPaid
         )
 
     is PaymentScreenState.Error -> PaymentResultPresentation.Error(message)

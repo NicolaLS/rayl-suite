@@ -86,7 +86,7 @@ internal fun BlipTabContent(
     val currencyCode by runtime.currencyPreferences.code.collectAsStateWithLifecycle(
         CurrencyCatalog.DEFAULT_CODE
     )
-    val estimatedFeeHint = stringResource(BlipUiR.string.result_paid_fee_blink_hint)
+    val receiptFeeInformation = stringResource(BlipUiR.string.receipt_fee_blink_hint)
 
     when (tab) {
         // Blip has no Recent tab, so its session history lives behind the Scan screen's button.
@@ -101,7 +101,7 @@ internal fun BlipTabContent(
             if (showingRecent) {
                 PaymentRecentScreen(
                     state = flowState,
-                    estimatedFeeHint = estimatedFeeHint,
+                    receiptFeeInformation = receiptFeeInformation,
                     selectedTransactionId = selectedTransactionId,
                     onSelectTransaction = tabState::selectTransaction,
                     onIntent = coordinator::dispatch,
@@ -115,7 +115,6 @@ internal fun BlipTabContent(
                     state = flowState,
                     messageEvents = messages,
                     appTitle = runtime.configuration.appName,
-                    estimatedFeeHint = estimatedFeeHint,
                     savePrompt = hubState.savePrompt,
                     onIntent = coordinator::dispatch,
                     onHubIntent = runtime.paymentHub::dispatch,
@@ -137,7 +136,7 @@ internal fun BlipTabContent(
         AppTab.Recent ->
             PaymentRecentScreen(
                 state = flowState,
-                estimatedFeeHint = estimatedFeeHint,
+                receiptFeeInformation = receiptFeeInformation,
                 selectedTransactionId = selectedTransactionId,
                 onSelectTransaction = tabState::selectTransaction,
                 onIntent = coordinator::dispatch

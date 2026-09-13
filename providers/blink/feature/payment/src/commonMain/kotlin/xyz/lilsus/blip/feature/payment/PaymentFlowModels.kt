@@ -20,7 +20,8 @@ internal data class ExecutablePayment(
     val amountOverrideMsats: Long?,
     val fundingWallet: BlinkFundingWallet,
     val fundingAmountCents: Long?,
-    val targetContext: HubTargetContext?
+    val targetContext: HubTargetContext?,
+    val lnurlPayDisplay: LnurlPayDisplay? = null
 )
 
 internal sealed interface AdmissionResult {

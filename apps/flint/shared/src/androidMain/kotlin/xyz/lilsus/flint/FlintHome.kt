@@ -99,7 +99,6 @@ internal fun FlintTabContent(
                 state = flowState,
                 messageEvents = messages,
                 appTitle = stringResource(R.string.app_name),
-                estimatedFeeHint = null,
                 savePrompt = hubState.savePrompt,
                 onIntent = coordinator::dispatch,
                 onHubIntent = runtime.paymentHub::dispatch,
@@ -111,7 +110,7 @@ internal fun FlintTabContent(
         AppTab.Recent ->
             PaymentRecentScreen(
                 state = flowState,
-                estimatedFeeHint = null,
+                receiptFeeInformation = null,
                 selectedTransactionId = selectedTransactionId,
                 onSelectTransaction = tabState::selectTransaction,
                 onIntent = coordinator::dispatch

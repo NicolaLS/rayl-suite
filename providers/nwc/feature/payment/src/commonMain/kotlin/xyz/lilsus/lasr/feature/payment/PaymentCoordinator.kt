@@ -33,13 +33,12 @@ class PaymentCoordinator(
     paymentPreferences: PaymentPreferencesRepository,
     private val paymentHub: PaymentHubController,
     private val haptics: HapticFeedbackManager,
-    private val showEstimatedFeeHint: Boolean = false,
     coroutineContext: CoroutineContext = Dispatchers.Main
 ) {
     private val scope = CoroutineScope(SupervisorJob() + coroutineContext)
     private val currencyManager = PaymentCurrencyManager(bitcoinPriceProvider, scope)
     private val presentation = PaymentPresentationPhase(currencyManager)
-    private val history = PaymentHistory(currencyManager, showEstimatedFeeHint)
+    private val history = PaymentHistory(currencyManager)
     private val operation = PaymentOperation(scope)
     private var runtimePreferences = PaymentRuntimePreferences()
     private val confirmation =
@@ -227,10 +226,15 @@ class PaymentCoordinator(
                 val result = CompletedPayment(
                     amountMsats = amountMsats,
                     feeMsats = outcome.feesPaidMsats ?: 0L,
-                    showEstimatedFeeHint = showEstimatedFeeHint,
                     preimage = outcome.preimage
                 )
-                history.record(payment.invoice.paymentHash.toHex(), amountMsats, result = result)
+                history.record(
+                    paymentHash = payment.invoice.paymentHash.toHex(),
+                    amountMsats = amountMsats,
+                    result = result,
+                    recipient = payment.targetContext?.address?.full,
+                    domain = payment.lnurlPayDisplay?.domain
+                )
                 reportPaymentSuccess(payment.targetContext, amountMsats)
                 if (runtimePreferences.vibrateOnPayment) haptics.notifyPaymentSuccess()
                 presentation.showPaymentSuccess(result)

@@ -54,6 +54,7 @@ import xyz.lilsus.raylsuite.feature.paymentsettings.PaymentPreferencesRepository
 import xyz.lilsus.raylsuite.feature.paymentui.LnurlPayDisplay
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentConfirmationAmount
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentIntent
+import xyz.lilsus.raylsuite.feature.paymentui.PaymentReceiptDetails
 import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountConfig
 import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountController
 import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountKey
@@ -94,7 +95,7 @@ class PaymentCoordinator(
     val newSessionTransactionCount: StateFlow<Int> =
         mutableNewSessionTransactionCount.asStateFlow()
 
-    private val receipts = mutableListOf<PaymentReceipt>()
+    private val receipts = mutableListOf<SessionReceipt>()
     private val knownSessionTransactionIds = mutableSetOf<String>()
     private val newSessionTransactionIds = mutableSetOf<String>()
     private val interaction = PaymentInteractionSession()
@@ -294,7 +295,11 @@ class PaymentCoordinator(
                 )
 
             is PreparePaymentResult.Existing -> {
-                recordReceipt(result.receipt)
+                recordReceipt(
+                    result.receipt,
+                    recipient = targetContext?.address?.full,
+                    domain = targetContext?.address?.domain
+                )
                 showReceipt(result.receipt, wasAlreadyPaid = true)
             }
 
@@ -379,7 +384,11 @@ class PaymentCoordinator(
         currentCoroutineContext().ensureActive()
         when (result) {
             is ConfirmPaymentResult.Completed -> {
-                recordReceipt(result.receipt)
+                recordReceipt(
+                    result.receipt,
+                    recipient = draft.targetContext?.address?.full,
+                    domain = draft.lnurlPayDisplay?.domain
+                )
                 if (result.receipt.outcome == PaymentOutcome.COMPLETED && !result.wasAlreadyPaid) {
                     if (vibrateOnPayment) ignoreHapticFailure(haptics::notifyPaymentSuccess)
                     draft.targetContext?.let { context ->
@@ -529,8 +538,14 @@ class PaymentCoordinator(
         }
     }
 
-    private fun recordReceipt(receipt: PaymentReceipt) {
-        if (receipts.none { it.id == receipt.id }) receipts.add(0, receipt)
+    private fun recordReceipt(
+        receipt: PaymentReceipt,
+        recipient: String? = null,
+        domain: String? = null
+    ) {
+        if (receipts.none { it.payment.id == receipt.id }) {
+            receipts.add(0, SessionReceipt(receipt, recipient, domain))
+        }
         while (receipts.size > MAX_SESSION_RECEIPTS) receipts.removeAt(receipts.lastIndex)
         refreshSessionTransactions()
     }
@@ -549,7 +564,7 @@ class PaymentCoordinator(
         mutableNewSessionTransactionCount.value = newSessionTransactionIds.size
     }
 
-    private fun PaymentReceipt.toSessionTransactionItem(): SessionTransactionItem =
+    private fun SessionReceipt.toSessionTransactionItem(): SessionTransactionItem = with(payment) {
         SessionTransactionItem(
             id = id,
             amount = display(amountSats),
@@ -564,8 +579,22 @@ class PaymentCoordinator(
                 PaymentUiError.Spark(SparkPaymentError.Rejected("The Spark payment failed"))
             } else {
                 null
+            },
+            receipt = if (outcome == PaymentOutcome.COMPLETED) {
+                PaymentReceiptDetails(
+                    amount = display(amountSats),
+                    fee = display(feeSats),
+                    amountSats = DisplayAmount(amountSats.value, DisplayCurrency.Satoshi),
+                    feeSats = DisplayAmount(feeSats.value, DisplayCurrency.Satoshi),
+                    createdAtMs = createdAtEpochSeconds * MILLIS_PER_SECOND,
+                    recipient = recipient,
+                    domain = domain
+                )
+            } else {
+                null
             }
         )
+    }
 
     private suspend fun handlePaymentLink(link: ClaimedPaymentLink) {
         when (link) {
@@ -693,6 +722,12 @@ class PaymentCoordinator(
         )
     }
 }
+
+private data class SessionReceipt(
+    val payment: PaymentReceipt,
+    val recipient: String?,
+    val domain: String?
+)
 
 private fun PaymentRejection.toPaymentUiError(): PaymentUiError = when (this) {
     PaymentRejection.UNSUPPORTED_INPUT,

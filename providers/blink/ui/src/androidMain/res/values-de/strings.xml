@@ -20,5 +20,5 @@
     <string name="error_blink_limit_exceeded">Diese Zahlung überschreitet deine Kontolimits.</string>
     <string name="error_blink_rate_limited">Zu viele Anfragen. Bitte warte einen Moment und versuche es erneut.</string>
     <string name="error_blink_invalid_api_key">Ungültiger oder widerrufener API-Schlüssel. Erstelle einen neuen Schlüssel, um fortzufahren.</string>
-    <string name="result_paid_fee_blink_hint">Blink könnte diese Gebühr teilweise erstatten.</string>
+    <string name="receipt_fee_blink_hint">Blink könnte die Gebühr teilweise erstatten. Prüfe deine Blink-Wallet.</string>
 </resources>

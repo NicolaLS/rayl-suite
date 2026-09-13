@@ -20,5 +20,5 @@
     <string name="error_blink_limit_exceeded">Este pago excede los límites de tu cuenta.</string>
     <string name="error_blink_rate_limited">Demasiadas solicitudes. Espera un momento e intenta de nuevo.</string>
     <string name="error_blink_invalid_api_key">Clave API inválida o revocada. Crea una nueva clave para continuar.</string>
-    <string name="result_paid_fee_blink_hint">Blink podría reembolsar parcialmente esta comisión.</string>
+    <string name="receipt_fee_blink_hint">Blink podría reembolsar parte de la comisión. Revisa tu billetera Blink.</string>
 </resources>
