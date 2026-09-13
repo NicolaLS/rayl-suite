@@ -7,7 +7,7 @@
     <string name="confirm_payment_approximate_amount">≈ %1$s</string>
     <string name="confirm_payment_exact_amount">Genauer Betrag: %1$s</string>
     <string name="pay_button">Bezahlen</string>
-    <string name="lnurl_payment_recipient">Empfänger: %1$s</string>
+    <string name="lnurl_payment_recipient">Zahlung an %1$s</string>
     <string name="lnurl_payment_image_description">Empfängerbild</string>
     <string name="dismiss_button">Schließen</string>
     <string name="view_session_transactions">Transaktionen dieser Sitzung anzeigen</string>

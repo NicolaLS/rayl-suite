@@ -53,7 +53,6 @@ data class NativePaymentScanSheet(
     val exactAmount: String?,
     val fundingSource: String?,
     val recipientTitle: String?,
-    val recipientDescription: String?,
     val recipientImageBase64: String?,
     val currencyLabel: String?,
     val rangeMessage: String?,
@@ -277,7 +276,6 @@ private suspend fun ManualAmountUiState.toNativeSheet(
     exactAmount = null,
     fundingSource = null,
     recipientTitle = recipient?.recipientTitle(),
-    recipientDescription = recipient?.description,
     recipientImageBase64 = recipient?.image?.encodedBase64(),
     currencyLabel = currency.nativeLabel(),
     rangeMessage = rangeStatus.message(),
@@ -337,7 +335,6 @@ private suspend fun PaymentScreenState.Confirm.toNativeSheet(
         },
     fundingSource = fundingSource,
     recipientTitle = lnurlPayDisplay?.recipientTitle(),
-    recipientDescription = lnurlPayDisplay?.description,
     recipientImageBase64 = lnurlPayDisplay?.image?.encodedBase64(),
     currencyLabel = null,
     rangeMessage = null,
@@ -363,7 +360,6 @@ private suspend fun HubSavePrompt.toNativeSheet(): NativePaymentScanSheet {
         exactAmount = null,
         fundingSource = null,
         recipientTitle = null,
-        recipientDescription = null,
         recipientImageBase64 = null,
         currencyLabel = null,
         rangeMessage = null,
@@ -376,8 +372,10 @@ private suspend fun HubSavePrompt.toNativeSheet(): NativePaymentScanSheet {
     )
 }
 
-private suspend fun LnurlPayDisplay.recipientTitle(): String =
-    nativeString(NativeStringResource(table = "PaymentUI", key = "lnurl_payment_recipient"), domain)
+private suspend fun LnurlPayDisplay.recipientTitle(): String = nativeString(
+    NativeStringResource(table = "PaymentUI", key = "lnurl_payment_recipient"),
+    recipient
+)
 
 private suspend fun RangeStatus.message(): String? = when (this) {
     RangeStatus.InRange,

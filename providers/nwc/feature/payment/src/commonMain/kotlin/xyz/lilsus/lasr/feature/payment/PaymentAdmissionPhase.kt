@@ -382,7 +382,8 @@ internal class PaymentAdmissionPhase(
                 domain = params.domain,
                 description = params.metadata.plainText,
                 imagePngBase64 = params.metadata.imagePng,
-                imageJpegBase64 = params.metadata.imageJpeg
+                imageJpegBase64 = params.metadata.imageJpeg,
+                lightningAddress = targetContext?.address
             ) ?: run {
                 presentation.presentError(
                     PaymentUiError.InvalidInvoice("LNURL payment details are invalid")

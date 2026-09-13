@@ -3,19 +3,22 @@ package xyz.lilsus.raylsuite.feature.paymentui
 import androidx.compose.runtime.Immutable
 import kotlin.io.encoding.Base64
 import kotlin.io.encoding.ExperimentalEncodingApi
+import xyz.lilsus.raylsuite.core.model.LightningAddress
 
 @Immutable
 data class LnurlPayDisplay(
     val domain: String,
     val description: String,
-    val image: LnurlPayImage? = null
+    val image: LnurlPayImage? = null,
+    val recipient: String = domain
 ) {
     companion object {
         fun fromUntrusted(
             domain: String,
             description: String?,
             imagePngBase64: String? = null,
-            imageJpegBase64: String? = null
+            imageJpegBase64: String? = null,
+            lightningAddress: LightningAddress? = null
         ): LnurlPayDisplay? {
             val safeDomain = sanitizeDomain(domain) ?: return null
             val safeDescription = sanitizeDescription(description) ?: return null
@@ -27,7 +30,8 @@ data class LnurlPayDisplay(
                         ?: LnurlPayImage.fromBase64(
                             LnurlPayImageFormat.Jpeg,
                             imageJpegBase64
-                        )
+                        ),
+                recipient = lightningAddress?.full ?: safeDomain
             )
         }
 

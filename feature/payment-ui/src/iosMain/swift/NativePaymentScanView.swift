@@ -485,7 +485,9 @@ private struct NativePaymentManualAmountView: View {
     private func amountPage(reviewing: Bool) -> some View {
         ScrollView {
             VStack(spacing: 24) {
-                NativePaymentRecipientView(sheet: sheet)
+                if reviewing {
+                    NativePaymentRecipientView(sheet: sheet)
+                }
                 if let body = sheet.body {
                     Text(body)
                         .font(.subheadline)
@@ -726,7 +728,7 @@ private struct NativePaymentRecipientView: View {
     let sheet: NativePaymentScanSheet
 
     var body: some View {
-        if let title = sheet.recipientTitle, let description = sheet.recipientDescription {
+        if let title = sheet.recipientTitle {
             HStack(spacing: 12) {
                 if let encoded = sheet.recipientImageBase64,
                     let data = Data(base64Encoded: encoded),
@@ -739,15 +741,9 @@ private struct NativePaymentRecipientView: View {
                         .clipped()
                         .accessibilityHidden(true)
                 }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(title)
-                        .font(.subheadline.weight(.semibold))
-                        .lineLimit(2)
-                    Text(description)
-                        .font(.body)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(3)
-                }
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .fixedSize(horizontal: false, vertical: true)
                 Spacer(minLength: 0)
             }
         }

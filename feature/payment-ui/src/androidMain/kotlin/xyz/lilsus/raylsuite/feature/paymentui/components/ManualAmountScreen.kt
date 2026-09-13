@@ -203,11 +203,11 @@ fun ManualAmountScreen(
                                 .padding(horizontal = 24.dp, vertical = 24.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            lnurlPayDisplay?.let {
-                                LnurlPayReviewSection(it)
-                                Spacer(modifier = Modifier.height(16.dp))
-                            }
                             if (showReview) {
+                                lnurlPayDisplay?.let {
+                                    LnurlPayReviewSection(it)
+                                    Spacer(modifier = Modifier.height(16.dp))
+                                }
                                 state.amount?.let { amount ->
                                     Text(
                                         text = formatter.format(amount),

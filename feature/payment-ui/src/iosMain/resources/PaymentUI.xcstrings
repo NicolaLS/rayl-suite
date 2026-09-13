@@ -559,19 +559,19 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Empfänger: %1$@"
+            "value" : "Zahlung an %1$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Recipient: %1$@"
+            "value" : "Paying to %1$@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Destinatario: %1$@"
+            "value" : "Pago a %1$@"
           }
         }
       }

@@ -260,7 +260,7 @@ class PaymentCoordinator(
         when (result) {
             is PreparePaymentResult.AmountRequired -> {
                 val lnurlPayDisplay =
-                    result.payment.lnurlPayDetails?.toDisplay() ?: run {
+                    result.payment.lnurlPayDetails?.toDisplay(targetContext?.address) ?: run {
                         if (result.payment.lnurlPayDetails != null) {
                             engine.cancel(result.payment.handle)
                             showError(
@@ -321,7 +321,7 @@ class PaymentCoordinator(
         amountEnteredManually: Boolean
     ) {
         interaction.reset()
-        val lnurlPayDisplay = payment.lnurlPayDetails?.toDisplay()
+        val lnurlPayDisplay = payment.lnurlPayDetails?.toDisplay(targetContext?.address)
         if (payment.lnurlPayDetails != null && lnurlPayDisplay == null) {
             engine.cancel(payment.handle)
             showError(PaymentUiError.InvalidInvoice("LNURL payment details are invalid"))
@@ -770,12 +770,14 @@ internal fun requiresPreparedPaymentConfirmation(
     amountEnteredManually: Boolean = false
 ): Boolean = !amountEnteredManually && (engineRequiresConfirmation || isPresetTarget)
 
-private fun LnurlPayReviewDetails.toDisplay(): LnurlPayDisplay? = LnurlPayDisplay.fromUntrusted(
-    domain = domain,
-    description = description,
-    imagePngBase64 = imagePngBase64,
-    imageJpegBase64 = imageJpegBase64
-)
+private fun LnurlPayReviewDetails.toDisplay(address: LightningAddress?): LnurlPayDisplay? =
+    LnurlPayDisplay.fromUntrusted(
+        domain = domain,
+        description = description,
+        imagePngBase64 = imagePngBase64,
+        imageJpegBase64 = imageJpegBase64,
+        lightningAddress = address
+    )
 
 private fun reusableLightningAddress(input: String): LightningAddress? =
     LightningAddress.parse(input)

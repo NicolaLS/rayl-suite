@@ -36,8 +36,10 @@ the requested amount, and commit to the metadata hash or contain the exact
 plaintext description; absent plaintext metadata never permits an arbitrary
 invoice description.
 
-The payment's domain and sanitized description are shown on amount entry and
-confirmation screens. LNURL codes and Lightning addresses use the same payment
+Amount entry omits recipient details. Confirmation shows one localized “Paying to …”
+line using the requested Lightning address, or the LNURL domain when there is no
+address. Server metadata descriptions are not repeated in the confirmation UI.
+LNURL codes and Lightning addresses use the same payment
 confirmation and Auto Pay policy as invoices; there is no separate LNURL review
 setting. Once an amount is known, the app requests and validates the invoice
 before applying the normal payment confirmation policy. A scanned fixed-amount
