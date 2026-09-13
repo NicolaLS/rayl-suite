@@ -51,6 +51,7 @@ kotlin {
             implementation(libs.navigation.compose)
             implementation(libs.navigation.event.compose)
             implementation(libs.compose.foundation)
+            implementation(libs.compose.material.icons.extended)
             implementation(libs.compose.material3)
             implementation(libs.compose.runtime)
             implementation(libs.compose.ui)

@@ -1,5 +1,7 @@
 package xyz.lilsus.lasr
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -214,6 +216,7 @@ private fun LasrSettingsTab(runtime: LasrRuntime, performanceDiagnostics: Perfor
                                     ?: stringResource(
                                         WalletR.string.settings_manage_wallet_subtitle
                                     ),
+                            icon = Icons.Filled.AccountBalanceWallet,
                             onClick = {
                                 destination = LasrSettingsDestination.WalletManagement
                             }

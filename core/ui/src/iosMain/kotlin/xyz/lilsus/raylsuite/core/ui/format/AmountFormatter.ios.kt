@@ -30,26 +30,38 @@ private class IosAmountFormatter(locale: AppLocale) : AmountFormatter {
         DisplayCurrency.Satoshi -> formatSatoshi(amount.minor)
     }
 
-    private fun formatFiat(minor: Long, currency: DisplayCurrency.Fiat): String {
-        val code = currency.iso4217.uppercase()
-        val formatter =
-            fiatFormatters.getOrPut(code) {
-                NSNumberFormatter().apply {
-                    numberStyle = NSNumberFormatterCurrencyStyle
-                    locale = nsLocale
-                    currencyCode = code
-                }
+    override fun affix(currency: DisplayCurrency): CurrencyAffix = when (currency) {
+        DisplayCurrency.Satoshi -> CurrencyAffix(prefix = "", suffix = SATOSHI_SUFFIX)
+
+        is DisplayCurrency.Fiat ->
+            fiatFormatter(currency).let { formatter ->
+                CurrencyAffix(formatter.positivePrefix, formatter.positiveSuffix)
             }
+    }
+
+    private fun fiatFormatter(currency: DisplayCurrency.Fiat): NSNumberFormatter {
+        val code = currency.iso4217.uppercase()
+        return fiatFormatters.getOrPut(code) {
+            NSNumberFormatter().apply {
+                numberStyle = NSNumberFormatterCurrencyStyle
+                locale = nsLocale
+                currencyCode = code
+            }
+        }
+    }
+
+    private fun formatFiat(minor: Long, currency: DisplayCurrency.Fiat): String {
+        val formatter = fiatFormatter(currency)
         val fractionDigits = formatter.maximumFractionDigits.toInt()
         val decimalMinor = NSDecimalNumber(string = minor.toString())
         val major =
             decimalMinor.decimalNumberByMultiplyingByPowerOf10((-fractionDigits).toShort())
-        return formatter.stringFromNumber(major) ?: "$minor $code"
+        return formatter.stringFromNumber(major) ?: "$minor ${currency.iso4217.uppercase()}"
     }
 
     private fun formatSatoshi(minor: Long): String {
         val number = NSNumber(longLong = minor)
         val formatted = satoshiFormatter.stringFromNumber(number) ?: minor.toString()
-        return "$formatted sat"
+        return "$formatted$SATOSHI_SUFFIX"
     }
 }

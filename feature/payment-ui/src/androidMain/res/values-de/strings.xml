@@ -18,6 +18,7 @@
     <string name="toast_lnurl_request_not_supported">Diese LNURL-Anfrage kann nicht bezahlt werden.</string>
     <string name="toast_payment_link_not_supported">Dieser Zahlungslink wird nicht unterstützt.</string>
     <string name="enter_amount_title">Betrag eingeben</string>
+    <string name="enter_amount_backspace">Letztes Zeichen löschen</string>
     <string name="enter_amount_too_low">Der Betrag ist zu niedrig.</string>
     <string name="enter_amount_too_large">Der Betrag ist zu hoch.</string>
     <string name="result_paid_title">Bezahlt</string>

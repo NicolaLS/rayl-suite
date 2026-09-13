@@ -1,6 +1,7 @@
 package xyz.lilsus.raylsuite.feature.paymenthub.widget
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.scrollBy
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -55,6 +58,7 @@ import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
 import kotlinx.coroutines.delay
@@ -87,17 +91,54 @@ internal fun HubWidgetCanvas(
         Box(contentAlignment = Alignment.TopCenter, modifier = Modifier.fillMaxSize()) {
             BoxWithConstraints(Modifier.widthIn(max = 1100.dp).fillMaxWidth()) {
                 val scrollState = rememberScrollState()
-                WidgetGrid(
-                    state = state,
-                    viewModel = viewModel,
-                    columns = if (maxWidth >= 700.dp) 4 else 2,
-                    scrollState = scrollState,
-                    viewportHeight = constraints.maxHeight.toFloat(),
-                    modifier = Modifier.fillMaxWidth()
-                        .verticalScroll(scrollState)
-                        .padding(horizontal = 16.dp, vertical = 16.dp)
-                )
+                if (state.widgets.isEmpty()) {
+                    // A lone dashed square in an empty screen reads as a loading failure, so the
+                    // first run says what the canvas is for.
+                    HubEmptyCanvas(
+                        enabled = !state.busy,
+                        onAdd = viewModel::openGallery,
+                        modifier = Modifier.fillMaxSize().verticalScroll(scrollState)
+                    )
+                } else {
+                    WidgetGrid(
+                        state = state,
+                        viewModel = viewModel,
+                        columns = if (maxWidth >= 700.dp) 4 else 2,
+                        scrollState = scrollState,
+                        viewportHeight = constraints.maxHeight.toFloat(),
+                        modifier = Modifier.fillMaxWidth()
+                            .verticalScroll(scrollState)
+                            .padding(horizontal = 16.dp, vertical = 16.dp)
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun HubEmptyCanvas(enabled: Boolean, onAdd: () -> Unit, modifier: Modifier = Modifier) {
+    BoxWithConstraints(contentAlignment = Alignment.Center, modifier = modifier) {
+        val tileSize = minOf(maxWidth * 0.45f, 180.dp)
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 24.dp)
+        ) {
+            Text(
+                stringResource(R.string.hub_widget_empty_title),
+                style = MaterialTheme.typography.titleLarge,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                stringResource(R.string.hub_widget_empty_body),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.widthIn(max = 320.dp)
+            )
+            Spacer(Modifier.height(14.dp))
+            AddWidgetTile(enabled = enabled, onClick = onAdd, modifier = Modifier.size(tileSize))
         }
     }
 }
@@ -279,13 +320,23 @@ private fun AddWidgetTile(enabled: Boolean, onClick: () -> Unit, modifier: Modif
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
             modifier = Modifier.padding(12.dp)
         ) {
-            Icon(Icons.Filled.Add, contentDescription = null)
+            // The disc sits where a contact portrait would, so the placeholder lines up with its
+            // neighbours instead of floating.
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.size(46.dp)
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest, CircleShape)
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(24.dp))
+            }
             Text(
                 stringResource(R.string.hub_widget_add),
                 style = MaterialTheme.typography.titleSmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
             )
         }
@@ -358,7 +409,8 @@ private fun WidgetCanvasTile(
             onPay = viewModel::pay,
             modifier = Modifier.fillMaxSize(),
             interactive = interactive,
-            headerTrailingPadding = 24.dp
+            // Clears the glyph of the 48dp target, not the whole target, so titles keep their room.
+            headerTrailingPadding = 20.dp
         )
         Box(modifier = Modifier.align(Alignment.TopEnd)) {
             IconButton(
@@ -372,7 +424,8 @@ private fun WidgetCanvasTile(
                 Icon(
                     Icons.Filled.MoreHoriz,
                     contentDescription = stringResource(R.string.hub_widget_options),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(20.dp)
                 )
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {

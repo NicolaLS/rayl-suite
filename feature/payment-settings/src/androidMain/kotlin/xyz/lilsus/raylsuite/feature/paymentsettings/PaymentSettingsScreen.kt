@@ -15,9 +15,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
@@ -58,16 +60,10 @@ fun PaymentSettingsScreen(
     val currencyText =
         state.thresholdCurrencyEquivalent?.let { " (${formatter.format(it)})" }.orEmpty()
     val thresholdText =
-        when (state.confirmationMode) {
-            PaymentConfirmationMode.Above ->
-                stringResource(
-                    R.string.settings_payments_confirm_threshold,
-                    formatter.format(threshold) + currencyText
-                )
-
-            PaymentConfirmationMode.Always ->
-                stringResource(R.string.settings_payments_option_always)
-        }
+        stringResource(
+            R.string.settings_payments_confirm_threshold,
+            formatter.format(threshold) + currencyText
+        )
 
     Scaffold(
         modifier = modifier.testTag(PaymentSettingsTestTags.SCREEN),
@@ -86,9 +82,9 @@ fun PaymentSettingsScreen(
                     .padding(padding)
                     .consumeWindowInsets(padding)
                     .navigationBarsPadding()
-                    .padding(horizontal = 16.dp, vertical = 24.dp)
+                    .padding(horizontal = 16.dp, vertical = 16.dp)
                     .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             ConfirmationSection(
                 state = state,
@@ -132,16 +128,17 @@ private fun ConfirmationSection(
     SettingsSection(
         title = stringResource(R.string.settings_payments_confirm_label)
     ) {
-        Text(
-            text = thresholdText,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        PaymentModeChips(
+        PaymentModeSelector(
             selected = state.confirmationMode,
             onSelected = onModeSelected
         )
+        // Only the threshold needs spelling out; "Always" already reads off the selector.
         if (state.confirmationMode == PaymentConfirmationMode.Above) {
+            Text(
+                text = thresholdText,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
             ThresholdSlider(
                 thresholdSats = state.thresholdSats,
                 onThresholdChanged = onThresholdChanged
@@ -158,15 +155,15 @@ private fun SettingsSection(
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        tonalElevation = 6.dp
+        shape = RoundedCornerShape(14.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant
     ) {
         Column(
             modifier =
                 Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Text(
                 text = title,
@@ -190,7 +187,7 @@ private fun SettingsToggle(
         modifier =
             modifier
                 .fillMaxWidth()
-                .heightIn(min = 48.dp)
+                .heightIn(min = 44.dp)
                 .toggleable(
                     value = checked,
                     role = Role.Switch,
@@ -215,16 +212,22 @@ private fun SettingsToggle(
     }
 }
 
+/** Two mutually exclusive rules, so a segmented control rather than two independent chips. */
 @Composable
-private fun PaymentModeChips(
+private fun PaymentModeSelector(
     selected: PaymentConfirmationMode,
     onSelected: (PaymentConfirmationMode) -> Unit
 ) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        confirmationModeOptions.forEach { (mode, label) ->
-            FilterChip(
+    SingleChoiceSegmentedButtonRow(modifier = Modifier.fillMaxWidth()) {
+        confirmationModeOptions.forEachIndexed { index, (mode, label) ->
+            SegmentedButton(
                 selected = selected == mode,
                 onClick = { onSelected(mode) },
+                shape =
+                    SegmentedButtonDefaults.itemShape(
+                        index = index,
+                        count = confirmationModeOptions.size
+                    ),
                 modifier = Modifier.testTag(mode.testTag),
                 label = { Text(stringResource(label)) }
             )

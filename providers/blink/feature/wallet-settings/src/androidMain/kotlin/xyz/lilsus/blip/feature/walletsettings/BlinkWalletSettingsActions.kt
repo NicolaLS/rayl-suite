@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
@@ -31,8 +32,8 @@ import xyz.lilsus.blip.feature.walletsettings.R
 import xyz.lilsus.blip.integration.blink.BlinkFundingWallet
 import xyz.lilsus.blip.integration.blink.BlinkWalletCurrency
 import xyz.lilsus.blip.ui.blinkErrorMessageFor
-import xyz.lilsus.raylsuite.core.ui.components.AppListDefaults
-import xyz.lilsus.raylsuite.core.ui.components.AppListRow
+import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRow
+import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRowDefaults
 
 /** Android renderer for Blip's wallet settings actions. */
 @Composable
@@ -50,56 +51,35 @@ fun BlinkWalletSettingsActions(
 
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(AppListDefaults.SectionSpacing)
+        verticalArrangement = Arrangement.spacedBy(AppSettingsRowDefaults.RowSpacing)
     ) {
-        AppListRow(
+        AppSettingsRow(
+            title = stringResource(R.string.settings_blink_funding_wallet),
             onClick = {
                 showFundingWallets = true
                 onLoadFundingWallets()
             },
-            testTag = BlinkWalletSettingsTestTags.FUNDING_WALLET_BUTTON,
-            minHeight = 48.dp,
-            tonalElevation = 4.dp,
-            color = MaterialTheme.colorScheme.surfaceVariant
+            subtitle =
+                state.selectedWallet?.currency?.fundingWalletTitle()
+                    ?: stringResource(R.string.settings_blink_funding_wallet_choose),
+            icon = Icons.Filled.AccountBalanceWallet,
+            testTag = BlinkWalletSettingsTestTags.FUNDING_WALLET_BUTTON
         ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.settings_blink_funding_wallet),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Text(
-                    text =
-                        state.selectedWallet?.currency?.fundingWalletTitle()
-                            ?: stringResource(R.string.settings_blink_funding_wallet_choose),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 4.dp)
-                )
-            }
             Icon(
-                imageVector = Icons.Filled.AccountBalanceWallet,
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(AppSettingsRowDefaults.ChevronSize)
             )
         }
-        AppListRow(
+        AppSettingsRow(
+            title = stringResource(R.string.settings_blink_connection_remove),
             onClick = { showRemoveConfirmation = true },
-            testTag = BlinkWalletSettingsTestTags.REMOVE_BUTTON,
-            minHeight = 48.dp,
-            tonalElevation = 4.dp,
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.error
-        ) {
-            Text(
-                text = stringResource(R.string.settings_blink_connection_remove),
-                style = MaterialTheme.typography.titleMedium,
-                modifier = Modifier.weight(1f)
-            )
-            Icon(
-                imageVector = Icons.Filled.Delete,
-                contentDescription = null
-            )
-        }
+            icon = Icons.Filled.Delete,
+            iconTint = MaterialTheme.colorScheme.error,
+            contentColor = MaterialTheme.colorScheme.error,
+            testTag = BlinkWalletSettingsTestTags.REMOVE_BUTTON
+        )
     }
 
     if (showFundingWallets) {

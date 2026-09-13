@@ -1,5 +1,7 @@
 package xyz.lilsus.flint
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -195,6 +197,7 @@ private fun FlintSettingsTab(
                             id = "wallet",
                             title = stringResource(R.string.settings_wallet_title),
                             subtitle = stringResource(R.string.settings_wallet_subtitle),
+                            icon = Icons.Filled.AccountBalanceWallet,
                             onClick = { destination = FlintSettingsDestination.WalletManagement }
                         )
                     )

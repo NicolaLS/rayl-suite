@@ -467,6 +467,11 @@ private struct NativePaymentManualAmountView: View {
     let controller: NativePaymentScanController
     @State private var reviewingManualAmount = false
 
+    // Height the amount keeps for itself before the pad may grow. Scaled so Dynamic Type does not
+    // push the currency switch below the fold.
+    @ScaledMetric(relativeTo: .body) private var amountFigureReserve: CGFloat = 144
+    @ScaledMetric(relativeTo: .body) private var currencySwitchReserve: CGFloat = 60
+
     var body: some View {
         NavigationStack {
             amountPage(reviewing: false)
@@ -476,40 +481,38 @@ private struct NativePaymentManualAmountView: View {
         }
         .accessibilityIdentifier("payment_manual_amount_screen")
         .onChange(of: sheet.amount) { _, _ in reviewingManualAmount = false }
-        .onChange(of: sheet.currencyLabel) { _, _ in reviewingManualAmount = false }
+        .onChange(of: sheet.currencyAffix?.suffix) { _, _ in reviewingManualAmount = false }
         .onChange(of: sheet.canSubmit) { _, canSubmit in
             if !canSubmit { reviewingManualAmount = false }
         }
     }
 
+    /// The amount owns the free space; the keypad stays anchored just above the action.
     private func amountPage(reviewing: Bool) -> some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                if reviewing {
-                    NativePaymentRecipientView(sheet: sheet)
-                }
-                if let body = sheet.body {
-                    Text(body)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                if reviewing {
-                    if let amount = sheet.manualReview?.amount {
-                        Text(amount)
-                            .font(.largeTitle.weight(.semibold))
-                            .multilineTextAlignment(.center)
-                            .accessibilityIdentifier("payment_manual_amount_review")
+        GeometryReader { proxy in
+            ScrollView {
+                VStack(spacing: 0) {
+                    Spacer(minLength: 16)
+                    if reviewing {
+                        reviewContent
+                        Spacer(minLength: 16)
+                    } else {
+                        entryContent
+                        Spacer(minLength: 24)
+                        if let backspaceTitle = sheet.backspaceTitle {
+                            NativePaymentAmountKeypad(
+                                controller: controller,
+                                allowsDecimal: sheet.allowsDecimal,
+                                backspaceTitle: backspaceTitle,
+                                keyHeight: keypadKeyHeight(available: proxy.size.height))
+                        }
                     }
-                } else {
-                    manualAmountContent
-                    NativePaymentAmountKeypad(
-                        controller: controller, allowsDecimal: sheet.allowsDecimal)
                 }
+                .padding(.horizontal, 24)
+                .frame(maxWidth: 480)
+                .frame(maxWidth: .infinity, minHeight: proxy.size.height)
             }
-            .padding(24)
-            .frame(maxWidth: 480)
-            .frame(maxWidth: .infinity)
+            .scrollBounceBehavior(.basedOnSize)
         }
         .background(Color(uiColor: .systemGroupedBackground))
         .safeAreaInset(edge: .bottom, spacing: 0) {
@@ -544,7 +547,8 @@ private struct NativePaymentManualAmountView: View {
             .frame(maxWidth: .infinity)
             .background(Color(uiColor: .systemGroupedBackground))
         }
-        .navigationTitle(reviewing ? sheet.manualReview?.title ?? sheet.title : sheet.title)
+        // The entry step needs no title: a keypad under a cancel button explains itself.
+        .navigationTitle(reviewing ? sheet.manualReview?.title ?? sheet.title : "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if let cancel = sheet.secondaryActionTitle {
@@ -556,54 +560,103 @@ private struct NativePaymentManualAmountView: View {
         }
     }
 
-    @ViewBuilder
-    private var manualAmountContent: some View {
-        if let amount = sheet.amount, let currency = sheet.currencyLabel {
-            VStack(spacing: 8) {
-                Text(amount)
+    /// The pad takes what the amount above it does not need, so nothing scrolls on a short phone.
+    private func keypadKeyHeight(available: CGFloat) -> CGFloat {
+        let reserve =
+            amountFigureReserve + (sheet.currencySwitch == nil ? 0 : currencySwitchReserve)
+        let rows = CGFloat(NativePaymentAmountKeypad.rowCount)
+        let spacing = NativePaymentAmountKeypad.spacing
+        let byHeight = (available - reserve - spacing * (rows - 1)) / rows
+        return min(max(byHeight, 44), 56)
+    }
+
+    /// Entry step. One typographic stack: the amount, its mark, and what it is worth elsewhere.
+    private var entryContent: some View {
+        VStack(spacing: 0) {
+            if let amount = sheet.amount, let affix = sheet.currencyAffix {
+                Text(amountFigure(amount, affix: affix))
                     .font(.system(size: 56, weight: .medium, design: .rounded))
                     .monospacedDigit()
                     .lineLimit(1)
                     .minimumScaleFactor(0.35)
+                    .contentTransition(.numericText())
+                    .animation(.snappy(duration: 0.18), value: amount)
+                    .animation(.snappy(duration: 0.18), value: sheet.amountPending)
                     .frame(maxWidth: .infinity)
-                Text(currency)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
+                    .accessibilityElement(children: .combine)
             }
-            .padding(.vertical, 16)
-            .accessibilityElement(children: .combine)
+
+            secondaryLine
+
+            if let currencySwitch = sheet.currencySwitch {
+                Button {
+                    controller.manualAmountKey(key: "switchCurrency")
+                } label: {
+                    Label(currencySwitch.title, systemImage: "arrow.up.arrow.down")
+                        .font(.subheadline.weight(.medium))
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+                .padding(.top, 24)
+                .accessibilityIdentifier("payment_manual_amount_switch_currency")
+            }
         }
+    }
 
-        if let currencySwitch = sheet.currencySwitch {
-            Button {
-                controller.manualAmountKey(key: "switchCurrency")
-            } label: {
-                Label(currencySwitch.title, systemImage: "arrow.up.arrow.down")
-            }
-            .buttonStyle(.bordered)
-            .accessibilityIdentifier("payment_manual_amount_switch_currency")
-
-            HStack {
-                Text(currencySwitch.currency)
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(currencySwitch.equivalent ?? "—")
-                    .font(.title3)
-                    .monospacedDigit()
-            }
-            .padding()
-            .background(Color(uiColor: .secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 16))
-            .accessibilityElement(children: .combine)
-            .accessibilityIdentifier("payment_manual_amount_equivalent")
+    /// The locale decides which side its mark sits on, and it is set like the figure it belongs to.
+    /// An opened but unfilled fraction digit is dimmed, so "0." does not read as a settled "0.0".
+    /// One `Text` throughout, so the numeric transition still animates the whole figure.
+    private func amountFigure(_ amount: String, affix: NativeAmountAffix) -> AttributedString {
+        var figure = AttributedString(affix.prefix + amount)
+        if let pending = sheet.amountPending, !pending.isEmpty {
+            var unfilled = AttributedString(pending)
+            unfilled.foregroundColor = .secondary
+            figure += unfilled
         }
+        figure += AttributedString(affix.suffix)
+        return figure
+    }
 
+    /// One line under the figure. A range warning takes the equivalent's place rather than adding
+    /// a line, so nothing below it moves when the entered amount goes out of bounds.
+    @ViewBuilder
+    private var secondaryLine: some View {
         if let rangeMessage = sheet.rangeMessage {
             Text(rangeMessage)
-                .font(.footnote)
+                .font(.callout)
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.red)
+                .padding(.top, 10)
+        } else if let equivalent = sheet.currencySwitch?.equivalent {
+            Text(equivalent)
+                .font(.title3)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .padding(.top, 10)
+                .accessibilityIdentifier("payment_manual_amount_equivalent")
+        }
+    }
+
+    /// Review step. Recipient and amount read as one statement in the middle of the screen.
+    private var reviewContent: some View {
+        VStack(spacing: 24) {
+            NativePaymentRecipientView(sheet: sheet, centered: true)
+
+            if let amount = sheet.manualReview?.amount {
+                Text(amount)
+                    .font(.system(size: 44, weight: .semibold, design: .rounded))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.4)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("payment_manual_amount_review")
+            }
+
+            if let rangeMessage = sheet.rangeMessage {
+                Text(rangeMessage)
+                    .font(.footnote)
+                    .multilineTextAlignment(.center)
+                    .foregroundStyle(.red)
+            }
         }
     }
 }
@@ -726,26 +779,43 @@ private struct NativePaymentScanSheetView: View {
 
 private struct NativePaymentRecipientView: View {
     let sheet: NativePaymentScanSheet
+    var centered = false
 
     var body: some View {
         if let title = sheet.recipientTitle {
-            HStack(spacing: 12) {
-                if let encoded = sheet.recipientImageBase64,
-                    let data = Data(base64Encoded: encoded),
-                    let image = UIImage(data: data)
-                {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: 56, height: 56)
-                        .clipped()
-                        .accessibilityHidden(true)
+            if centered {
+                VStack(spacing: 12) {
+                    avatar(size: 64)
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                Text(title)
-                    .font(.subheadline.weight(.semibold))
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
+                .frame(maxWidth: .infinity)
+            } else {
+                HStack(spacing: 12) {
+                    avatar(size: 56)
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                }
             }
+        }
+    }
+
+    @ViewBuilder
+    private func avatar(size: CGFloat) -> some View {
+        if let encoded = sheet.recipientImageBase64,
+            let data = Data(base64Encoded: encoded),
+            let image = UIImage(data: data)
+        {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFill()
+                .frame(width: size, height: size)
+                .clipShape(.rect(cornerRadius: size / 4))
+                .accessibilityHidden(true)
         }
     }
 }
@@ -753,6 +823,11 @@ private struct NativePaymentRecipientView: View {
 private struct NativePaymentAmountKeypad: View {
     let controller: NativePaymentScanController
     let allowsDecimal: Bool
+    let backspaceTitle: String
+    var keyHeight: CGFloat = 56
+
+    static let spacing: CGFloat = 12
+    static let rowCount = 4
 
     private let rows = [
         ["1", "2", "3"],
@@ -762,9 +837,9 @@ private struct NativePaymentAmountKeypad: View {
     ]
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: Self.spacing) {
             ForEach(rows, id: \.self) { row in
-                HStack(spacing: 12) {
+                HStack(spacing: Self.spacing) {
                     ForEach(row, id: \.self) { key in
                         Button {
                             controller.manualAmountKey(key: key)
@@ -772,13 +847,14 @@ private struct NativePaymentAmountKeypad: View {
                             Group {
                                 if key == "backspace" {
                                     Image(systemName: "delete.left")
+                                        .accessibilityLabel(backspaceTitle)
                                 } else {
                                     Text(key == "decimal" ? (Locale.current.decimalSeparator ?? ".") : key)
                                 }
                             }
                             .font(.title.weight(.medium))
                             .foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity, minHeight: 56)
+                            .frame(maxWidth: .infinity, minHeight: keyHeight)
                             .background(
                                 Color(uiColor: .secondarySystemGroupedBackground),
                                 in: RoundedRectangle(cornerRadius: 16)

@@ -674,19 +674,19 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zum Zahlungszeitpunkt wird der aktuelle Wechselkurs verwendet, sodass der Empfänger Bitcoin im Wert dieses %1$@-Betrags erhält."
+            "value": "Wird beim Bezahlen zum aktuellen Wechselkurs in Bitcoin umgerechnet."
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "At payment time the current exchange rate is used, so the recipient receives bitcoin worth this %1$@ amount."
+            "value": "Converted to bitcoin at the exchange rate when you pay."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "En el momento del pago se usa el tipo de cambio actual para que el destinatario reciba bitcoin por el valor de este importe en %1$@."
+            "value": "Se convierte a bitcoin al tipo de cambio del momento del pago."
           }
         }
       }
@@ -1308,6 +1308,52 @@
           "stringUnit": {
             "state": "translated",
             "value": "Opciones del widget"
+          }
+        }
+      }
+    },
+    "hub_widget_pick_contact": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontakt auswählen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a contact"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir un contacto"
+          }
+        }
+      }
+    },
+    "hub_widget_pick_contacts": {
+      "extractionState": "manual",
+      "localizations": {
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kontakte auswählen"
+          }
+        },
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose contacts"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir contactos"
           }
         }
       }

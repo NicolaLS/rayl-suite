@@ -101,7 +101,17 @@ internal fun HubContactPicker(
         Scaffold(
             topBar = {
                 CenterAlignedTopAppBar(
-                    title = { Text(stringResource(R.string.hub_widget_choose_contacts, capacity)) },
+                    title = {
+                        Text(
+                            stringResource(
+                                if (capacity == 1) {
+                                    R.string.hub_widget_pick_contact
+                                } else {
+                                    R.string.hub_widget_pick_contacts
+                                }
+                            )
+                        )
+                    },
                     navigationIcon = {
                         BackIconButton(onClick = { if (!state.busy) onClose() })
                     },
@@ -135,21 +145,24 @@ internal fun HubContactPicker(
                         keyboardActions = KeyboardActions(onSearch = { keyboard?.hide() }),
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
                     )
-                    Text(
-                        stringResource(
-                            R.string.hub_widget_selected_count,
-                            editor.contactIds.size,
-                            capacity
-                        ),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(
-                            horizontal = 16.dp,
-                            vertical = 12.dp
-                        ).semantics {
-                            liveRegion = LiveRegionMode.Polite
-                        }
-                    )
+                    // A single-choice list needs no tally; the selected radio already says it.
+                    if (capacity > 1) {
+                        Text(
+                            stringResource(
+                                R.string.hub_widget_selected_count,
+                                editor.contactIds.size,
+                                capacity
+                            ),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(
+                                horizontal = 16.dp,
+                                vertical = 12.dp
+                            ).semantics {
+                                liveRegion = LiveRegionMode.Polite
+                            }
+                        )
+                    }
                     LazyColumn(
                         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp),

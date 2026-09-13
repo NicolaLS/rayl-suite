@@ -35,6 +35,7 @@ kotlin {
         }
         androidMain.dependencies {
             implementation(libs.compose.foundation)
+            implementation(libs.compose.material.icons.extended)
             implementation(libs.compose.material3)
             implementation(project(":providers:nwc:feature:wallet-details"))
             implementation(project(":feature:wallet-management"))

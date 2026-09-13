@@ -91,11 +91,20 @@ struct NativePaymentHubView: View {
                 let width = viewport.size.width - HubGeometry.gutter * 2
                 let unit = (width - HubGeometry.gap * CGFloat(columns - 1)) / CGFloat(columns)
                 ScrollView {
-                    widgetGrid(state, unit: unit)
-                        .padding(.horizontal, HubGeometry.gutter)
-                        .padding(.top, HubGeometry.gutter)
-                        .padding(.bottom, 24)
-                        .disabled(state.busy)
+                    Group {
+                        if state.canvas.tiles.isEmpty {
+                            // A lone dashed square on an empty screen reads as a loading failure,
+                            // so the first run says what the canvas is for.
+                            emptyCanvas(state, unit: min(unit, 180))
+                                .frame(minHeight: viewport.size.height)
+                        } else {
+                            widgetGrid(state, unit: unit)
+                                .padding(.top, HubGeometry.gutter)
+                                .padding(.bottom, 24)
+                        }
+                    }
+                    .padding(.horizontal, HubGeometry.gutter)
+                    .disabled(state.busy)
                 }
                 .refreshable { model.controller.refreshContent() }
                 .onAppear { model.controller.setCanvasColumns(value: Int32(columns)) }
@@ -165,42 +174,71 @@ struct NativePaymentHubView: View {
                 )
             }
 
-            Button {
-                model.controller.openGallery()
-            } label: {
-                VStack(spacing: 12) {
-                    Image(systemName: "plus")
-                        .font(.title2.weight(.medium))
-                        .accessibilityHidden(true)
-                    Text(state.text.addWidget)
-                        .font(.subheadline.weight(.semibold))
-                        .multilineTextAlignment(.center)
-                }
-                .foregroundStyle(.secondary)
-                .padding(12)
-                .frame(width: unit, height: unit)
-                .background(
-                    Color(uiColor: .secondarySystemGroupedBackground).opacity(0.5),
-                    in: RoundedRectangle(cornerRadius: 24)
+            addWidgetTile(state, unit: unit)
+                .offset(
+                    x: (unit + HubGeometry.gap) * CGFloat(addPosition.column),
+                    y: (unit + HubGeometry.gap) * CGFloat(addPosition.row)
                 )
-                .overlay {
-                    RoundedRectangle(cornerRadius: 24)
-                        .strokeBorder(
-                            Color.secondary.opacity(0.3), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
-                }
-                .contentShape(RoundedRectangle(cornerRadius: 24))
-            }
-            .buttonStyle(.plain)
-            .offset(
-                x: (unit + HubGeometry.gap) * CGFloat(addPosition.column),
-                y: (unit + HubGeometry.gap) * CGFloat(addPosition.row)
-            )
         }
         .frame(
             maxWidth: .infinity,
             minHeight: HubGeometry.span(unit, max(state.canvas.rows, addPosition.row + 1)),
             alignment: .topLeading
         )
+    }
+
+    private func addWidgetTile(_ state: NativePaymentHubSnapshot, unit: CGFloat) -> some View {
+        Button {
+            model.controller.openGallery()
+        } label: {
+            VStack(spacing: 10) {
+                // The disc sits where a contact portrait would, so the placeholder lines up with
+                // its neighbours instead of floating.
+                ZStack {
+                    Circle().fill(Color(uiColor: .tertiarySystemFill))
+                    Image(systemName: "plus").font(.title3.weight(.semibold))
+                }
+                .frame(width: 46, height: 46)
+                .accessibilityHidden(true)
+                Text(state.text.addWidget)
+                    .font(.subheadline.weight(.semibold))
+                    .lineLimit(1)
+                    .multilineTextAlignment(.center)
+            }
+            .foregroundStyle(.secondary)
+            .padding(12)
+            .frame(width: unit, height: unit)
+            .background(
+                Color(uiColor: .secondarySystemGroupedBackground).opacity(0.5),
+                in: RoundedRectangle(cornerRadius: 24)
+            )
+            .overlay {
+                RoundedRectangle(cornerRadius: 24)
+                    .strokeBorder(
+                        Color.secondary.opacity(0.3), style: StrokeStyle(lineWidth: 1.5, dash: [6, 5]))
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 24))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func emptyCanvas(_ state: NativePaymentHubSnapshot, unit: CGFloat) -> some View {
+        VStack(spacing: 10) {
+            Spacer(minLength: 0)
+            Text(state.text.emptyTitle)
+                .font(.title3.weight(.semibold))
+                .multilineTextAlignment(.center)
+            Text(state.text.emptyBody)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 320)
+            addWidgetTile(state, unit: unit)
+                .padding(.top, 14)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 16)
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder
@@ -416,50 +454,70 @@ private struct VariantGallery: View {
         definition.variants.first { $0.id == state.editor?.variantId }
     }
 
+    /// Every page reserves the tallest layout, so the previews keep their relative sizes and paging
+    /// never resizes the screen around them.
+    private var previewRows: CGFloat {
+        CGFloat(definition.variants.map { $0.rows }.max() ?? 1)
+    }
+
     var body: some View {
-        VStack(spacing: 12) {
-            Text(definition.title).font(.largeTitle.bold()).padding(.top, 20)
-            Text(definition.detail)
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 24)
-            TabView(selection: Binding(
-                get: { state.editor?.variantId ?? definition.variants.first?.id ?? "" },
-                set: { controller.selectVariant(id: $0) }
-            )) {
-                ForEach(definition.variants, id: \.id) { variant in
-                    GeometryReader { proxy in
-                        let aspect = CGFloat(variant.columns) / CGFloat(variant.rows)
-                        let width = min(proxy.size.width - 40, variant.columns == 1 ? 180 : 360, proxy.size.height * aspect)
-                        WidgetContent(tile: variant.preview, copy: state.text, interactive: false, pay: { _ in })
-                            .frame(width: width, height: width * CGFloat(variant.rows) / CGFloat(variant.columns))
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        GeometryReader { proxy in
+            let gaps = HubGeometry.gap * (previewRows - 1)
+            // Roughly half the screen for the preview, the rest for the copy and the page dots
+            // around it. A share rather than a fixed reserve keeps both readable as text scales.
+            let budget = max(proxy.size.height * 0.45, 160)
+            let unit = min((min(proxy.size.width, 420) - 52) / 2, (budget - gaps) / previewRows, 160)
+            let stage = unit * previewRows + gaps
+            ScrollView {
+                VStack(spacing: 14) {
+                    Spacer(minLength: 0)
+                    Text(definition.title)
+                        .font(.title2.weight(.semibold))
+                        .multilineTextAlignment(.center)
+                    Text(definition.detail)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 24)
+                    TabView(selection: Binding(
+                        get: { state.editor?.variantId ?? definition.variants.first?.id ?? "" },
+                        set: { controller.selectVariant(id: $0) }
+                    )) {
+                        ForEach(definition.variants, id: \.id) { variant in
+                            WidgetContent(tile: variant.preview, copy: state.text, interactive: false, pay: { _ in })
+                                .frame(
+                                    width: HubGeometry.span(unit, variant.columns),
+                                    height: HubGeometry.span(unit, variant.rows)
+                                )
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .tag(variant.id)
+                                .accessibilityLabel(variant.title)
+                        }
                     }
-                    .padding(.bottom, 25)
-                    .tag(variant.id)
-                    .accessibilityLabel(variant.title)
+                    .tabViewStyle(.page(indexDisplayMode: definition.variants.count > 1 ? .always : .never))
+                    .indexViewStyle(.page(backgroundDisplayMode: .always))
+                    .frame(height: stage + (definition.variants.count > 1 ? 44 : 0))
+                    if let selected {
+                        Text(selected.title).font(.headline)
+                        Text(selected.detail)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 24)
+                    }
+                    Spacer(minLength: 0)
                 }
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity, minHeight: proxy.size.height)
             }
-            .tabViewStyle(.page(indexDisplayMode: definition.variants.count > 1 ? .always : .never))
-            .indexViewStyle(.page(backgroundDisplayMode: .always))
-            .frame(minHeight: 220, maxHeight: 400)
-            if let selected {
-                Text(selected.title).font(.headline)
-                Text(selected.detail)
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-            }
-            Spacer(minLength: 0)
         }
         .safeAreaInset(edge: .bottom) {
             HubPrimaryButton(title: state.text.continueTitle, busy: false) {
                 controller.configureSelected()
             }
         }
-        .navigationTitle(definition.title)
+        // The bar says what to do here; the body already names what is being configured.
+        .navigationTitle(state.text.chooseLayout)
         .navigationBarTitleDisplayMode(.inline)
     }
 }
@@ -589,13 +647,20 @@ private struct WidgetConfigurationView: View {
                     }
                 }
             }
-            Button {
-                showingContactPicker = true
-            } label: {
-                Label(editor.selectionTitle, systemImage: "person.crop.circle.badge.checkmark")
+            if editor.selectedContacts.count < Int(editor.capacity) {
+                Button {
+                    showingContactPicker = true
+                } label: {
+                    Label(editor.selectionTitle, systemImage: "person.crop.circle.badge.plus")
+                }
             }
+        } header: {
+            Text(state.text.contactsTitle)
         } footer: {
-            Text(editor.selectionCount)
+            // "0 of 1 selected" only restates the single row above it.
+            if editor.capacity > 1 {
+                Text(editor.selectionCount)
+            }
         }
     }
 
@@ -658,10 +723,15 @@ private struct HubContactPicker: View {
                                 .foregroundStyle(.secondary)
                         }
                     } header: {
-                        Text(editor.selectionCount)
+                        // A single-choice list needs no tally; the checkmark already says it.
+                        if editor.capacity > 1 {
+                            Text(editor.selectionCount)
+                        }
                     } footer: {
-                        if editor.capacity > 1 && editor.selectedContacts.count >= editor.capacity {
-                            Text(editor.selectionTitle)
+                        if editor.capacity > 1,
+                            editor.selectedContacts.count >= Int(editor.capacity)
+                        {
+                            Text(editor.selectionLimit)
                         }
                     }
                     if let error = state.error, !showingNewContact {
@@ -920,7 +990,9 @@ private struct WidgetContent: View {
     @ViewBuilder
     private func people(size: CGSize) -> some View {
         let columns = tile.columns == 1 ? 1 : (tile.rows >= 2 ? 3 : 4)
-        let singleHeightAllowance: CGFloat = tile.people.first?.amount == nil ? 82 : 108
+        // A contact and a shortcut often sit side by side, so the portrait always budgets for an
+        // amount line. Sizing it from the content gave neighbouring tiles different circles.
+        let singleHeightAllowance: CGFloat = 108
         let avatarSize = min(
             tile.columns == 1 ? 66 : (tile.rows >= 2 ? 72 : 50),
             (size.width - 40) / CGFloat(columns) - 10,
@@ -944,6 +1016,12 @@ private struct WidgetContent: View {
         }
     }
 
+    /// A single face always budgets the line so neighbouring tiles line up. A multi-contact tile
+    /// only needs its own cells to agree, so one with no amounts at all keeps the space.
+    private var reservesAmount: Bool {
+        tile.columns == 1 || tile.people.contains { $0.amount != nil }
+    }
+
     private func personButton(_ person: NativeHubPerson, avatarSize: CGFloat, seed: Int = 0) -> some View {
         Button {
             if !person.actionId.isEmpty { pay(person.actionId) }
@@ -955,13 +1033,17 @@ private struct WidgetContent: View {
                     .foregroundStyle(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                if let amount = person.amount {
-                    Text(amount)
-                        .font(tile.kind == "shortcut" ? .headline : .caption2)
+                // The line is kept even without an amount so that portraits and names sit at the
+                // same height across neighbouring tiles.
+                if reservesAmount {
+                    Text(person.amount ?? " ")
+                        .font(tile.columns == 1 ? .subheadline.weight(.semibold) : .caption2)
                         .foregroundStyle(Color.accentColor)
                         .monospacedDigit()
                         .lineLimit(1)
                         .minimumScaleFactor(0.65)
+                        .opacity(person.amount == nil ? 0 : 1)
+                        .accessibilityHidden(person.amount == nil)
                 }
             }
             .frame(maxWidth: .infinity)

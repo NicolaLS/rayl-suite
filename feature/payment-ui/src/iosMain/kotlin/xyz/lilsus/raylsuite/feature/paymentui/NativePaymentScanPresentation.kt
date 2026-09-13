@@ -50,11 +50,13 @@ data class NativePaymentScanSheet(
     val title: String,
     val body: String?,
     val amount: String?,
+    /** Fraction digit the user has opened but not typed yet; drawn dimmed. */
+    val amountPending: String? = null,
     val exactAmount: String?,
     val fundingSource: String?,
     val recipientTitle: String?,
     val recipientImageBase64: String?,
-    val currencyLabel: String?,
+    val currencyAffix: NativeAmountAffix?,
     val rangeMessage: String?,
     val allowsDecimal: Boolean,
     val canSubmit: Boolean,
@@ -63,14 +65,14 @@ data class NativePaymentScanSheet(
     val textFieldLabel: String?,
     val textFieldValue: String?,
     val manualReview: NativeManualAmountReview? = null,
-    val currencySwitch: NativeManualCurrencySwitch? = null
+    val currencySwitch: NativeManualCurrencySwitch? = null,
+    val backspaceTitle: String? = null
 )
 
-data class NativeManualCurrencySwitch(
-    val title: String,
-    val currency: String,
-    val equivalent: String?
-)
+data class NativeManualCurrencySwitch(val title: String, val equivalent: String?)
+
+/** Currency marks around a figure the user is still typing, placed the way the locale does. */
+data class NativeAmountAffix(val prefix: String, val suffix: String)
 
 data class NativeManualAmountReview(val title: String, val amount: String?, val payTitle: String)
 
@@ -273,11 +275,12 @@ private suspend fun ManualAmountUiState.toNativeSheet(
     title = nativeString(NativeStringResource(table = "PaymentUI", key = "enter_amount_title")),
     body = null,
     amount = committedNumber(),
+    amountPending = pendingFraction(),
     exactAmount = null,
     fundingSource = null,
     recipientTitle = recipient?.recipientTitle(),
     recipientImageBase64 = recipient?.image?.encodedBase64(),
-    currencyLabel = currency.nativeLabel(),
+    currencyAffix = formatter.affix(currency).let { NativeAmountAffix(it.prefix, it.suffix) },
     rangeMessage = rangeStatus.message(),
     allowsDecimal = allowDecimal,
     canSubmit = amount != null && amount.minor > 0L && rangeStatus == RangeStatus.InRange,
@@ -289,13 +292,15 @@ private suspend fun ManualAmountUiState.toNativeSheet(
     ),
     textFieldLabel = null,
     textFieldValue = null,
+    backspaceTitle = nativeString(
+        NativeStringResource(table = "PaymentUI", key = "enter_amount_backspace")
+    ),
     currencySwitch = alternativeCurrency?.let { alternative ->
         NativeManualCurrencySwitch(
             title = nativeString(
                 NativeStringResource(table = "PaymentUI", key = "enter_amount_switch_currency"),
                 alternative.nativeLabel().uppercase()
             ),
-            currency = alternative.nativeLabel().uppercase(),
             equivalent = equivalentAmount?.let { "≈ ${formatter.format(it)}" }
         )
     },
@@ -336,7 +341,7 @@ private suspend fun PaymentScreenState.Confirm.toNativeSheet(
     fundingSource = fundingSource,
     recipientTitle = lnurlPayDisplay?.recipientTitle(),
     recipientImageBase64 = lnurlPayDisplay?.image?.encodedBase64(),
-    currencyLabel = null,
+    currencyAffix = null,
     rangeMessage = null,
     allowsDecimal = false,
     canSubmit = true,
@@ -361,7 +366,7 @@ private suspend fun HubSavePrompt.toNativeSheet(): NativePaymentScanSheet {
         fundingSource = null,
         recipientTitle = null,
         recipientImageBase64 = null,
-        currencyLabel = null,
+        currencyAffix = null,
         rangeMessage = null,
         allowsDecimal = false,
         canSubmit = true,
@@ -397,8 +402,15 @@ private fun ManualAmountUiState.committedNumber(): String {
             normalized.reversed().chunked(3).joinToString(",").reversed()
         }
     if (!allowDecimal || (!hasDecimal && rawFraction.isEmpty())) return whole
-    return "$whole.${rawFraction.ifEmpty { "0" }}"
+    return "$whole.$rawFraction"
 }
+
+/**
+ * A decimal point with nothing after it yet. Shown as a dimmed zero so "0." does not read as a
+ * committed "0.0", which would suggest the next digit lands in the hundredths.
+ */
+private fun ManualAmountUiState.pendingFraction(): String? =
+    if (allowDecimal && hasDecimal && rawFraction.isEmpty()) "0" else null
 
 private fun DisplayCurrency.nativeLabel(): String = when (this) {
     DisplayCurrency.Satoshi -> "sat"

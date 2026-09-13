@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -100,14 +101,7 @@ private fun SingleContactFace(
             }
         ).padding(14.dp)
     ) {
-        Text(
-            text = tile.title?.takeIf { it.isNotBlank() } ?: tile.kind.label(),
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(end = headerTrailingPadding)
-        )
+        WidgetHeader(tile, headerTrailingPadding)
         BoxWithConstraints(
             contentAlignment = Alignment.Center,
             modifier = Modifier.weight(1f).fillMaxWidth()
@@ -120,10 +114,7 @@ private fun SingleContactFace(
                     textAlign = TextAlign.Center
                 )
             } else {
-                val textHeight = (if (amount == null) 20.dp else 44.dp) *
-                    LocalDensity.current.fontScale
-                val avatarSize = minOf(maxWidth * 0.5f, maxHeight - textHeight - 12.dp)
-                    .coerceIn(24.dp, 66.dp)
+                val avatarSize = singleAvatarSize(maxWidth, maxHeight)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(6.dp)
@@ -136,20 +127,61 @@ private fun SingleContactFace(
                         overflow = TextOverflow.Ellipsis,
                         textAlign = TextAlign.Center
                     )
-                    amount?.let {
-                        Text(
-                            text = it,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center
-                        )
-                    }
+                    // The line is kept even without an amount so that portraits and names sit at
+                    // the same height across neighbouring tiles.
+                    Text(
+                        text = amount.orEmpty(),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
         }
     }
+}
+
+/**
+ * Every face opens the same way, so a canvas of mixed widgets reads as one set rather than as
+ * several unrelated cards.
+ */
+@Composable
+private fun WidgetHeader(tile: HubWidgetTile, trailingPadding: Dp) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(5.dp),
+        modifier = Modifier.fillMaxWidth().padding(end = trailingPadding)
+    ) {
+        if (tile.kind == HubWidgetKind.Shortcut) {
+            Icon(
+                Icons.Filled.Bolt,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(14.dp)
+            )
+        }
+        Text(
+            text = tile.title?.takeIf { it.isNotBlank() } ?: tile.kind.label(),
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
+}
+
+/**
+ * A contact and a shortcut often sit side by side, so the portrait always budgets for an amount
+ * line even when the widget has none. Sizing it from the content instead would give neighbouring
+ * tiles visibly different circles.
+ */
+@Composable
+private fun singleAvatarSize(width: Dp, height: Dp): Dp {
+    val textHeight = 44.dp * LocalDensity.current.fontScale
+    return minOf(width * 0.5f, height - textHeight - 12.dp).coerceIn(24.dp, 66.dp)
 }
 
 @Composable
@@ -164,13 +196,7 @@ private fun ContactCollectionFace(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier.fillMaxSize().padding(14.dp)
     ) {
-        Text(
-            text = tile.title?.takeIf { it.isNotBlank() } ?: tile.kind.label(),
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(end = headerTrailingPadding)
-        )
+        WidgetHeader(tile, headerTrailingPadding)
         if (tile.people.isEmpty() && !preview) {
             Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
                 Text(
@@ -190,6 +216,9 @@ private fun ContactCollectionFace(
             val columns = if (tile.variant.rows == 1) tile.variant.capacity else 3
             val rowCount = if (tile.variant.rows == 1) 1 else 2
             val people = tile.people.take(tile.variant.capacity)
+            // Favorites and Recents mix plain contacts with shortcuts. Reserving the line for the
+            // whole tile keeps its portraits even; a tile with no amounts at all keeps the space.
+            val reserveAmount = people.any { it.amount != null }
             repeat(rowCount) { row ->
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -203,6 +232,7 @@ private fun ContactCollectionFace(
                                 person = person,
                                 onPay = onPay,
                                 interactive = interactive,
+                                reserveAmount = reserveAmount,
                                 modifier = Modifier.weight(1f).fillMaxSize()
                             )
                         } else {
@@ -220,6 +250,7 @@ private fun ContactCell(
     person: HubWidgetPerson?,
     onPay: (String) -> Unit,
     interactive: Boolean,
+    reserveAmount: Boolean,
     modifier: Modifier = Modifier
 ) {
     val payLabel = person?.let { stringResource(R.string.hub_canvas_pay, it.title) }
@@ -234,8 +265,7 @@ private fun ContactCell(
         ),
         contentAlignment = Alignment.Center
     ) {
-        val textHeight = (if (person?.amount != null) 34.dp else 18.dp) *
-            LocalDensity.current.fontScale
+        val textHeight = (if (reserveAmount) 34.dp else 18.dp) * LocalDensity.current.fontScale
         val avatarSize = minOf(maxWidth * 0.7f, maxHeight - textHeight - 10.dp)
             .coerceIn(24.dp, 52.dp)
         Column(
@@ -254,18 +284,22 @@ private fun ContactCell(
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center
             )
-            person?.amount?.let { amount ->
+            if (reserveAmount) {
                 Text(
-                    text = rememberAmountFormatter().format(
-                        DisplayAmount(
-                            amount.minor,
-                            CurrencyCatalog.infoFor(amount.normalizedCurrencyCode).currency
+                    text = person?.amount?.let { amount ->
+                        rememberAmountFormatter().format(
+                            DisplayAmount(
+                                amount.minor,
+                                CurrencyCatalog.infoFor(amount.normalizedCurrencyCode).currency
+                            )
                         )
-                    ),
+                    }.orEmpty(),
                     style = MaterialTheme.typography.labelSmall,
+                    fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
                 )
             }
         }
@@ -316,15 +350,9 @@ private fun MetricFace(tile: HubWidgetTile, headerTrailingPadding: Dp) {
     Column(
         horizontalAlignment = Alignment.Start,
         verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize().padding(18.dp)
+        modifier = Modifier.fillMaxSize().padding(14.dp)
     ) {
-        Text(
-            tile.title ?: tile.kind.label(),
-            style = MaterialTheme.typography.titleSmall,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(end = headerTrailingPadding)
-        )
+        WidgetHeader(tile, headerTrailingPadding)
         Spacer(Modifier.height(12.dp))
         when {
             tile.loading -> Text(

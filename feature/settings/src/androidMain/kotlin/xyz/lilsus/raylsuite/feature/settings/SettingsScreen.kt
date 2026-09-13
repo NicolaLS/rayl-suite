@@ -3,14 +3,19 @@ package xyz.lilsus.raylsuite.feature.settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Contrast
+import androidx.compose.material.icons.filled.CurrencyExchange
+import androidx.compose.material.icons.filled.Language
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -23,16 +28,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import xyz.lilsus.raylsuite.core.ui.components.AppFadingLazyColumn
-import xyz.lilsus.raylsuite.core.ui.components.AppListDefaults
-import xyz.lilsus.raylsuite.core.ui.components.AppListRow
+import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRow
+import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRowDefaults
 import xyz.lilsus.raylsuite.core.ui.components.BackIconButton
 import xyz.lilsus.raylsuite.core.ui.platform.appVersionName
 import xyz.lilsus.raylsuite.core.ui.theme.RaylSuiteTheme
@@ -43,6 +48,7 @@ data class SettingsEntry(
     val id: String,
     val title: String,
     val subtitle: String? = null,
+    val icon: ImageVector? = null,
     val testTag: String? = null,
     val onClick: () -> Unit
 ) {
@@ -83,6 +89,7 @@ fun SettingsScreen(
                 id = "payments",
                 title = stringResource(R.string.settings_payments),
                 subtitle = stringResource(R.string.settings_payments_subtitle),
+                icon = Icons.Filled.Bolt,
                 testTag = SettingsTestTags.PAYMENTS_ROW,
                 onClick = onPayments
             ),
@@ -90,6 +97,7 @@ fun SettingsScreen(
                 id = "currency",
                 title = stringResource(R.string.settings_currency),
                 subtitle = resolvedCurrencySubtitle,
+                icon = Icons.Filled.CurrencyExchange,
                 testTag = SettingsTestTags.CURRENCY_ROW,
                 onClick = onCurrency
             ),
@@ -97,6 +105,7 @@ fun SettingsScreen(
                 id = "language",
                 title = stringResource(R.string.settings_language),
                 subtitle = resolvedLanguageSubtitle,
+                icon = Icons.Filled.Language,
                 testTag = SettingsTestTags.LANGUAGE_ROW,
                 onClick = onLanguage
             ),
@@ -104,6 +113,7 @@ fun SettingsScreen(
                 id = "theme",
                 title = stringResource(R.string.settings_theme),
                 subtitle = resolvedThemeSubtitle,
+                icon = Icons.Filled.Contrast,
                 testTag = SettingsTestTags.THEME_ROW,
                 onClick = onTheme
             )
@@ -136,8 +146,8 @@ fun SettingsScreen(
                 Modifier
                     .fillMaxSize()
                     .padding(padding),
-            contentPadding = AppListDefaults.ScreenPadding,
-            verticalArrangement = Arrangement.spacedBy(AppListDefaults.SectionSpacing)
+            contentPadding = AppSettingsRowDefaults.ScreenPadding,
+            verticalArrangement = Arrangement.spacedBy(AppSettingsRowDefaults.RowSpacing)
         ) {
             items(entries, key = { entry -> "entry:${entry.id}" }) { entry ->
                 SettingsListItem(entry)
@@ -167,26 +177,13 @@ fun SettingsScreen(
 
 @Composable
 private fun PerformanceDiagnosticsRow(enabled: Boolean, onEnabledChanged: (Boolean) -> Unit) {
-    AppListRow(
+    AppSettingsRow(
+        title = stringResource(R.string.settings_performance_diagnostics),
         onClick = { onEnabledChanged(!enabled) },
-        minHeight = 48.dp,
-        tonalElevation = 4.dp,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
+        subtitle = stringResource(R.string.settings_performance_diagnostics_subtitle),
+        icon = Icons.Filled.Speed,
+        subtitleMaxLines = 2
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = stringResource(R.string.settings_performance_diagnostics),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Text(
-                text = stringResource(R.string.settings_performance_diagnostics_subtitle),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-        }
         Switch(
             checked = enabled,
             onCheckedChange = onEnabledChanged
@@ -196,35 +193,18 @@ private fun PerformanceDiagnosticsRow(enabled: Boolean, onEnabledChanged: (Boole
 
 @Composable
 private fun SettingsListItem(entry: SettingsEntry) {
-    AppListRow(
+    AppSettingsRow(
+        title = entry.title,
         onClick = entry.onClick,
-        testTag = entry.testTag,
-        minHeight = 48.dp,
-        tonalElevation = 4.dp,
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        contentPadding = PaddingValues(horizontal = 20.dp, vertical = 16.dp)
+        subtitle = entry.subtitle,
+        icon = entry.icon,
+        testTag = entry.testTag
     ) {
-        Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = entry.title,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            entry.subtitle?.let { subtitle ->
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
-        }
         Icon(
             imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(AppSettingsRowDefaults.ChevronSize)
         )
     }
 }
@@ -233,7 +213,7 @@ private fun SettingsListItem(entry: SettingsEntry) {
 private fun SettingsFooter(legalLinks: SettingsLegalLinks) {
     val uriHandler = LocalUriHandler.current
     Column(
-        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        modifier = Modifier.fillMaxWidth().padding(top = 20.dp, bottom = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {

@@ -164,7 +164,7 @@ class NativePaymentHubController(
                     fiatAmountHint = if (
                         editor.kind == HubWidgetKind.Shortcut && editor.currencyCode != "SAT"
                     ) {
-                        nativeString(resource("hub_target_amount_fiat_hint"), editor.currencyCode)
+                        localized("hub_target_amount_fiat_hint")
                     } else {
                         null
                     },
@@ -180,12 +180,20 @@ class NativePaymentHubController(
                                 contact.address.full.contains(query, ignoreCase = true)
                             )
                     }.map { it.toNative() },
-                    selectionTitle = localized("hub_widget_choose_contacts", variant.capacity),
+                    // Reads as an action at any capacity; "Choose up to 1 contacts" did not.
+                    selectionTitle = localized(
+                        if (variant.capacity == 1) {
+                            "hub_widget_pick_contact"
+                        } else {
+                            "hub_widget_pick_contacts"
+                        }
+                    ),
                     selectionCount = localized(
                         "hub_widget_selected_count",
                         editor.contactIds.size,
                         variant.capacity
                     ),
+                    selectionLimit = localized("hub_widget_choose_contacts", variant.capacity),
                     capacity = variant.capacity,
                     canSave = state.editorValidationError() == null,
                     validationMessage = when (state.editorValidationError()) {
@@ -465,6 +473,8 @@ data class NativeHubEditor(
     val availableContacts: List<NativeHubContact>,
     val selectionTitle: String,
     val selectionCount: String,
+    /** Explains the ceiling once a multi-contact widget is full. */
+    val selectionLimit: String,
     val capacity: Int,
     val canSave: Boolean,
     val validationMessage: String?,

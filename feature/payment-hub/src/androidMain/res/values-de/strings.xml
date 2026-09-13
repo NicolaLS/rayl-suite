@@ -16,7 +16,7 @@
     <string name="hub_configure_delete">Aus dem Hub entfernen</string>
     <string name="hub_target_name_label">Name</string>
     <string name="hub_target_address_label">Lightning-Adresse</string>
-    <string name="hub_target_amount_fiat_hint">Zum Zahlungszeitpunkt wird der aktuelle Wechselkurs verwendet, sodass der Empfänger Bitcoin im Wert dieses %1$s-Betrags erhält.</string>
+    <string name="hub_target_amount_fiat_hint">Wird beim Bezahlen zum aktuellen Wechselkurs in Bitcoin umgerechnet.</string>
     <string name="hub_target_comment_label">Zahlungskommentar (optional)</string>
     <string name="hub_error_enter_title">Gib einen Namen ein.</string>
     <string name="hub_error_invalid_address">Gib eine gültige Lightning-Adresse ein.</string>
@@ -52,6 +52,8 @@
     <string name="hub_widget_edit">Widget bearbeiten</string>
     <string name="hub_widget_name">Widget-Name</string>
     <string name="hub_widget_choose_contacts">Wähle bis zu %1$d Kontakte</string>
+    <string name="hub_widget_pick_contact">Kontakt auswählen</string>
+    <string name="hub_widget_pick_contacts">Kontakte auswählen</string>
     <string name="hub_widget_selected_count">%1$d von %2$d ausgewählt</string>
     <string name="hub_widget_change_contacts">Kontakte ändern</string>
     <string name="hub_widget_add_contact">Kontakt hinzufügen</string>

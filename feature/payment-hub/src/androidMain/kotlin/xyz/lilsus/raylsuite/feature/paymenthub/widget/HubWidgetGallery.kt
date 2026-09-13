@@ -78,9 +78,9 @@ internal fun HubWidgetGallery(
             item(span = { GridItemSpan(maxLineSpan) }) {
                 Text(
                     stringResource(R.string.hub_widget_gallery_body),
-                    style = MaterialTheme.typography.titleLarge,
+                    style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp)
+                    modifier = Modifier.padding(bottom = 4.dp)
                 )
             }
             items(state.gallery, key = HubWidgetDefinition::id) { definition ->
@@ -204,104 +204,124 @@ internal fun HubWidgetVariants(
             variants.getOrNull(page)?.let { viewModel.selectVariant(it.id) }
         }
     }
+    // Every page reserves the tallest layout, so the previews keep their relative sizes and paging
+    // never resizes the screen around them.
+    val previewRows = variants.maxOf { it.rows }
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-            modifier = Modifier.weight(
-                1f
-            ).fillMaxWidth().verticalScroll(rememberScrollState()).padding(vertical = 20.dp)
-        ) {
-            Text(
-                definition.label(),
-                style = MaterialTheme.typography.headlineSmall,
-                modifier = Modifier.padding(horizontal = 24.dp)
-            )
-            Text(
-                definition.body(),
-                style = MaterialTheme.typography.bodyLarge,
-                textAlign = TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.widthIn(max = 480.dp).padding(horizontal = 24.dp)
-            )
-            HorizontalPager(
-                state = pager,
-                pageSpacing = 16.dp,
-                contentPadding = PaddingValues(horizontal = 24.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) { page ->
-                val variant = variants[page]
-                val description =
-                    stringResource(R.string.hub_widget_preview_page, page + 1, variants.size)
-                BoxWithConstraints(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier.fillMaxWidth().semantics {
-                        contentDescription = description
-                    }
+        BoxWithConstraints(modifier = Modifier.weight(1f).fillMaxWidth()) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 20.dp)
                 ) {
-                    val previewWidth = maxWidth.coerceAtMost(400.dp)
-                    val unit = (previewWidth - 12.dp) / 2
-                    Box(
-                        Modifier.fillMaxWidth().height(previewWidth),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        HubWidgetFace(
-                            tile = HubWidgetTile(
-                                id = "preview:${definition.id}:${variant.id}",
-                                definitionId = definition.id,
-                                kind = definition.kind,
-                                variant = variant,
-                                title = definition.title,
-                                people = if (definition.kind == HubWidgetKind.Metric) {
-                                    emptyList()
-                                } else {
-                                    state.contacts.take(variant.capacity).map { contact ->
-                                        HubWidgetPerson(
-                                            actionId = "",
-                                            contactId = contact.id,
-                                            title = contact.title,
-                                            address = ""
-                                        )
-                                    }
-                                }
-                            ),
-                            onPay = {},
-                            preview = true,
-                            interactive = false,
-                            modifier = Modifier.width(
-                                unit * variant.columns + 12.dp * (variant.columns - 1)
-                            )
-                                .height(unit * variant.rows + 12.dp * (variant.rows - 1))
-                        )
-                    }
-                }
-            }
-            if (variants.size > 1) {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    variants.indices.forEach { page ->
-                        Box(
-                            Modifier.size(7.dp).background(
-                                if (page ==
-                                    pager.currentPage
-                                ) {
-                                    MaterialTheme.colorScheme.primary
-                                } else {
-                                    MaterialTheme.colorScheme.outlineVariant
-                                },
-                                CircleShape
-                            )
-                        )
-                    }
-                }
-            }
-            variants.getOrNull(pager.currentPage)?.let { variant ->
-                Text(variant.title ?: variant.label(), style = MaterialTheme.typography.titleMedium)
-                if (definition.kind != HubWidgetKind.Metric) {
                     Text(
-                        variant.body(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        definition.label(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 24.dp)
                     )
+                    Text(
+                        definition.body(),
+                        style = MaterialTheme.typography.bodyLarge,
+                        textAlign = TextAlign.Center,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.widthIn(max = 480.dp).padding(horizontal = 24.dp)
+                    )
+                    HorizontalPager(
+                        state = pager,
+                        pageSpacing = 16.dp,
+                        contentPadding = PaddingValues(horizontal = 24.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) { page ->
+                        val variant = variants[page]
+                        val description = stringResource(
+                            R.string.hub_widget_preview_page,
+                            page + 1,
+                            variants.size
+                        )
+                        BoxWithConstraints(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxWidth().semantics {
+                                contentDescription = description
+                            }
+                        ) {
+                            val gaps = previewGap * (previewRows - 1)
+                            val unit = (maxWidth.coerceAtMost(400.dp) - previewGap) / 2
+                            Box(
+                                Modifier.fillMaxWidth().height(unit * previewRows + gaps),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                HubWidgetFace(
+                                    tile = HubWidgetTile(
+                                        id = "preview:${definition.id}:${variant.id}",
+                                        definitionId = definition.id,
+                                        kind = definition.kind,
+                                        variant = variant,
+                                        title = definition.title,
+                                        people = if (definition.kind == HubWidgetKind.Metric) {
+                                            emptyList()
+                                        } else {
+                                            state.contacts.take(variant.capacity).map { contact ->
+                                                HubWidgetPerson(
+                                                    actionId = "",
+                                                    contactId = contact.id,
+                                                    title = contact.title,
+                                                    address = ""
+                                                )
+                                            }
+                                        }
+                                    ),
+                                    onPay = {},
+                                    preview = true,
+                                    interactive = false,
+                                    modifier = Modifier
+                                        .width(
+                                            unit * variant.columns +
+                                                previewGap * (variant.columns - 1)
+                                        )
+                                        .height(
+                                            unit * variant.rows + previewGap * (variant.rows - 1)
+                                        )
+                                )
+                            }
+                        }
+                    }
+                    if (variants.size > 1) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            variants.indices.forEach { page ->
+                                Box(
+                                    Modifier.size(7.dp).background(
+                                        if (page == pager.currentPage) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.outlineVariant
+                                        },
+                                        CircleShape
+                                    )
+                                )
+                            }
+                        }
+                    }
+                    variants.getOrNull(pager.currentPage)?.let { variant ->
+                        Text(
+                            variant.title ?: variant.label(),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        if (definition.kind != HubWidgetKind.Metric) {
+                            Text(
+                                variant.body(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.widthIn(max = 480.dp)
+                                    .padding(horizontal = 24.dp)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -310,9 +330,12 @@ internal fun HubWidgetVariants(
                 variants.getOrNull(pager.currentPage)?.let { viewModel.selectVariant(it.id) }
                 viewModel.configureSelected()
             },
-            modifier = Modifier.widthIn(max = 520.dp).fillMaxWidth().padding(16.dp)
+            modifier = Modifier.widthIn(max = 520.dp).fillMaxWidth()
+                .padding(horizontal = 24.dp).padding(top = 8.dp, bottom = 16.dp).height(56.dp)
         ) {
             Text(stringResource(R.string.hub_widget_continue))
         }
     }
 }
+
+private val previewGap = 12.dp
