@@ -1,8 +1,4 @@
 <resources>
-    <string name="tap_dismiss_pending_blink">Blink indicó que este pago está pendiente. Comprueba su estado final en tu billetera Blink.</string>
-    <string name="transaction_status_sending">Enviando</string>
-    <string name="transaction_status_pending_blink">Pendiente en Blink</string>
-    <string name="transaction_status_unknown">Estado desconocido</string>
     <string name="transaction_status_success">Pagado</string>
     <string name="transaction_status_already_paid">Ya pagado</string>
     <string name="transaction_status_failure">Fallido</string>
@@ -15,6 +11,7 @@
     <string name="error_payment_rejected_generic">El pago fue rechazado.</string>
     <string name="error_payment_rejected_message">El pago fue rechazado: %1$s</string>
     <string name="error_network_unavailable">Sin conexión a internet. Verifica tu red.</string>
+    <string name="error_payment_status_unknown">No se pudo confirmar este pago. Revisa tu billetera Blink antes de volver a pagar.</string>
     <string name="error_payment_unconfirmed">Estado de pago desconocido. Es posible que el pago haya sido exitoso.</string>
     <string name="error_payment_unconfirmed_message">Estado de pago desconocido: %1$s</string>
     <string name="error_blink_permission_denied">Tu clave API no tiene permiso para enviar pagos. Crea una nueva clave con todos los permisos habilitados.</string>

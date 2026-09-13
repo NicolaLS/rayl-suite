@@ -1,7 +1,7 @@
 package xyz.lilsus.flint.feature.payment
 
 import xyz.lilsus.flint.application.payment.AmountRequiredPayment
-import xyz.lilsus.flint.application.payment.PaymentActivity
+import xyz.lilsus.flint.application.payment.PaymentReceipt
 import xyz.lilsus.flint.application.payment.PreparedPayment
 import xyz.lilsus.raylsuite.core.model.LightningAddress
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentAmountQuote
@@ -12,8 +12,7 @@ import xyz.lilsus.raylsuite.feature.paymentui.PaymentConfirmationAmount
 /**
  * Holds the mutually exclusive phases of one Flint payment interaction.
  *
- * Wallet attachment and durable attempts outlive this presentation session. Resetting it only
- * drops transient handles and result presentation owned by the coordinator.
+ * Resetting it drops transient handles and the result presentation owned by the coordinator.
  */
 internal class PaymentInteractionSession {
     var phase: PaymentInteractionPhase = PaymentInteractionPhase.Idle
@@ -25,15 +24,8 @@ internal class PaymentInteractionSession {
     val manualRequest: ManualRequest?
         get() = (phase as? PaymentInteractionPhase.ManualAmount)?.request
 
-    val activeAttemptId: String?
-        get() = (phase as? PaymentInteractionPhase.Attempt)?.attemptId
-
-    val visibleActivity: VisibleActivity?
-        get() = when (val current = phase) {
-            is PaymentInteractionPhase.Attempt -> current.visibleActivity
-            is PaymentInteractionPhase.Result -> current.visibleActivity
-            else -> null
-        }
+    val visibleReceipt: VisibleReceipt?
+        get() = (phase as? PaymentInteractionPhase.Result)?.receipt
 
     fun requestManualAmount(request: ManualRequest) {
         phase = PaymentInteractionPhase.ManualAmount(request)
@@ -43,29 +35,8 @@ internal class PaymentInteractionSession {
         phase = PaymentInteractionPhase.Draft(draft)
     }
 
-    fun beginAttempt(attemptId: String) {
-        phase = PaymentInteractionPhase.Attempt(attemptId)
-    }
-
-    fun showActivity(visibleActivity: VisibleActivity) {
-        val current = phase
-        phase =
-            if (
-                current is PaymentInteractionPhase.Attempt &&
-                current.attemptId == visibleActivity.activity.attemptId
-            ) {
-                current.copy(visibleActivity = visibleActivity)
-            } else {
-                PaymentInteractionPhase.Result(visibleActivity)
-            }
-    }
-
-    fun clearVisibleActivity() {
-        phase = when (val current = phase) {
-            is PaymentInteractionPhase.Attempt -> current.copy(visibleActivity = null)
-            is PaymentInteractionPhase.Result -> PaymentInteractionPhase.Idle
-            else -> current
-        }
+    fun showResult(receipt: VisibleReceipt) {
+        phase = PaymentInteractionPhase.Result(receipt)
     }
 
     fun reset() {
@@ -80,10 +51,7 @@ internal sealed interface PaymentInteractionPhase {
 
     data class Draft(val draft: ActiveDraft) : PaymentInteractionPhase
 
-    data class Attempt(val attemptId: String, val visibleActivity: VisibleActivity? = null) :
-        PaymentInteractionPhase
-
-    data class Result(val visibleActivity: VisibleActivity) : PaymentInteractionPhase
+    data class Result(val receipt: VisibleReceipt) : PaymentInteractionPhase
 }
 
 internal data class ActiveDraft(
@@ -100,9 +68,9 @@ internal data class ManualRequest(
     val lnurlPayDisplay: LnurlPayDisplay?
 )
 
-internal data class VisibleActivity(val activity: PaymentActivity, val wasAlreadyPaid: Boolean)
+internal data class VisibleReceipt(val receipt: PaymentReceipt, val wasAlreadyPaid: Boolean)
 
-/** App-owned link between a Spark attempt and the hub target it was started from. */
+/** App-owned link between a Spark payment and the hub target it was started from. */
 internal data class HubTargetContext(
     val targetId: HubItemId?,
     val address: LightningAddress,

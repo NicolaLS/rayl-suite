@@ -13,7 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Error
-import androidx.compose.material.icons.filled.HourglassTop
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -178,13 +177,6 @@ private fun SessionTransactionRow(transaction: PaymentSessionTransaction, onClic
 @Composable
 private fun PaymentSessionTransaction.presentation(): TransactionStatusPresentation =
     when (statusTone) {
-        PaymentStatusTone.Pending -> TransactionStatusPresentation(
-            label = statusLabel,
-            icon = Icons.Filled.HourglassTop,
-            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-            contentColor = MaterialTheme.colorScheme.onSecondaryContainer
-        )
-
         PaymentStatusTone.Success -> TransactionStatusPresentation(
             label = statusLabel,
             icon = Icons.Filled.CheckCircle,

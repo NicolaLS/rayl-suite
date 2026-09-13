@@ -53,6 +53,8 @@ private fun blipPaymentStringResource(key: LocalizedTextKey): Int = when (key) {
         BlipPaymentTextKey.ErrorPaymentRejectedMessage ->
             R.string.error_payment_rejected_message
 
+        BlipPaymentTextKey.ErrorPaymentStatusUnknown -> R.string.error_payment_status_unknown
+
         BlipPaymentTextKey.ErrorPaymentUnconfirmed -> R.string.error_payment_unconfirmed
 
         BlipPaymentTextKey.ErrorPaymentUnconfirmedMessage ->

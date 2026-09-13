@@ -7,7 +7,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.ui.format.rememberAmountFormatter
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentFlowState
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentSessionItem
@@ -30,7 +29,6 @@ fun rememberPaymentFlowState(coordinator: PaymentCoordinator): PaymentFlowState 
         sessionItems =
             sessionTransactions.map { transaction ->
                 PaymentSessionItem(
-                    reference = transaction.toPaymentSessionReference(),
                     transaction = transaction.toPaymentSessionTransaction(formatter),
                     detail = transaction.toPaymentTransactionDetail()
                 )
@@ -57,30 +55,5 @@ fun rememberPaymentMessages(coordinator: PaymentCoordinator): Flow<String> {
 @Composable
 private fun SessionTransactionItem.toPaymentTransactionDetail() = PaymentTransactionDetail(
     id = id,
-    state = toDetailUiState().toPaymentScreenState(::lasrPaymentErrorMessageFor),
-    canRetry = status == PendingStatus.OutcomeUnknown || status == PendingStatus.Failed
+    state = toDetailUiState().toPaymentScreenState(::lasrPaymentErrorMessageFor)
 )
-
-private fun SessionTransactionItem.toDetailUiState(): PaymentUiState = when (status) {
-    PendingStatus.Sending,
-    PendingStatus.Resolving -> PaymentUiState.Loading()
-
-    PendingStatus.Succeeded -> {
-        val paidAmount = resultAmount ?: amount
-        PaymentUiState.Success(
-            amountPaid = paidAmount,
-            feePaid = fee ?: paidAmount.zero(),
-            showEstimatedFeeHint = showEstimatedFeeHint && !wasAlreadyPaid,
-            wasAlreadyPaid = wasAlreadyPaid,
-            preimage = preimage
-        )
-    }
-
-    PendingStatus.OutcomeUnknown,
-    PendingStatus.Failed ->
-        PaymentUiState.Error(
-            error ?: PaymentUiError.Unexpected(errorMessage)
-        )
-}
-
-private fun DisplayAmount.zero(): DisplayAmount = DisplayAmount(0, currency)

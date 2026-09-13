@@ -13,8 +13,6 @@
     <string name="view_session_transactions">Ver transacciones de esta sesión</string>
     <string name="session_transactions_title">Pagos recientes</string>
     <string name="session_transactions_empty">Aún no hay pagos en esta sesión.</string>
-    <string name="tap_dismiss_pending">Toca para cerrar. El pago continúa en segundo plano.</string>
-    <string name="retry_payment">Reintentar pago</string>
     <string name="toast_bitcoin_address">Esto es una dirección Bitcoin. Pide una factura Lightning.</string>
     <string name="toast_bolt12_not_supported">Las ofertas BOLT12 aún no son compatibles.</string>
     <string name="toast_lnurl_request_not_supported">Esta solicitud LNURL no se puede pagar.</string>
@@ -53,14 +51,5 @@
     <string name="camera_permission_restricted_body">El acceso a la cámara no está disponible debido a las restricciones de este dispositivo.</string>
     <string name="resolving_payment_title">Preparando el pago</string>
     <string name="resolving_payment_subtitle">Todavía no se ha enviado ningún pago.</string>
-    <string name="in_progress_title">El pago aún podría completarse</string>
-    <string name="in_progress_body">Un pago para esta solicitud sigue en curso. Revísalo para evitar pagar dos veces o crea un pago adicional solo si quieres volver a pagar.</string>
-    <string name="outcome_unknown_title">Estado del pago anterior desconocido</string>
-    <string name="outcome_unknown_body">Es posible que el pago anterior haya sido exitoso. Reintenta exactamente su factura, revísalo o crea intencionalmente un pago adicional.</string>
-    <string name="completed_title">Pago anterior completado</string>
-    <string name="completed_body">El pago anterior se completó. Revísalo o crea un pago adicional si quieres volver a pagar.</string>
-    <string name="retry_previous_invoice">Reintentar factura anterior</string>
-    <string name="create_additional_payment">Crear pago adicional</string>
-    <string name="view_previous_payment">Ver pago anterior</string>
     <string name="enter_amount_switch_currency">Cambiar a %1$s</string>
 </resources>

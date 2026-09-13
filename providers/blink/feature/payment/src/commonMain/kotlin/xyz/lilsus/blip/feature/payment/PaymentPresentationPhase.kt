@@ -36,12 +36,6 @@ internal class PaymentPresentationPhase(private val currencyManager: PaymentCurr
         mutableUiState.value = PaymentUiState.Active
     }
 
-    fun showActiveIfLoading() {
-        if (mutableUiState.value is PaymentUiState.Loading) {
-            showActive()
-        }
-    }
-
     fun showLoading(kind: LoadingKind = LoadingKind.Paying) {
         mutableUiState.value = PaymentUiState.Loading(kind)
     }
@@ -63,10 +57,6 @@ internal class PaymentPresentationPhase(private val currencyManager: PaymentCurr
             )
     }
 
-    fun showPendingRetry(id: String) {
-        mutableUiState.value = PaymentUiState.PendingRetry(id)
-    }
-
     fun presentError(error: PaymentUiError) {
         mutableUiState.value = PaymentUiState.Error(error)
         emitErrorEvent(error)
@@ -84,15 +74,6 @@ internal class PaymentPresentationPhase(private val currencyManager: PaymentCurr
         lastPaymentResult = payment
         mutableUiState.value = payment.toUiState()
     }
-
-    fun showPaymentError(error: PaymentUiError, emitEvent: Boolean) {
-        lastPaymentResult = null
-        mutableUiState.value = PaymentUiState.Error(error)
-        if (emitEvent) emitErrorEvent(error)
-    }
-
-    fun shouldShowDirectPaymentResult(recordVisible: Boolean): Boolean =
-        mutableUiState.value is PaymentUiState.Loading && !recordVisible
 
     fun onSessionTransactionsOpened(currentTransactionIds: Iterable<String>) {
         newTransactionIds.clear()
@@ -134,6 +115,11 @@ internal class PaymentPresentationPhase(private val currencyManager: PaymentCurr
     }
 
     fun dismissResult() {
+        if (mutableUiState.value !is PaymentUiState.Success &&
+            mutableUiState.value !is PaymentUiState.Error
+        ) {
+            return
+        }
         mutableTransactionDetailNavigationTarget.value = null
         showActive()
     }

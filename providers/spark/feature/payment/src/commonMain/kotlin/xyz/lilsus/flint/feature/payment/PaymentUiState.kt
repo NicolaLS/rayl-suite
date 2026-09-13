@@ -8,8 +8,6 @@ import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountUiState
 sealed interface PaymentUiState {
     data object Active : PaymentUiState
 
-    data object Detected : PaymentUiState
-
     data class Loading(val kind: LoadingKind = LoadingKind.Paying) : PaymentUiState
 
     data class EnterAmount(
@@ -21,8 +19,6 @@ sealed interface PaymentUiState {
         val amount: PaymentConfirmationAmount,
         val lnurlPayDisplay: LnurlPayDisplay? = null
     ) : PaymentUiState
-
-    data class PendingRetry(val id: String) : PaymentUiState
 
     data class Success(
         val amountPaid: DisplayAmount,
@@ -55,47 +51,42 @@ sealed interface PaymentUiError {
 data class SessionTransactionItem(
     val id: String,
     val amount: DisplayAmount,
-    val status: PendingStatus,
+    val status: TransactionStatus,
     val createdAtMs: Long,
     val resultAmount: DisplayAmount? = null,
     val fee: DisplayAmount? = null,
     val error: PaymentUiError? = null,
-    val errorMessage: String? = null,
     val showEstimatedFeeHint: Boolean = false,
     val wasAlreadyPaid: Boolean = false,
     val preimage: String? = null
 )
 
-enum class PendingStatus {
-    Sending,
-    Resolving,
-    OutcomeUnknown,
+enum class TransactionStatus {
     Succeeded,
     Failed
 }
 
 sealed interface SparkPaymentError {
-    val detail: String?
+    data object WalletUnavailable : SparkPaymentError
 
-    data object WalletUnavailable : SparkPaymentError {
-        override val detail: String? = null
+    data object SdkUnavailable : SparkPaymentError
+
+    data class Rejected(val detail: String?) : SparkPaymentError
+
+    data object OutcomeUnknown : SparkPaymentError
+}
+
+internal fun SessionTransactionItem.toDetailUiState(): PaymentUiState = when (status) {
+    TransactionStatus.Succeeded -> {
+        val paidAmount = resultAmount ?: amount
+        PaymentUiState.Success(
+            amountPaid = paidAmount,
+            feePaid = fee ?: DisplayAmount(0, paidAmount.currency),
+            showEstimatedFeeHint = showEstimatedFeeHint && !wasAlreadyPaid,
+            wasAlreadyPaid = wasAlreadyPaid,
+            preimage = preimage
+        )
     }
 
-    data object SdkUnavailable : SparkPaymentError {
-        override val detail: String? = null
-    }
-
-    data object StorageUnavailable : SparkPaymentError {
-        override val detail: String? = null
-    }
-
-    data object CapacityReached : SparkPaymentError {
-        override val detail: String? = null
-    }
-
-    data class Rejected(override val detail: String?) : SparkPaymentError
-
-    data class OutcomeUnknown(override val detail: String?) : SparkPaymentError
-
-    data class Unexpected(override val detail: String?) : SparkPaymentError
+    TransactionStatus.Failed -> PaymentUiState.Error(error ?: PaymentUiError.Unexpected())
 }

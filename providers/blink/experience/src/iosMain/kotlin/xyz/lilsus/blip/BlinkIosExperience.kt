@@ -7,8 +7,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import xyz.lilsus.blip.feature.payment.PaymentEvent
-import xyz.lilsus.blip.feature.payment.PaymentUiState
-import xyz.lilsus.blip.feature.payment.previousPaymentSituation
 import xyz.lilsus.blip.feature.payment.toNativePaymentScreenState
 import xyz.lilsus.blip.feature.payment.toNativeRecentItem
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
@@ -201,7 +199,9 @@ class BlinkIosExperience(private val configuration: BlinkExperienceConfiguration
     }
 
     fun selectTab(tab: String) {
-        runtime.tabState.select(AppTab.fromStoredValue(tab))
+        if (!runtime.paymentCoordinator.isSubmitting.value) {
+            runtime.tabState.select(AppTab.fromStoredValue(tab))
+        }
     }
 
     fun settingsController(): NativeSettingsController = nativeSettingsController
@@ -267,10 +267,6 @@ class BlinkIosExperience(private val configuration: BlinkExperienceConfiguration
                 runtime.paymentHub.state,
                 runtime.languageRepository.preference
             ) { payment, transactions, newTransactionCount, hubState, _ ->
-                val previousSituation =
-                    (payment as? PaymentUiState.PendingRetry)?.id?.let { id ->
-                        transactions.firstOrNull { it.id == id }?.previousPaymentSituation()
-                    }
                 controller.update(
                     payment = payment.toNativePaymentScreenState(),
                     appTitle = configuration.appName,
@@ -281,7 +277,6 @@ class BlinkIosExperience(private val configuration: BlinkExperienceConfiguration
                                 key = "result_paid_fee_blink_hint"
                             )
                         ),
-                    previousPaymentSituation = previousSituation,
                     savePrompt = hubState.savePrompt,
                     recentCount = transactions.size,
                     newRecentCount = newTransactionCount

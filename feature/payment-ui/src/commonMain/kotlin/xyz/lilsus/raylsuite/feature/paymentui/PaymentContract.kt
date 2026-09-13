@@ -35,14 +35,4 @@ sealed interface PaymentIntent {
     data object ConfirmPaymentSubmit : PaymentIntent
 
     data object ConfirmPaymentDismiss : PaymentIntent
-
-    data object PendingRetryCreateNewInvoice : PaymentIntent
-
-    data object PendingRetryRetryPrevious : PaymentIntent
-
-    data object PendingRetryViewPending : PaymentIntent
-
-    data object PendingRetryDismiss : PaymentIntent
-
-    data class RetryTransaction(val id: String) : PaymentIntent
 }

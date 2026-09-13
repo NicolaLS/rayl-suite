@@ -2,17 +2,16 @@ package xyz.lilsus.blip.feature.payment
 
 import fr.acinq.lightning.payment.Bolt11Invoice
 import fr.acinq.lightning.utils.currentTimestampSeconds
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.core.model.DisplayCurrency
 import xyz.lilsus.raylsuite.core.model.LightningAddress
-import xyz.lilsus.raylsuite.core.payment.DynamicPaymentSourceKey
 import xyz.lilsus.raylsuite.core.payment.LightningInputParser
 import xyz.lilsus.raylsuite.core.payment.LnurlInvoiceResolution
 import xyz.lilsus.raylsuite.core.payment.LnurlPayClient
 import xyz.lilsus.raylsuite.core.payment.LnurlPayParams
 import xyz.lilsus.raylsuite.core.payment.LnurlResult
-import xyz.lilsus.raylsuite.core.payment.lightningAddressDynamicPaymentSourceKey
-import xyz.lilsus.raylsuite.core.payment.lnurlDynamicPaymentSourceKey
 import xyz.lilsus.raylsuite.feature.paymentcurrency.CurrencyState
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentAmountQuote
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentCurrencyManager
@@ -26,192 +25,115 @@ import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountKey
 internal class PaymentAdmissionPhase(
     private val lnurlPayClient: LnurlPayClient,
     private val currencyManager: PaymentCurrencyManager,
-    private val pendingTracker: PendingPaymentTracker,
+    private val history: PaymentHistory,
     private val presentation: PaymentPresentationPhase,
-    private val confirmationIsIdle: () -> Boolean,
     private val notifyScanSuccess: () -> Unit
 ) {
     private val preparation = PaymentPreparation(lnurlPayClient)
-    private val admissionSession = PaymentAdmissionSession()
     private val inputParser = preparation.inputParser
     private val manualAmount = preparation.manualAmount
 
     suspend fun handlePaymentInput(
         rawInput: String,
-        source: PaymentRequestSource,
-        token: PaymentTaskToken
+        source: PaymentRequestSource
     ): AdmissionResult {
-        if (
-            presentation.uiState.value != PaymentUiState.Active ||
-            !confirmationIsIdle() ||
-            !admissionSession.begin(token)
-        ) {
-            return AdmissionResult.Presented
-        }
+        if (presentation.uiState.value != PaymentUiState.Active) return AdmissionResult.Presented
         preparation.manualEntryContext = null
+        val parseResult =
+            if (source == PaymentRequestSource.DeepLink) {
+                inputParser.parseDeepLink(rawInput)
+            } else {
+                inputParser.parse(rawInput)
+            }
+        return when (val result = parseResult) {
+            is LightningInputParser.ParseResult.Failure -> {
+                handleParseFailure(result.reason)
+                AdmissionResult.Presented
+            }
 
-        return try {
-            val parseResult =
-                if (source == PaymentRequestSource.DeepLink) {
-                    inputParser.parseDeepLink(rawInput)
-                } else {
-                    inputParser.parse(rawInput)
-                }
-            when (val result = parseResult) {
-                is LightningInputParser.ParseResult.Failure -> {
-                    handleParseFailure(result.reason)
-                    AdmissionResult.Presented
-                }
-
-                is LightningInputParser.ParseResult.Success ->
-                    when (val target = result.target) {
-                        is LightningInputParser.Target.Bolt11 -> {
-                            pendingTracker.findLatestByPaymentHash(
-                                target.invoice.paymentHash.toHex()
-                            )
-                                ?.let { existing ->
-                                    requestTransactionDetailNavigation(existing.id)
-                                    return AdmissionResult.Presented
-                                }
-                            if (rejectExpiredInvoice(target.invoice)) {
+            is LightningInputParser.ParseResult.Success ->
+                when (val target = result.target) {
+                    is LightningInputParser.Target.Bolt11 -> {
+                        history.findPaidByPaymentHash(target.invoice.paymentHash.toHex())
+                            ?.let { existing ->
+                                requestTransactionDetailNavigation(existing.id)
                                 return AdmissionResult.Presented
                             }
-                            notifyScanSuccess()
-                            processBoltInvoice(target.invoice, source)
-                        }
-
-                        is LightningInputParser.Target.Lnurl -> {
-                            val sourceKey = lnurlDynamicPaymentSourceKey(target.endpoint)
-                            val existing =
-                                pendingTracker.findGuardingByDynamicSourceKey(sourceKey)
-                            if (existing != null) {
-                                AdmissionResult.PendingClarification(
-                                    record = existing,
-                                    continuation =
-                                        PendingRetryContinuation.Lnurl(
-                                            endpoint = target.endpoint,
-                                            sourceKey = sourceKey,
-                                            paymentSource = source
-                                        )
-                                )
-                            } else {
-                                notifyScanSuccess()
-                                fetchLnurl(
-                                    endpoint = target.endpoint,
-                                    paymentSource = source,
-                                    sourceKey = sourceKey,
-                                    token = token
-                                )
-                            }
-                        }
-
-                        is LightningInputParser.Target.LightningAddressTarget -> {
-                            val sourceKey =
-                                lightningAddressDynamicPaymentSourceKey(target.address)
-                            val targetContext =
-                                HubTargetContext(
-                                    targetId = null,
-                                    address = target.address,
-                                    isPreset = false
-                                )
-                            val existing =
-                                pendingTracker.findGuardingByDynamicSourceKey(sourceKey)
-                            if (existing != null) {
-                                AdmissionResult.PendingClarification(
-                                    record = existing,
-                                    continuation =
-                                        PendingRetryContinuation.LightningAddress(
-                                            address = target.address,
-                                            sourceKey = sourceKey,
-                                            paymentSource = source,
-                                            targetContext = targetContext
-                                        )
-                                )
-                            } else {
-                                notifyScanSuccess()
-                                resolveLightningAddress(
-                                    address = target.address,
-                                    paymentSource = source,
-                                    sourceKey = sourceKey,
-                                    targetContext = targetContext,
-                                    token = token
-                                )
-                            }
-                        }
-
-                        else -> AdmissionResult.Presented
+                        if (rejectExpiredInvoice(target.invoice)) return AdmissionResult.Presented
+                        notifyScanSuccess()
+                        processBoltInvoice(target.invoice, source)
                     }
-            }
-        } finally {
-            admissionSession.complete(token)
+
+                    is LightningInputParser.Target.Lnurl -> {
+                        notifyScanSuccess()
+                        fetchLnurl(target.endpoint, source)
+                    }
+
+                    is LightningInputParser.Target.LightningAddressTarget -> {
+                        notifyScanSuccess()
+                        resolveLightningAddress(
+                            address = target.address,
+                            paymentSource = source,
+                            targetContext = HubTargetContext(null, target.address, isPreset = false)
+                        )
+                    }
+
+                    else -> AdmissionResult.Presented
+                }
         }
     }
 
-    suspend fun payTarget(
-        intent: DirectTargetPaymentIntent,
-        token: PaymentTaskToken
-    ): AdmissionResult {
-        if (
-            presentation.uiState.value != PaymentUiState.Active ||
-            !confirmationIsIdle() ||
-            !admissionSession.begin(token)
-        ) {
-            return AdmissionResult.Presented
-        }
-        return try {
-            val preset = (intent.amountRule as? DirectTargetAmountRule.Preset)?.amount
-            val context =
-                HubTargetContext(
-                    targetId = intent.targetId,
-                    address = intent.address,
-                    isPreset = preset != null
+    suspend fun payTarget(intent: DirectTargetPaymentIntent): AdmissionResult {
+        if (presentation.uiState.value != PaymentUiState.Active) return AdmissionResult.Presented
+        presentation.showLoading(LoadingKind.Resolving)
+        val preset = (intent.amountRule as? DirectTargetAmountRule.Preset)?.amount
+        val context =
+            HubTargetContext(
+                targetId = intent.targetId,
+                address = intent.address,
+                isPreset = preset != null
+            )
+        return if (preset == null) {
+            resolveTargetPayment(
+                address = intent.address,
+                context = context,
+                paymentQuote = null,
+                comment = intent.comment
+            )
+        } else {
+            val paymentQuote = currencyManager.quoteStoredAmount(preset)
+            currentCoroutineContext().ensureActive()
+            if (paymentQuote == null) {
+                val info = CurrencyCatalog.infoFor(preset.normalizedCurrencyCode)
+                presentation.presentError(
+                    if (info.currency is DisplayCurrency.Fiat) {
+                        PaymentUiError.ExchangeRateUnavailable(info.code)
+                    } else {
+                        PaymentUiError.InvalidInvoice(
+                            "Preset amount could not be converted"
+                        )
+                    }
                 )
-            if (preset == null) {
+                AdmissionResult.Presented
+            } else {
                 resolveTargetPayment(
                     address = intent.address,
                     context = context,
-                    paymentQuote = null,
-                    comment = intent.comment,
-                    token = token
+                    paymentQuote = paymentQuote,
+                    comment = intent.comment
                 )
-            } else {
-                val paymentQuote = currencyManager.quoteStoredAmount(preset)
-                token.ensureCurrent()
-                if (paymentQuote == null) {
-                    val info = CurrencyCatalog.infoFor(preset.normalizedCurrencyCode)
-                    presentation.presentError(
-                        if (info.currency is DisplayCurrency.Fiat) {
-                            PaymentUiError.ExchangeRateUnavailable(info.code)
-                        } else {
-                            PaymentUiError.InvalidInvoice(
-                                "Preset amount could not be converted"
-                            )
-                        }
-                    )
-                    AdmissionResult.Presented
-                } else {
-                    resolveTargetPayment(
-                        address = intent.address,
-                        context = context,
-                        paymentQuote = paymentQuote,
-                        comment = intent.comment,
-                        token = token
-                    )
-                }
             }
-        } finally {
-            admissionSession.complete(token)
         }
     }
 
-    suspend fun submitManualAmount(token: PaymentTaskToken): AdmissionResult {
+    suspend fun submitManualAmount(): AdmissionResult {
         val entryState = presentation.uiState.value as? PaymentUiState.EnterAmount
             ?: return AdmissionResult.Presented
         val context = preparation.manualEntryContext ?: return AdmissionResult.Presented
         val enteredAmount = manualAmount.enteredAmount() ?: return AdmissionResult.Presented
         presentation.showLoading(LoadingKind.Resolving)
         val paymentQuote = currencyManager.quote(enteredAmount)
-        token.ensureCurrent()
+        currentCoroutineContext().ensureActive()
         if (paymentQuote == null) {
             presentation.showManualAmount(entryState.entry, entryState.lnurlPayDisplay)
             val error =
@@ -231,7 +153,7 @@ internal class PaymentAdmissionPhase(
                     PreparedPayment(
                         invoice = context.invoice,
                         amountOverrideMsats = paymentQuote.amountMsats,
-                        origin = PendingOrigin.ManualEntry,
+                        isManualEntry = true,
                         source = context.source,
                         paymentQuote = paymentQuote
                     )
@@ -255,41 +177,10 @@ internal class PaymentAdmissionPhase(
                         session = context.session,
                         amountMsats = roundedAmount,
                         isManualEntry = true,
-                        paymentQuote = paymentQuote,
-                        token = token
+                        paymentQuote = paymentQuote
                     )
                 }
             }
-        }
-    }
-
-    suspend fun continueDynamicPayment(
-        recordId: String,
-        continuation: PendingRetryContinuation,
-        token: PaymentTaskToken
-    ): AdmissionResult {
-        notifyScanSuccess()
-        return when (continuation) {
-            is PendingRetryContinuation.Lnurl ->
-                fetchLnurl(
-                    endpoint = continuation.endpoint,
-                    paymentSource = continuation.paymentSource,
-                    sourceKey = continuation.sourceKey,
-                    replacesDynamicGuardId = recordId,
-                    token = token
-                )
-
-            is PendingRetryContinuation.LightningAddress ->
-                resolveLightningAddress(
-                    address = continuation.address,
-                    paymentSource = continuation.paymentSource,
-                    sourceKey = continuation.sourceKey,
-                    targetContext = continuation.targetContext,
-                    presetQuote = continuation.presetQuote,
-                    targetComment = continuation.targetComment,
-                    replacesDynamicGuardId = recordId,
-                    token = token
-                )
         }
     }
 
@@ -303,13 +194,10 @@ internal class PaymentAdmissionPhase(
     }
 
     fun dismissManualAmount() {
+        if (presentation.uiState.value !is PaymentUiState.EnterAmount) return
         manualAmount.reset()
         preparation.manualEntryContext = null
         presentation.showActive()
-    }
-
-    fun restoreManualAmount() {
-        presentation.showManualAmount(manualAmount.current())
     }
 
     fun refreshManualAmountState() {
@@ -354,12 +242,7 @@ internal class PaymentAdmissionPhase(
         }
     }
 
-    fun clearPaymentState(currencyState: CurrencyState) {
-        preparation.reset(currencyState)
-    }
-
     fun reset(currencyState: CurrencyState) {
-        admissionSession.reset()
         preparation.reset(currencyState)
     }
 
@@ -411,7 +294,6 @@ internal class PaymentAdmissionPhase(
                 PreparedPayment(
                     invoice = invoice,
                     amountOverrideMsats = null,
-                    origin = PendingOrigin.Invoice,
                     source = source
                 )
             )
@@ -420,22 +302,16 @@ internal class PaymentAdmissionPhase(
 
     private suspend fun fetchLnurl(
         endpoint: String,
-        paymentSource: PaymentRequestSource,
-        sourceKey: DynamicPaymentSourceKey?,
-        token: PaymentTaskToken,
-        replacesDynamicGuardId: String? = null
+        paymentSource: PaymentRequestSource
     ): AdmissionResult {
         presentation.showLoading(LoadingKind.Resolving)
         val result = lnurlPayClient.fetchPayParams(endpoint)
-        token.ensureCurrent()
+        currentCoroutineContext().ensureActive()
         return when (result) {
             is LnurlResult.Success ->
                 handleLnurlParams(
                     params = result.data,
-                    paymentSource = paymentSource,
-                    sourceKey = sourceKey,
-                    replacesDynamicGuardId = replacesDynamicGuardId,
-                    token = token
+                    paymentSource = paymentSource
                 )
 
             is LnurlResult.Error -> {
@@ -448,27 +324,21 @@ internal class PaymentAdmissionPhase(
     private suspend fun resolveLightningAddress(
         address: LightningAddress,
         paymentSource: PaymentRequestSource,
-        sourceKey: DynamicPaymentSourceKey?,
-        token: PaymentTaskToken,
         targetContext: HubTargetContext? = null,
         presetQuote: PaymentAmountQuote? = null,
-        targetComment: String? = null,
-        replacesDynamicGuardId: String? = null
+        targetComment: String? = null
     ): AdmissionResult {
         presentation.showLoading(LoadingKind.Resolving)
         val result = lnurlPayClient.fetchPayParams(address)
-        token.ensureCurrent()
+        currentCoroutineContext().ensureActive()
         return when (result) {
             is LnurlResult.Success ->
                 handleLnurlParams(
                     params = result.data,
                     paymentSource = paymentSource,
-                    sourceKey = sourceKey,
                     targetContext = targetContext,
                     presetQuote = presetQuote,
-                    targetComment = targetComment,
-                    replacesDynamicGuardId = replacesDynamicGuardId,
-                    token = token
+                    targetComment = targetComment
                 )
 
             is LnurlResult.Error -> {
@@ -482,46 +352,24 @@ internal class PaymentAdmissionPhase(
         address: LightningAddress,
         context: HubTargetContext,
         paymentQuote: PaymentAmountQuote?,
-        comment: String?,
-        token: PaymentTaskToken
+        comment: String?
     ): AdmissionResult {
-        val sourceKey = lightningAddressDynamicPaymentSourceKey(address)
-        val existing = pendingTracker.findGuardingByDynamicSourceKey(sourceKey)
-        if (existing != null) {
-            return AdmissionResult.PendingClarification(
-                record = existing,
-                continuation =
-                    PendingRetryContinuation.LightningAddress(
-                        address = address,
-                        sourceKey = sourceKey,
-                        paymentSource = PaymentRequestSource.Camera,
-                        targetContext = context,
-                        presetQuote = paymentQuote,
-                        targetComment = comment
-                    )
-            )
-        }
         notifyScanSuccess()
         return resolveLightningAddress(
             address = address,
             paymentSource = PaymentRequestSource.Camera,
-            sourceKey = sourceKey,
             targetContext = context,
             presetQuote = paymentQuote,
-            targetComment = comment,
-            token = token
+            targetComment = comment
         )
     }
 
     private suspend fun handleLnurlParams(
         params: LnurlPayParams,
         paymentSource: PaymentRequestSource,
-        sourceKey: DynamicPaymentSourceKey? = null,
         targetContext: HubTargetContext? = null,
         presetQuote: PaymentAmountQuote? = null,
-        targetComment: String? = null,
-        replacesDynamicGuardId: String? = null,
-        token: PaymentTaskToken
+        targetComment: String? = null
     ): AdmissionResult {
         if (params.minSendable <= 0 || params.maxSendable < params.minSendable) {
             presentation.presentError(
@@ -545,11 +393,9 @@ internal class PaymentAdmissionPhase(
             LnurlSession(
                 params = params,
                 display = lnurlPayDisplay,
-                sourceKey = sourceKey,
                 paymentSource = paymentSource,
                 targetContext = targetContext,
-                comment = targetComment,
-                replacesDynamicGuardId = replacesDynamicGuardId
+                comment = targetComment
             )
         val currencyState = currencyManager.state.value
         val inputInfo = currencyState.info
@@ -567,6 +413,7 @@ internal class PaymentAdmissionPhase(
             inputInfo.code.equals(currencyState.info.code, ignoreCase = true)
         ) {
             currencyManager.ensureExchangeRateIfNeeded(inputInfo)
+            currentCoroutineContext().ensureActive()
         }
 
         presetQuote?.let { paymentQuote ->
@@ -586,8 +433,7 @@ internal class PaymentAdmissionPhase(
                 session = session,
                 amountMsats = roundedAmount,
                 isManualEntry = false,
-                paymentQuote = paymentQuote,
-                token = token
+                paymentQuote = paymentQuote
             )
         }
 
@@ -596,8 +442,7 @@ internal class PaymentAdmissionPhase(
                 session = session,
                 amountMsats = params.minSendable,
                 isManualEntry = false,
-                paymentQuote = null,
-                token = token
+                paymentQuote = null
             )
         }
 
@@ -618,12 +463,11 @@ internal class PaymentAdmissionPhase(
         session: LnurlSession,
         amountMsats: Long,
         isManualEntry: Boolean,
-        paymentQuote: PaymentAmountQuote?,
-        token: PaymentTaskToken
+        paymentQuote: PaymentAmountQuote?
     ): AdmissionResult {
         presentation.showLoading()
         val result = preparation.resolveLnurlInvoice(session, amountMsats)
-        token.ensureCurrent()
+        currentCoroutineContext().ensureActive()
         return when (result) {
             is LnurlInvoiceResolution.Success ->
                 handleLnurlInvoice(
@@ -647,7 +491,7 @@ internal class PaymentAdmissionPhase(
         isManualEntry: Boolean,
         paymentQuote: PaymentAmountQuote?
     ): AdmissionResult {
-        pendingTracker.findLatestByPaymentHash(invoice.paymentHash.toHex())?.let { existing ->
+        history.findPaidByPaymentHash(invoice.paymentHash.toHex())?.let { existing ->
             preparation.manualEntryContext = null
             presentation.showActive()
             requestTransactionDetailNavigation(existing.id)
@@ -658,16 +502,9 @@ internal class PaymentAdmissionPhase(
             PreparedPayment(
                 invoice = invoice,
                 amountOverrideMsats = null,
-                origin =
-                    if (isManualEntry) {
-                        PendingOrigin.LnurlManual
-                    } else {
-                        PendingOrigin.LnurlFixed
-                    },
+                isManualEntry = isManualEntry,
                 source = session.paymentSource,
-                dynamicSourceKey = session.sourceKey,
                 targetContext = session.targetContext,
-                replacesDynamicGuardId = session.replacesDynamicGuardId,
                 lnurlPayDisplay = session.display,
                 paymentQuote = paymentQuote
             )
@@ -675,7 +512,6 @@ internal class PaymentAdmissionPhase(
     }
 
     private fun requestTransactionDetailNavigation(id: String) {
-        pendingTracker.focus(id)
         presentation.requestTransactionDetailNavigation(id)
     }
 

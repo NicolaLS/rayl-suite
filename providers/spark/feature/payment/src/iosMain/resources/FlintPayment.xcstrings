@@ -23,28 +23,6 @@
         }
       }
     },
-    "error_network_unavailable": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No internet connection. Check your network."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Keine Internetverbindung. Prüfe dein Netzwerk."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Sin conexión a internet. Verifica tu red."
-          }
-        }
-      }
-    },
     "error_payment_rejected_generic": {
       "localizations": {
         "en": {
@@ -94,41 +72,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Payment status unknown. It may have succeeded."
+            "value": "Unable to confirm this payment. Verify its status before paying again."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zahlungsstatus unbekannt. Die Zahlung ist möglicherweise erfolgt."
+            "value": "Diese Zahlung konnte nicht bestätigt werden. Prüfe ihren Status, bevor du erneut bezahlst."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Estado de pago desconocido. Es posible que el pago haya sido exitoso."
-          }
-        }
-      }
-    },
-    "error_payment_unconfirmed_message": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Payment status unknown: %1$@"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zahlungsstatus unbekannt: %1$@"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Estado de pago desconocido: %1$@"
+            "value": "No se pudo confirmar este pago. Verifica su estado antes de volver a pagar."
           }
         }
       }
@@ -195,28 +151,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Fallido"
-          }
-        }
-      }
-    },
-    "transaction_status_pending": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pending"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ausstehend"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pendiente"
           }
         }
       }

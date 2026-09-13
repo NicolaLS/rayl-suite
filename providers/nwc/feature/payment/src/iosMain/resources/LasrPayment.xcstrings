@@ -208,29 +208,6 @@
         }
       }
     },
-    "transaction_status_pending" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ausstehend"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pending"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pendiente"
-          }
-        }
-      }
-    },
     "transaction_status_success" : {
       "extractionState" : "stale",
       "localizations" : {

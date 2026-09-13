@@ -19,8 +19,8 @@ class ConnectionStorageResetTest {
             putBoolean("onboarding.completed", true)
             putString("hub", "saved")
         }
-        val blink = MapSettings().apply { putString("payments.pendingAttempts.v1", "old attempt") }
-        val nwc = MapSettings().apply { putString("payments.pendingAttempts.v1", "other attempt") }
+        val blink = MapSettings().apply { putString("connection.preference", "old setting") }
+        val nwc = MapSettings().apply { putString("connection.preference", "other setting") }
         val secrets = FakeSecrets()
         val reset = ConnectionStorageReset(app, blink, secrets, "blink.removing")
         reset.begin()
@@ -29,8 +29,8 @@ class ConnectionStorageResetTest {
         assertTrue(reset.pending)
         secrets.fail = false
         assertTrue(ConnectionStorageReset(app, blink, secrets, "blink.removing").resume())
-        assertNull(blink.getStringOrNull("payments.pendingAttempts.v1"))
-        assertEquals("other attempt", nwc.getStringOrNull("payments.pendingAttempts.v1"))
+        assertNull(blink.getStringOrNull("connection.preference"))
+        assertEquals("other setting", nwc.getStringOrNull("connection.preference"))
         assertEquals("dark", app.getStringOrNull("appearance.selectedTheme"))
         assertEquals("saved contacts", app.getStringOrNull("contacts.document"))
         assertEquals("above", app.getStringOrNull("payments.confirmationMode"))

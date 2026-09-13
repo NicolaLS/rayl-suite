@@ -24,6 +24,7 @@ internal enum class BlipPaymentTextKey(override val key: String) : LocalizedText
     ErrorFundingWalletUnavailable("error_funding_wallet_unavailable"),
     ErrorMissingWalletConnection("error_missing_wallet_connection"),
     ErrorNetworkUnavailable("error_network_unavailable"),
+    ErrorPaymentStatusUnknown("error_payment_status_unknown"),
     ErrorPaymentRejectedGeneric("error_payment_rejected_generic"),
     ErrorPaymentRejectedMessage("error_payment_rejected_message"),
     ErrorPaymentUnconfirmed("error_payment_unconfirmed"),
@@ -33,6 +34,8 @@ internal enum class BlipPaymentTextKey(override val key: String) : LocalizedText
 }
 
 internal fun PaymentUiError.toLocalizedText(): LocalizedText = when (this) {
+    PaymentUiError.StatusUnknown -> LocalizedText(BlipPaymentTextKey.ErrorPaymentStatusUnknown)
+
     is PaymentUiError.Blink -> error.toLocalizedText()
 
     is PaymentUiError.InvalidInvoice -> invalidInvoicePaymentErrorText(reason)

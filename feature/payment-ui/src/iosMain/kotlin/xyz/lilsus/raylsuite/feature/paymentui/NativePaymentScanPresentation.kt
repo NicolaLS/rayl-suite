@@ -62,10 +62,8 @@ data class NativePaymentScanSheet(
     val rangeMessage: String?,
     val allowsDecimal: Boolean,
     val canSubmit: Boolean,
-    val primaryAction: String,
     val primaryActionTitle: String,
     val secondaryActionTitle: String?,
-    val tertiaryActionTitle: String?,
     val textFieldLabel: String?,
     val textFieldValue: String?,
     val manualReview: NativeManualAmountReview? = null,
@@ -93,10 +91,8 @@ suspend fun nativePaymentScanSnapshot(
     payment: PaymentScreenState,
     appTitle: String,
     estimatedFeeHint: String?,
-    previousPaymentSituation: PreviousPaymentSituation?,
     savePrompt: HubSavePrompt?,
     receiptVisible: Boolean,
-    canOpenPreviousPayment: Boolean = true,
     showResolvingContent: Boolean = true,
     recentCount: Int = 0,
     newRecentCount: Int = 0,
@@ -120,15 +116,12 @@ suspend fun nativePaymentScanSnapshot(
                 showResolvingContent = showResolvingContent,
                 formatter = formatter
             ),
-        sheet =
-            savePrompt?.toNativeSheet()
-                ?: payment.toNativeSheet(
-                    previousPaymentSituation,
-                    canOpenPreviousPayment,
-                    formatter
-                ),
+        sheet = savePrompt?.toNativeSheet() ?: payment.toNativeSheet(formatter),
         recent =
-            if (offersRecentEntryPoint && recentCount > 0) {
+            if (
+                offersRecentEntryPoint && recentCount > 0 &&
+                payment !is PaymentScreenState.Loading
+            ) {
                 NativePaymentScanRecentEntry(
                     title = nativeString(
                         NativeStringResource(table = "PaymentUI", key = "view_session_transactions")
@@ -333,19 +326,10 @@ private suspend fun receiptContent() = NativePaymentScanContent(
 )
 
 private suspend fun PaymentScreenState.toNativeSheet(
-    previousPaymentSituation: PreviousPaymentSituation?,
-    canOpenPreviousPayment: Boolean,
     formatter: AmountFormatter
 ): NativePaymentScanSheet? = when (this) {
     is PaymentScreenState.EnterAmount -> entry.toNativeSheet(lnurlPayDisplay, formatter)
-
     is PaymentScreenState.Confirm -> toNativeSheet(formatter)
-
-    is PaymentScreenState.PendingRetry ->
-        (previousPaymentSituation ?: PreviousPaymentSituation.InProgress).toNativeSheet(
-            canOpenPreviousPayment
-        )
-
     else -> null
 }
 
@@ -366,14 +350,12 @@ private suspend fun ManualAmountUiState.toNativeSheet(
     rangeMessage = rangeStatus.message(),
     allowsDecimal = allowDecimal,
     canSubmit = amount != null && amount.minor > 0L && rangeStatus == RangeStatus.InRange,
-    primaryAction = "submit",
     primaryActionTitle = nativeString(
         NativeStringResource(table = "PaymentUI", key = "continue_button")
     ),
     secondaryActionTitle = nativeString(
         NativeStringResource(table = "PaymentUI", key = "dismiss_button")
     ),
-    tertiaryActionTitle = null,
     textFieldLabel = null,
     textFieldValue = null,
     currencySwitch = alternativeCurrency?.let { alternative ->
@@ -431,87 +413,15 @@ private suspend fun PaymentScreenState.Confirm.toNativeSheet(
     rangeMessage = null,
     allowsDecimal = false,
     canSubmit = true,
-    primaryAction = "submit",
     primaryActionTitle = nativeString(
         NativeStringResource(table = "PaymentUI", key = "pay_button")
     ),
     secondaryActionTitle = nativeString(
         NativeStringResource(table = "PaymentUI", key = "dismiss_button")
     ),
-    tertiaryActionTitle = null,
     textFieldLabel = null,
     textFieldValue = null
 )
-
-private suspend fun PreviousPaymentSituation.toNativeSheet(
-    canOpenPreviousPayment: Boolean
-): NativePaymentScanSheet {
-    val canRetry = this == PreviousPaymentSituation.OutcomeUnknown
-    val (title, body) =
-        when (this) {
-            PreviousPaymentSituation.InProgress ->
-                NativeStringResource(table = "PaymentUI", key = "in_progress_title") to
-                    NativeStringResource(table = "PaymentUI", key = "in_progress_body")
-
-            PreviousPaymentSituation.OutcomeUnknown ->
-                NativeStringResource(table = "PaymentUI", key = "outcome_unknown_title") to
-                    NativeStringResource(table = "PaymentUI", key = "outcome_unknown_body")
-
-            PreviousPaymentSituation.Completed ->
-                NativeStringResource(table = "PaymentUI", key = "completed_title") to
-                    NativeStringResource(table = "PaymentUI", key = "completed_body")
-        }
-    return NativePaymentScanSheet(
-        kind = SHEET_REPEAT_PAYMENT,
-        title = nativeString(title),
-        body = nativeString(body),
-        amount = null,
-        exactAmount = null,
-        fundingSource = null,
-        recipientTitle = null,
-        recipientDescription = null,
-        recipientImageBase64 = null,
-        currencyLabel = null,
-        rangeMessage = null,
-        allowsDecimal = false,
-        canSubmit = true,
-        primaryAction =
-            when {
-                canRetry -> "retry"
-                canOpenPreviousPayment -> "view"
-                else -> "additional"
-            },
-        primaryActionTitle =
-            nativeString(
-                when {
-                    canRetry -> NativeStringResource(
-                        table = "PaymentUI",
-                        key = "retry_previous_invoice"
-                    )
-
-                    canOpenPreviousPayment -> NativeStringResource(
-                        table = "PaymentUI",
-                        key = "view_previous_payment"
-                    )
-
-                    else -> NativeStringResource(
-                        table = "PaymentUI",
-                        key = "create_additional_payment"
-                    )
-                }
-            ),
-        secondaryActionTitle =
-            nativeString(
-                NativeStringResource(table = "PaymentUI", key = "create_additional_payment")
-            )
-                .takeIf { canRetry || canOpenPreviousPayment },
-        tertiaryActionTitle =
-            nativeString(NativeStringResource(table = "PaymentUI", key = "view_previous_payment"))
-                .takeIf { canRetry && canOpenPreviousPayment },
-        textFieldLabel = null,
-        textFieldValue = null
-    )
-}
 
 private suspend fun HubSavePrompt.toNativeSheet(): NativePaymentScanSheet {
     val presentation = toNativePresentation()
@@ -529,10 +439,8 @@ private suspend fun HubSavePrompt.toNativeSheet(): NativePaymentScanSheet {
         rangeMessage = null,
         allowsDecimal = false,
         canSubmit = true,
-        primaryAction = "save",
         primaryActionTitle = presentation.saveTitle,
         secondaryActionTitle = presentation.dismissTitle,
-        tertiaryActionTitle = null,
         textFieldLabel = presentation.nameLabel,
         textFieldValue = presentation.targetName
     )
@@ -578,5 +486,4 @@ private const val CONTENT_ERROR = "error"
 
 private const val SHEET_MANUAL_AMOUNT = "manualAmount"
 private const val SHEET_CONFIRMATION = "confirmation"
-private const val SHEET_REPEAT_PAYMENT = "repeatPayment"
 private const val SHEET_SAVE_TARGET = "saveTarget"

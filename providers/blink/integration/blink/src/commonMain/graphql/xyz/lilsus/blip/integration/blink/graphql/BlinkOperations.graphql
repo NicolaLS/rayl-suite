@@ -29,6 +29,7 @@ query BlinkContacts {
 }
 
 fragment BlinkTransactionPaymentResult on Transaction {
+  id
   status
   direction
   settlementFee
@@ -39,6 +40,18 @@ fragment BlinkTransactionPaymentResult on Transaction {
     }
     ... on SettlementViaLn {
       preImage
+    }
+  }
+}
+
+query BlinkPaymentTransaction($walletId: WalletId!, $transactionId: ID!) {
+  me {
+    defaultAccount {
+      walletById(walletId: $walletId) {
+        transactionById(transactionId: $transactionId) {
+          ...BlinkTransactionPaymentResult
+        }
+      }
     }
   }
 }

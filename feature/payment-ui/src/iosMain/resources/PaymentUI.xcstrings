@@ -208,52 +208,6 @@
         }
       }
     },
-    "completed_body" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Die vorherige Zahlung wurde abgeschlossen. Zeige sie an oder erstelle eine zusätzliche Zahlung, wenn du erneut bezahlen möchtest."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The previous payment completed. Review it or create an additional payment if you intend to pay again."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El pago anterior se completó. Revísalo o crea un pago adicional si quieres volver a pagar."
-          }
-        }
-      }
-    },
-    "completed_title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vorherige Zahlung abgeschlossen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Previous payment completed"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pago anterior completado"
-          }
-        }
-      }
-    },
     "confirm_payment_approximate_amount" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -319,29 +273,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Confirmar pago"
-          }
-        }
-      }
-    },
-    "create_additional_payment" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zusätzliche Zahlung erstellen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Create additional payment"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Crear pago adicional"
           }
         }
       }
@@ -599,52 +530,6 @@
         }
       }
     },
-    "in_progress_body" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eine Zahlung für diese Anfrage läuft noch. Zeige sie an, um eine doppelte Zahlung zu vermeiden, oder erstelle nur dann eine zusätzliche Zahlung, wenn du erneut bezahlen möchtest."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A payment for this request is still in progress. Review it to avoid paying twice, or create an additional payment only if you intend to pay again."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Un pago para esta solicitud sigue en curso. Revísalo para evitar pagar dos veces o crea un pago adicional solo si quieres volver a pagar."
-          }
-        }
-      }
-    },
-    "in_progress_title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zahlung möglicherweise noch in Bearbeitung"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Payment may still complete"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El pago aún podría completarse"
-          }
-        }
-      }
-    },
     "lnurl_payment_image_description" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -710,52 +595,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Abrir centro de pagos"
-          }
-        }
-      }
-    },
-    "outcome_unknown_body" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Die vorherige Zahlung könnte erfolgreich gewesen sein. Versuche genau diese Rechnung erneut, zeige die Zahlung an oder erstelle bewusst eine zusätzliche Zahlung."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The previous payment may still have succeeded. Retry its exact invoice, review it, or intentionally create an additional payment."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Es posible que el pago anterior haya sido exitoso. Reintenta exactamente su factura, revísalo o crea intencionalmente un pago adicional."
-          }
-        }
-      }
-    },
-    "outcome_unknown_title" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Status der vorherigen Zahlung unbekannt"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Previous payment status unknown"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Estado del pago anterior desconocido"
           }
         }
       }
@@ -1151,52 +990,6 @@
         }
       }
     },
-    "retry_payment" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zahlung erneut versuchen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retry payment"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reintentar pago"
-          }
-        }
-      }
-    },
-    "retry_previous_invoice" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vorherige Rechnung erneut versuchen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retry previous invoice"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reintentar factura anterior"
-          }
-        }
-      }
-    },
     "scanner_close" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1312,29 +1105,6 @@
         }
       }
     },
-    "tap_dismiss_pending" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tippen zum Schließen. Zahlung läuft im Hintergrund weiter."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tap to dismiss. Payment continues in background."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toca para cerrar. El pago continúa en segundo plano."
-          }
-        }
-      }
-    },
     "toast_bitcoin_address" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -1423,29 +1193,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Este enlace de pago no es compatible."
-          }
-        }
-      }
-    },
-    "view_previous_payment" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vorherige Zahlung anzeigen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "View previous payment"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ver pago anterior"
           }
         }
       }

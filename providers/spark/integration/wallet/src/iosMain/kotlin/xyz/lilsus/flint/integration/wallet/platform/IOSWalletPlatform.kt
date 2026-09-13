@@ -2,7 +2,6 @@
 
 package xyz.lilsus.flint.integration.wallet.platform
 
-import app.cash.sqldelight.driver.native.NativeSqliteDriver
 import kotlinx.cinterop.CPointerVarOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
@@ -58,19 +57,14 @@ import xyz.lilsus.flint.application.wallet.DefaultWalletAccess
 import xyz.lilsus.flint.application.wallet.WalletAccess
 import xyz.lilsus.flint.application.wallet.WalletCredential
 import xyz.lilsus.flint.application.wallet.WalletDirectories
-import xyz.lilsus.flint.integration.wallet.persistence.FlintDatabase
-import xyz.lilsus.flint.integration.wallet.persistence.SqlPaymentAttemptRepository
 import xyz.lilsus.flint.integration.wallet.spark.BreezSparkSdkConnector
 
 fun createIOSWalletAccess(bootstrapConfig: AppBootstrapConfig): WalletAccess {
     val directories = IOSWalletDirectories()
     val vault = IOSCredentialVault().also(IOSCredentialVault::purgeOrphanAfterFreshInstall)
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val driver = NativeSqliteDriver(FlintDatabase.Schema, PAYMENT_DATABASE_NAME)
     val paymentEngine = DefaultPaymentEngine(
-        environment = bootstrapConfig.environment,
-        repository = SqlPaymentAttemptRepository(driver),
-        applicationScope = applicationScope
+        environment = bootstrapConfig.environment
     )
     val walletAccess = DefaultWalletAccess(
         bootstrapConfig = bootstrapConfig,
@@ -83,8 +77,6 @@ fun createIOSWalletAccess(bootstrapConfig: AppBootstrapConfig): WalletAccess {
     ).also(WalletAccess::start)
     return walletAccess
 }
-
-private const val PAYMENT_DATABASE_NAME = "flint-payment-intents.db"
 
 private class IOSWalletDirectories : WalletDirectories {
     private val fileManager = NSFileManager.defaultManager

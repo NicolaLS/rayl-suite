@@ -19,7 +19,6 @@ data class PaymentConfirmationPolicy(
         amountEnteredByUser: Boolean
     ): Boolean = mode == PaymentConfirmationMode.ALWAYS ||
         origin == PaymentOrigin.DEEP_LINK ||
-        origin == PaymentOrigin.MANUAL_RECOVERY ||
         amountEnteredByUser ||
         amountSats.value > amountThresholdSats.value ||
         feeSats.value > feeThresholdSats.value

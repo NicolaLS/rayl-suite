@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
@@ -39,7 +40,8 @@ data class FlintNativeWalletSettingsSnapshot(
 class FlintNativeWalletSettingsController internal constructor(
     walletAccess: WalletAccess,
     private val networkLabel: String,
-    languageChanges: Flow<*>
+    languageChanges: Flow<*>,
+    private val isSubmitting: StateFlow<Boolean>
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val wallet = WalletViewModel(walletAccess)
@@ -58,7 +60,7 @@ class FlintNativeWalletSettingsController internal constructor(
     }
 
     fun removeWallet() {
-        wallet.dispatch(WalletAction.ConfirmRemoval)
+        if (!isSubmitting.value) wallet.dispatch(WalletAction.ConfirmRemoval)
     }
 
     private suspend fun publishSnapshot() {

@@ -61,7 +61,9 @@ private fun FlintTabs(
 
     AppTabScaffold(
         selectedTab = selectedTab,
-        onTabSelected = tabState::select,
+        onTabSelected = { tab ->
+            if (!runtime.paymentCoordinator.isSubmitting.value) tabState.select(tab)
+        },
         recentBadgeCount = flowState.newSessionTransactionCount
     ) { tab ->
         FlintTabContent(
@@ -101,7 +103,9 @@ internal fun FlintTabContent(
                 savePrompt = hubState.savePrompt,
                 onIntent = coordinator::dispatch,
                 onHubIntent = runtime.paymentHub::dispatch,
-                onOpenTransaction = tabState::openTransaction
+                onOpenTransaction = { id ->
+                    if (!coordinator.isSubmitting.value) tabState.openTransaction(id)
+                }
             )
 
         AppTab.Recent ->
@@ -183,7 +187,11 @@ private fun FlintSettingsTab(
                     },
                 onBack = { destination = FlintSettingsDestination.Root },
                 onAddWallet = { destination = FlintSettingsDestination.WalletFlow },
-                onRemoveWallet = { walletViewModel.dispatch(WalletAction.ConfirmRemoval) }
+                onRemoveWallet = {
+                    if (!runtime.paymentCoordinator.isSubmitting.value) {
+                        walletViewModel.dispatch(WalletAction.ConfirmRemoval)
+                    }
+                }
             )
 
         FlintSettingsDestination.WalletFlow -> {

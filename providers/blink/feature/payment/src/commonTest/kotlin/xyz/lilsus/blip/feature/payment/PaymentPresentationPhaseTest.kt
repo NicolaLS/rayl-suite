@@ -9,6 +9,16 @@ import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentCurrencyManager
 
 class PaymentPresentationPhaseTest {
     @Test
+    fun dismissingAResultCannotDismissLoading() = runTest {
+        val presentation = PaymentPresentationPhase(
+            PaymentCurrencyManager(BitcoinPriceProvider { null }, backgroundScope)
+        )
+        presentation.showLoading()
+        presentation.dismissResult()
+        assertEquals(PaymentUiState.Loading(), presentation.uiState.value)
+    }
+
+    @Test
     fun transactionNavigationMarksOnlyTheSelectedTransactionAsSeen() = runTest {
         val presentation =
             PaymentPresentationPhase(

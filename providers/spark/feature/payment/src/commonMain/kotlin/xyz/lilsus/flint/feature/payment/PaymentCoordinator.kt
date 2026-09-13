@@ -1,14 +1,14 @@
 package xyz.lilsus.flint.feature.payment
 
 import kotlin.coroutines.CoroutineContext
-import kotlin.time.Clock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -17,20 +17,20 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import xyz.lilsus.flint.application.payment.AmountRequiredPayment
 import xyz.lilsus.flint.application.payment.ClaimedPaymentLink
 import xyz.lilsus.flint.application.payment.ConfirmPaymentResult
 import xyz.lilsus.flint.application.payment.LnurlPayReviewDetails
-import xyz.lilsus.flint.application.payment.PaymentActivity
 import xyz.lilsus.flint.application.payment.PaymentConfirmationMode as FlintConfirmationMode
 import xyz.lilsus.flint.application.payment.PaymentConfirmationPolicy
 import xyz.lilsus.flint.application.payment.PaymentEngine
 import xyz.lilsus.flint.application.payment.PaymentLinkInbox
 import xyz.lilsus.flint.application.payment.PaymentOrigin
 import xyz.lilsus.flint.application.payment.PaymentOutcome
+import xyz.lilsus.flint.application.payment.PaymentReceipt
 import xyz.lilsus.flint.application.payment.PaymentRejection
 import xyz.lilsus.flint.application.payment.PreparePaymentResult
 import xyz.lilsus.flint.application.payment.PreparedPayment
@@ -78,7 +78,6 @@ class PaymentCoordinator(
                 exchangeRate = null
             )
         )
-    private val hubContexts = mutableMapOf<String, HubTargetContext>()
 
     private val mutableUiState = MutableStateFlow<PaymentUiState>(PaymentUiState.Active)
     val uiState: StateFlow<PaymentUiState> = mutableUiState.asStateFlow()
@@ -91,25 +90,20 @@ class PaymentCoordinator(
     val sessionTransactions: StateFlow<List<SessionTransactionItem>> =
         mutableSessionTransactions.asStateFlow()
 
-    private val mutableTransactionDetailNavigationTarget = MutableStateFlow<String?>(null)
-    val transactionDetailNavigationTarget: StateFlow<String?> =
-        mutableTransactionDetailNavigationTarget.asStateFlow()
-
     private val mutableNewSessionTransactionCount = MutableStateFlow(0)
     val newSessionTransactionCount: StateFlow<Int> =
         mutableNewSessionTransactionCount.asStateFlow()
 
-    private val sessionAttemptIds = linkedSetOf<String>()
+    private val receipts = mutableListOf<PaymentReceipt>()
     private val knownSessionTransactionIds = mutableSetOf<String>()
     private val newSessionTransactionIds = mutableSetOf<String>()
-    private val terminalHubUpdates = mutableSetOf<String>()
-    private val successNotifications = mutableSetOf<String>()
     private val interaction = PaymentInteractionSession()
     private var activeLinkId: String? = null
     private var vibrateOnScan = true
     private var vibrateOnPayment = true
     private var offerToSaveNewTargets = true
-    private var pendingPresentationJob: Job? = null
+    private val mutableIsSubmitting = MutableStateFlow(false)
+    val isSubmitting: StateFlow<Boolean> = mutableIsSubmitting.asStateFlow()
 
     init {
         scope.launch {
@@ -136,53 +130,65 @@ class PaymentCoordinator(
             }
         }
         scope.launch {
-            engine.activity.collectLatest(::handleActivityUpdate)
-        }
-        scope.launch {
             paymentHub.paymentRequests.collect(::payTarget)
         }
         scope.launch {
             paymentLinks.revision.collect {
-                actionMutex.withLock { handlePendingPaymentLink() }
-            }
-        }
-    }
-
-    fun dispatch(intent: PaymentIntent) {
-        scope.launch {
-            actionMutex.withLock {
-                try {
-                    handleIntent(intent)
-                } catch (cause: CancellationException) {
-                    throw cause
-                } catch (cause: Throwable) {
-                    showError(
-                        PaymentUiError.Spark(
-                            SparkPaymentError.Unexpected(cause.message)
-                        )
-                    )
+                if (mutableIsSubmitting.value || mutableUiState.value != PaymentUiState.Active) {
+                    paymentLinks.clear()
+                } else {
+                    val link = paymentLinks.claim() ?: return@collect
+                    launchAction { handlePaymentLink(link) }
                 }
             }
         }
     }
 
+    fun dispatch(intent: PaymentIntent) {
+        if (!scope.isActive || mutableIsSubmitting.value) return
+        when (intent) {
+            PaymentIntent.SessionTransactionsOpened -> sessionTransactionsOpened()
+            is PaymentIntent.TransactionDetailNavigationHandled -> Unit
+            is PaymentIntent.ManualAmountKeyPress -> updateManualAmount(intent.key)
+            PaymentIntent.DismissResult -> dismissResult()
+            else -> launchAction { handleIntent(intent) }
+        }
+    }
+
+    private fun launchAction(block: suspend () -> Unit) {
+        if (!scope.isActive || !actionMutex.tryLock()) return
+        mutableIsSubmitting.value = true
+        scope.launch(start = CoroutineStart.UNDISPATCHED) {
+            try {
+                currentCoroutineContext().ensureActive()
+                block()
+            } catch (cause: CancellationException) {
+                throw cause
+            } catch (_: Throwable) {
+                currentCoroutineContext().ensureActive()
+                showError(PaymentUiError.Unexpected())
+            } finally {
+                mutableIsSubmitting.value = false
+                actionMutex.unlock()
+            }
+        }
+    }
+
     fun clear() {
-        pendingPresentationJob?.cancel()
         scope.cancel()
+        paymentLinks.clear()
     }
 
     fun resetSession() {
-        pendingPresentationJob?.cancel()
-        sessionAttemptIds.clear()
+        if (mutableIsSubmitting.value) return
+        paymentLinks.clear()
+        activeLinkId = null
+        receipts.clear()
         knownSessionTransactionIds.clear()
         newSessionTransactionIds.clear()
-        terminalHubUpdates.clear()
-        hubContexts.clear()
-        successNotifications.clear()
         interaction.reset()
         mutableSessionTransactions.value = emptyList()
         mutableNewSessionTransactionCount.value = 0
-        mutableTransactionDetailNavigationTarget.value = null
         paymentHub.resetSession()
         mutableUiState.value = PaymentUiState.Active
     }
@@ -191,8 +197,7 @@ class PaymentCoordinator(
         when (intent) {
             PaymentIntent.DismissResult -> dismissResult()
 
-            is PaymentIntent.TransactionDetailNavigationHandled ->
-                transactionDetailNavigationHandled(intent.id)
+            is PaymentIntent.TransactionDetailNavigationHandled -> Unit
 
             PaymentIntent.SessionTransactionsOpened -> sessionTransactionsOpened()
 
@@ -218,17 +223,6 @@ class PaymentCoordinator(
             PaymentIntent.ConfirmPaymentDismiss -> dismissConfirmation()
 
             PaymentIntent.ConfirmPaymentSubmit -> submitConfirmation()
-
-            PaymentIntent.PendingRetryCreateNewInvoice,
-            PaymentIntent.PendingRetryRetryPrevious,
-            PaymentIntent.PendingRetryDismiss -> dismissResult()
-
-            PaymentIntent.PendingRetryViewPending -> {
-                val id = (mutableUiState.value as? PaymentUiState.PendingRetry)?.id
-                if (id != null) requestTransactionDetailNavigation(id)
-            }
-
-            is PaymentIntent.RetryTransaction -> retryTransaction(intent.id)
         }
     }
 
@@ -245,7 +239,6 @@ class PaymentCoordinator(
         if (mutableUiState.value != PaymentUiState.Active) return
         clearTransientPaymentState()
         if (notifyScan && vibrateOnScan) ignoreHapticFailure(haptics::notifyScanSuccess)
-        mutableUiState.value = PaymentUiState.Detected
         mutableUiState.value = PaymentUiState.Loading(LoadingKind.Resolving)
         applyPrepareResult(
             result = engine.prepare(rawInput, origin),
@@ -262,6 +255,7 @@ class PaymentCoordinator(
         paymentQuote: PaymentAmountQuote? = null,
         amountEnteredManually: Boolean = false
     ) {
+        currentCoroutineContext().ensureActive()
         when (result) {
             is PreparePaymentResult.AmountRequired -> {
                 val lnurlPayDisplay =
@@ -300,9 +294,8 @@ class PaymentCoordinator(
                 )
 
             is PreparePaymentResult.Existing -> {
-                sessionAttemptIds += result.activity.attemptId
-                refreshSessionTransactions(engine.activity.value)
-                showActivity(result.activity, wasAlreadyPaid = true)
+                recordReceipt(result.receipt)
+                showReceipt(result.receipt, wasAlreadyPaid = true)
             }
 
             is PreparePaymentResult.Rejected ->
@@ -313,9 +306,6 @@ class PaymentCoordinator(
 
             PreparePaymentResult.SdkFailure ->
                 showError(PaymentUiError.Spark(SparkPaymentError.SdkUnavailable))
-
-            PreparePaymentResult.StorageFailure ->
-                showError(PaymentUiError.Spark(SparkPaymentError.StorageUnavailable))
         }
     }
 
@@ -379,20 +369,32 @@ class PaymentCoordinator(
     }
 
     private suspend fun submitConfirmation() {
+        if (mutableUiState.value !is PaymentUiState.Confirm) return
         val draft = interaction.activeDraft ?: return
         mutableUiState.value = PaymentUiState.Loading()
         applyConfirmResult(engine.confirm(draft.payment.handle), draft)
     }
 
     private suspend fun applyConfirmResult(result: ConfirmPaymentResult, draft: ActiveDraft) {
+        currentCoroutineContext().ensureActive()
         when (result) {
-            is ConfirmPaymentResult.Submitted -> {
-                interaction.beginAttempt(result.activity.attemptId)
-                sessionAttemptIds += result.activity.attemptId
-                draft.targetContext?.let { hubContexts[result.activity.attemptId] = it }
-                refreshSessionTransactions(engine.activity.value)
-                showActivity(result.activity)
+            is ConfirmPaymentResult.Completed -> {
+                recordReceipt(result.receipt)
+                if (result.receipt.outcome == PaymentOutcome.COMPLETED && !result.wasAlreadyPaid) {
+                    if (vibrateOnPayment) ignoreHapticFailure(haptics::notifyPaymentSuccess)
+                    draft.targetContext?.let { context ->
+                        if (context.targetId != null) {
+                            paymentHub.recordSuccessfulPayment(context.targetId)
+                        } else if (offerToSaveNewTargets) {
+                            paymentHub.offerSave(context.address)
+                        }
+                    }
+                }
+                showReceipt(result.receipt, result.wasAlreadyPaid)
             }
+
+            ConfirmPaymentResult.OutcomeUnknown ->
+                showError(PaymentUiError.Spark(SparkPaymentError.OutcomeUnknown))
 
             ConfirmPaymentResult.ConfirmationRequired -> {
                 val confirmationAmount =
@@ -411,22 +413,22 @@ class PaymentCoordinator(
 
             ConfirmPaymentResult.WalletUnavailable ->
                 showError(PaymentUiError.Spark(SparkPaymentError.WalletUnavailable))
-
-            ConfirmPaymentResult.PersistenceFailed ->
-                showError(PaymentUiError.Spark(SparkPaymentError.StorageUnavailable))
-
-            ConfirmPaymentResult.CapacityReached ->
-                showError(PaymentUiError.Spark(SparkPaymentError.CapacityReached))
         }
     }
 
     private suspend fun dismissManualAmount() {
-        interaction.manualRequest?.payment?.handle?.let { engine.cancel(it) }
+        if (mutableUiState.value !is PaymentUiState.EnterAmount) return
+        val request = interaction.manualRequest ?: return
+        engine.cancel(request.payment.handle)
+        currentCoroutineContext().ensureActive()
         finishPaymentInteraction()
     }
 
     private suspend fun dismissConfirmation() {
-        interaction.activeDraft?.payment?.handle?.let { engine.cancel(it) }
+        if (mutableUiState.value !is PaymentUiState.Confirm) return
+        val draft = interaction.activeDraft ?: return
+        engine.cancel(draft.payment.handle)
+        currentCoroutineContext().ensureActive()
         finishPaymentInteraction()
     }
 
@@ -445,6 +447,7 @@ class PaymentCoordinator(
         val enteredAmount = manualAmount.enteredAmount() ?: return
         mutableUiState.value = PaymentUiState.Loading(LoadingKind.Resolving)
         val paymentQuote = currencyManager.quote(enteredAmount)
+        currentCoroutineContext().ensureActive()
         val sats = paymentQuote?.amountMsats?.let(::msatsToSatoshi)
         if (paymentQuote == null || sats == null) {
             mutableUiState.value = entryState
@@ -511,160 +514,61 @@ class PaymentCoordinator(
             )
     }
 
-    private fun handleActivityUpdate(activity: List<PaymentActivity>) {
-        refreshSessionTransactions(activity)
-        activity.forEach(::updateTerminalHubState)
-        val active = interaction.activeAttemptId?.let { id ->
-            activity.firstOrNull { it.attemptId == id }
-        }
-        if (active != null) {
-            when (active.outcome) {
-                PaymentOutcome.COMPLETED,
-                PaymentOutcome.FAILED,
-                PaymentOutcome.SUBMISSION_UNRESOLVED,
-                PaymentOutcome.STATUS_UNAVAILABLE -> showActivity(active)
+    private fun showReceipt(receipt: PaymentReceipt, wasAlreadyPaid: Boolean = false) {
+        interaction.showResult(VisibleReceipt(receipt, wasAlreadyPaid))
+        mutableUiState.value = when (receipt.outcome) {
+            PaymentOutcome.COMPLETED -> PaymentUiState.Success(
+                amountPaid = display(receipt.amountSats),
+                feePaid = display(receipt.feeSats),
+                wasAlreadyPaid = wasAlreadyPaid
+            )
 
-                else -> Unit
-            }
+            PaymentOutcome.FAILED -> PaymentUiState.Error(
+                PaymentUiError.Spark(SparkPaymentError.Rejected("The Spark payment failed"))
+            )
         }
     }
 
-    private fun showActivity(activity: PaymentActivity, wasAlreadyPaid: Boolean = false) {
-        interaction.showActivity(VisibleActivity(activity, wasAlreadyPaid))
-        pendingPresentationJob?.cancel()
-        when (activity.outcome) {
-            PaymentOutcome.COMPLETED -> {
-                notifyPaymentSuccess(activity.attemptId)
-                mutableUiState.value =
-                    PaymentUiState.Success(
-                        amountPaid = display(activity.amountSats),
-                        feePaid = display(activity.feeSats),
-                        wasAlreadyPaid = wasAlreadyPaid
-                    )
-            }
-
-            PaymentOutcome.FAILED ->
-                showError(
-                    PaymentUiError.Spark(
-                        SparkPaymentError.Rejected("The Spark payment failed")
-                    ),
-                    keepVisibleActivity = true
-                )
-
-            PaymentOutcome.SUBMISSION_UNRESOLVED,
-            PaymentOutcome.STATUS_UNAVAILABLE ->
-                showError(
-                    PaymentUiError.Spark(
-                        SparkPaymentError.OutcomeUnknown(
-                            "The payment may still complete"
-                        )
-                    ),
-                    keepVisibleActivity = true
-                )
-
-            PaymentOutcome.CONFIRMATION_RECORDED,
-            PaymentOutcome.PENDING -> {
-                mutableUiState.value = PaymentUiState.Loading()
-                pendingPresentationJob =
-                    scope.launch {
-                        delay(PENDING_PRESENTATION_TIMEOUT_MS)
-                        if (
-                            interaction.activeAttemptId == activity.attemptId &&
-                            mutableUiState.value is PaymentUiState.Loading
-                        ) {
-                            mutableUiState.value = PaymentUiState.Active
-                        }
-                    }
-            }
-        }
+    private fun recordReceipt(receipt: PaymentReceipt) {
+        if (receipts.none { it.id == receipt.id }) receipts.add(0, receipt)
+        while (receipts.size > MAX_SESSION_RECEIPTS) receipts.removeAt(receipts.lastIndex)
+        refreshSessionTransactions()
     }
 
-    private fun refreshSessionTransactions(activity: List<PaymentActivity>) {
-        val items =
-            activity
-                .asSequence()
-                .filter { it.attemptId in sessionAttemptIds }
-                .map { it.toSessionTransactionItem() }
-                .toList()
+    private fun refreshSessionTransactions() {
+        val items = receipts.map { it.toSessionTransactionItem() }
         mutableSessionTransactions.value = items
+        val ids = items.mapTo(mutableSetOf()) { it.id }
+        knownSessionTransactionIds.retainAll(ids)
+        newSessionTransactionIds.retainAll(ids)
         val unseen = items.map { it.id }.filterNot(knownSessionTransactionIds::contains)
         if (unseen.isNotEmpty()) {
             knownSessionTransactionIds += unseen
             newSessionTransactionIds += unseen
-            mutableNewSessionTransactionCount.value = newSessionTransactionIds.size
         }
+        mutableNewSessionTransactionCount.value = newSessionTransactionIds.size
     }
 
-    private fun PaymentActivity.toSessionTransactionItem(): SessionTransactionItem {
-        val error =
-            when (outcome) {
-                PaymentOutcome.SUBMISSION_UNRESOLVED,
-                PaymentOutcome.STATUS_UNAVAILABLE ->
-                    PaymentUiError.Spark(
-                        SparkPaymentError.OutcomeUnknown("The payment may still complete")
-                    )
-
-                PaymentOutcome.FAILED ->
-                    PaymentUiError.Spark(
-                        SparkPaymentError.Rejected("The Spark payment failed")
-                    )
-
-                else -> null
-            }
-        return SessionTransactionItem(
-            id = attemptId,
+    private fun PaymentReceipt.toSessionTransactionItem(): SessionTransactionItem =
+        SessionTransactionItem(
+            id = id,
             amount = display(amountSats),
-            status =
-                when (outcome) {
-                    PaymentOutcome.CONFIRMATION_RECORDED -> PendingStatus.Resolving
-
-                    PaymentOutcome.PENDING -> PendingStatus.Sending
-
-                    PaymentOutcome.SUBMISSION_UNRESOLVED,
-                    PaymentOutcome.STATUS_UNAVAILABLE -> PendingStatus.OutcomeUnknown
-
-                    PaymentOutcome.COMPLETED -> PendingStatus.Succeeded
-
-                    PaymentOutcome.FAILED -> PendingStatus.Failed
-                },
+            status = when (outcome) {
+                PaymentOutcome.COMPLETED -> TransactionStatus.Succeeded
+                PaymentOutcome.FAILED -> TransactionStatus.Failed
+            },
             createdAtMs = createdAtEpochSeconds * MILLIS_PER_SECOND,
             resultAmount = display(amountSats),
             fee = display(feeSats),
-            error = error
+            error = if (outcome == PaymentOutcome.FAILED) {
+                PaymentUiError.Spark(SparkPaymentError.Rejected("The Spark payment failed"))
+            } else {
+                null
+            }
         )
-    }
 
-    private fun updateTerminalHubState(activity: PaymentActivity) {
-        if (activity.attemptId in terminalHubUpdates) return
-        when (activity.outcome) {
-            PaymentOutcome.COMPLETED -> {
-                terminalHubUpdates += activity.attemptId
-                val context = hubContexts.remove(activity.attemptId) ?: return
-                val targetId = context.targetId
-                if (targetId != null) {
-                    paymentHub.recordSuccessfulPayment(targetId)
-                } else if (offerToSaveNewTargets) {
-                    paymentHub.offerSave(context.address)
-                }
-            }
-
-            PaymentOutcome.FAILED -> {
-                terminalHubUpdates += activity.attemptId
-                hubContexts.remove(activity.attemptId)
-            }
-
-            else -> Unit
-        }
-    }
-
-    private fun notifyPaymentSuccess(id: String) {
-        if (!vibrateOnPayment || !successNotifications.add(id)) return
-        ignoreHapticFailure(haptics::notifyPaymentSuccess)
-    }
-
-    private suspend fun handlePendingPaymentLink() {
-        if (activeLinkId != null || mutableUiState.value != PaymentUiState.Active) return
-        when (val link = paymentLinks.claim() ?: return) {
+    private suspend fun handlePaymentLink(link: ClaimedPaymentLink) {
+        when (link) {
             is ClaimedPaymentLink.Rejected -> {
                 activeLinkId = link.id
                 paymentLinks.consume(link.id)
@@ -680,40 +584,21 @@ class PaymentCoordinator(
         }
     }
 
-    private fun resolveTargetPayment(
-        address: LightningAddress,
-        context: HubTargetContext,
-        paymentQuote: PaymentAmountQuote?
-    ) {
-        scope.launch {
-            actionMutex.withLock {
-                handlePaymentInput(
-                    rawInput = address.full,
-                    origin = PaymentOrigin.DETECTED_CONTENT,
-                    targetContext = context,
-                    requestedAmountMsats = paymentQuote?.amountMsats,
-                    paymentQuote = paymentQuote
-                )
-            }
-        }
-    }
-
     /** Maps a hub selection into Flint's own Spark preparation and confirmation flow. */
     private fun payTarget(intent: DirectTargetPaymentIntent) {
-        val preset = (intent.amountRule as? DirectTargetAmountRule.Preset)?.amount
-        val context =
-            HubTargetContext(
+        if (mutableUiState.value != PaymentUiState.Active) return
+        launchAction {
+            clearTransientPaymentState()
+            mutableUiState.value = PaymentUiState.Loading(LoadingKind.Resolving)
+            val preset = (intent.amountRule as? DirectTargetAmountRule.Preset)?.amount
+            val context = HubTargetContext(
                 targetId = intent.targetId,
                 address = intent.address,
                 isPreset = preset != null
             )
-        if (preset == null) {
-            resolveTargetPayment(intent.address, context, null)
-            return
-        }
-        scope.launch {
-            val paymentQuote = currencyManager.quoteStoredAmount(preset)
-            if (paymentQuote == null) {
+            val quote = preset?.let { currencyManager.quoteStoredAmount(it) }
+            currentCoroutineContext().ensureActive()
+            if (preset != null && quote == null) {
                 val info = CurrencyCatalog.infoFor(preset.normalizedCurrencyCode)
                 showError(
                     if (info.currency is DisplayCurrency.Fiat) {
@@ -722,18 +607,15 @@ class PaymentCoordinator(
                         PaymentUiError.InvalidInvoice("Preset amount could not be converted")
                     }
                 )
-                return@launch
+                return@launchAction
             }
-            resolveTargetPayment(intent.address, context, paymentQuote)
+            applyPrepareResult(
+                result = engine.prepare(intent.address.full, PaymentOrigin.DETECTED_CONTENT),
+                targetContext = context,
+                requestedAmountMsats = quote?.amountMsats,
+                paymentQuote = quote
+            )
         }
-    }
-
-    private suspend fun retryTransaction(id: String) {
-        if (id !in sessionAttemptIds) return
-        mutableUiState.value = PaymentUiState.Loading(LoadingKind.Resolving)
-        engine.refresh()
-        mutableUiState.value = PaymentUiState.Active
-        requestTransactionDetailNavigation(id)
     }
 
     private fun sessionTransactionsOpened() {
@@ -742,25 +624,15 @@ class PaymentCoordinator(
         mutableNewSessionTransactionCount.value = 0
     }
 
-    private fun requestTransactionDetailNavigation(id: String) {
-        if (mutableSessionTransactions.value.none { it.id == id }) return
-        mutableUiState.value = PaymentUiState.Active
-        mutableTransactionDetailNavigationTarget.value = id
-    }
-
-    private fun transactionDetailNavigationHandled(id: String) {
-        if (mutableTransactionDetailNavigationTarget.value == id) {
-            mutableTransactionDetailNavigationTarget.value = null
+    private fun dismissResult() {
+        if (mutableUiState.value is PaymentUiState.Success ||
+            mutableUiState.value is PaymentUiState.Error
+        ) {
+            finishPaymentInteraction()
         }
     }
 
-    private suspend fun dismissResult() {
-        finishPaymentInteraction()
-        handlePendingPaymentLink()
-    }
-
     private fun finishPaymentInteraction() {
-        pendingPresentationJob?.cancel()
         clearTransientPaymentState()
         activeLinkId?.let(paymentLinks::finish)
         activeLinkId = null
@@ -771,8 +643,8 @@ class PaymentCoordinator(
         interaction.reset()
     }
 
-    private fun showError(error: PaymentUiError, keepVisibleActivity: Boolean = false) {
-        if (!keepVisibleActivity) interaction.clearVisibleActivity()
+    private fun showError(error: PaymentUiError) {
+        interaction.reset()
         mutableUiState.value = PaymentUiState.Error(error)
     }
 
@@ -782,18 +654,18 @@ class PaymentCoordinator(
                 showManualAmount(request, clearInput = false)
             }
         }
-        interaction.visibleActivity?.let { visible ->
+        interaction.visibleReceipt?.let { visible ->
             when (mutableUiState.value) {
                 is PaymentUiState.Success,
-                is PaymentUiState.Error -> showActivity(
-                    visible.activity,
+                is PaymentUiState.Error -> showReceipt(
+                    visible.receipt,
                     visible.wasAlreadyPaid
                 )
 
                 else -> Unit
             }
         }
-        refreshSessionTransactions(engine.activity.value)
+        refreshSessionTransactions()
     }
 
     private fun display(amount: Satoshi): DisplayAmount =
@@ -813,6 +685,7 @@ class PaymentCoordinator(
             )
         }
         val preferredAmount = currencyManager.convertMsatsToFreshDisplay(amountMsats)
+        currentCoroutineContext().ensureActive()
         return PaymentConfirmationAmount(
             primary = preferredAmount,
             exactSats = exactSats.takeIf { preferredAmount.currency is DisplayCurrency.Fiat },
@@ -889,11 +762,6 @@ private inline fun ignoreHapticFailure(block: () -> Unit) {
     }
 }
 
-internal fun currentTimeMillis(): Long = Clock.System.now().toEpochMilliseconds()
-
-internal fun roundToFullSatoshis(msats: Long): Long =
-    ((msats + MSATS_PER_SAT - 1) / MSATS_PER_SAT) * MSATS_PER_SAT
-
 private const val MSATS_PER_SAT = 1_000L
 private const val MILLIS_PER_SECOND = 1_000L
-private const val PENDING_PRESENTATION_TIMEOUT_MS = 4_000L
+private const val MAX_SESSION_RECEIPTS = 10

@@ -1,12 +1,8 @@
 package xyz.lilsus.flint.application.payment
 
-import kotlinx.coroutines.flow.StateFlow
 import xyz.lilsus.raylsuite.core.model.Satoshi
 
 interface PaymentEngine {
-    val activity: StateFlow<List<PaymentActivity>>
-    val confirmationPolicy: StateFlow<PaymentConfirmationPolicy>
-
     suspend fun prepare(input: String, origin: PaymentOrigin): PreparePaymentResult
     suspend fun prepareAmount(
         handle: PaymentAmountHandle,
@@ -17,8 +13,6 @@ interface PaymentEngine {
     suspend fun cancel(handle: PaymentAmountHandle)
     suspend fun autoPay(handle: PaymentDraftHandle): ConfirmPaymentResult
     suspend fun confirm(handle: PaymentDraftHandle): ConfirmPaymentResult
-    fun requestRefresh()
-    suspend fun refresh()
 }
 
 class PaymentAmountHandle internal constructor(internal val value: String) {
@@ -62,11 +56,10 @@ data class LnurlPayReviewDetails(
 sealed interface PreparePaymentResult {
     data class AmountRequired(val payment: AmountRequiredPayment) : PreparePaymentResult
     data class Ready(val payment: PreparedPayment) : PreparePaymentResult
-    data class Existing(val activity: PaymentActivity) : PreparePaymentResult
+    data class Existing(val receipt: PaymentReceipt) : PreparePaymentResult
     data class Rejected(val reason: PaymentRejection) : PreparePaymentResult
     data object WalletUnavailable : PreparePaymentResult
     data object SdkFailure : PreparePaymentResult
-    data object StorageFailure : PreparePaymentResult
 }
 
 enum class PaymentRejection {
@@ -84,16 +77,16 @@ enum class PaymentRejection {
 }
 
 sealed interface ConfirmPaymentResult {
-    data class Submitted(val activity: PaymentActivity) : ConfirmPaymentResult
+    data class Completed(val receipt: PaymentReceipt, val wasAlreadyPaid: Boolean = false) :
+        ConfirmPaymentResult
+    data object OutcomeUnknown : ConfirmPaymentResult
     data object ConfirmationRequired : ConfirmPaymentResult
     data object DraftUnavailable : ConfirmPaymentResult
     data object WalletUnavailable : ConfirmPaymentResult
-    data object PersistenceFailed : ConfirmPaymentResult
-    data object CapacityReached : ConfirmPaymentResult
 }
 
-data class PaymentActivity(
-    val attemptId: String,
+data class PaymentReceipt(
+    val id: String,
     val method: PaymentMethod,
     val amountSats: Satoshi,
     val feeSats: Satoshi,
@@ -103,10 +96,6 @@ data class PaymentActivity(
 )
 
 enum class PaymentOutcome {
-    CONFIRMATION_RECORDED,
-    SUBMISSION_UNRESOLVED,
-    STATUS_UNAVAILABLE,
-    PENDING,
     COMPLETED,
     FAILED
 }
@@ -114,7 +103,6 @@ enum class PaymentOutcome {
 interface PaymentSessionLifecycle {
     suspend fun attach(client: SparkPaymentClient)
     suspend fun detach()
-    suspend fun clearWalletData(): Boolean
 }
 
 enum class PaymentNetwork {
@@ -185,21 +173,7 @@ enum class SdkPaymentStatus {
     FAILED
 }
 
-data class SdkPayment(
-    val id: String,
-    val method: PaymentMethod,
-    val status: SdkPaymentStatus,
-    val invoice: String?
-)
-
-sealed interface SparkPaymentEvent {
-    data class PaymentChanged(val payment: SdkPayment) : SparkPaymentEvent
-    data object Synced : SparkPaymentEvent
-}
-
-fun interface SparkPaymentEventListener {
-    suspend fun onEvent(event: SparkPaymentEvent)
-}
+data class SdkPayment(val id: String, val status: SdkPaymentStatus)
 
 interface SparkPaymentClient {
     suspend fun parse(input: String): ParsedSdkInput
@@ -211,7 +185,7 @@ interface SparkPaymentClient {
     ): SdkPreparationResult
     suspend fun send(prepared: SdkPreparedPayment, idempotencyKey: String): SdkPayment
     suspend fun getPayment(paymentId: String): SdkPayment
-    suspend fun listSentPayments(method: PaymentMethod, fromEpochSeconds: Long): List<SdkPayment>
-    suspend fun addEventListener(listener: SparkPaymentEventListener): String
-    suspend fun removeEventListener(listenerId: String)
+
+    /** Observes terminal SDK payment updates until the returned cleanup is invoked. */
+    suspend fun observePayments(onPayment: (SdkPayment) -> Unit): suspend () -> Unit
 }

@@ -29,9 +29,6 @@ private fun flintPaymentStringResource(key: LocalizedTextKey): Int = when (key) 
 
         FlintPaymentTextKey.ErrorPaymentUnconfirmed -> R.string.error_payment_unconfirmed
 
-        FlintPaymentTextKey.ErrorPaymentUnconfirmedMessage ->
-            R.string.error_payment_unconfirmed_message
-
         FlintPaymentTextKey.ErrorRelayConnectionFailed ->
             R.string.error_relay_connection_failed
     }

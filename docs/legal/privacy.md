@@ -1,6 +1,6 @@
 # Rayl and Blip Privacy Policy
 
-Last updated: September 8, 2026
+Last updated: September 13, 2026
 
 This policy covers version 1.0 of **Rayl** and **Blip** for Android and iOS.
 Both apps connect to your existing Blink account. Each app keeps its own local
@@ -27,7 +27,7 @@ history through an app-operated server.
 | Blink API key and wallet connection details | Connect to Blink, display wallet information, and submit and check payments. The API key is kept in app-scoped secure storage. |
 | Blink contacts and contacts you enter | A successful wallet connection automatically imports Blink contact names/aliases and Lightning addresses into the local Payment Hub. The apps do not read your device's address book. |
 | Hub widgets, preset amounts, comments, and contact usage | Store your chosen layout and payment shortcuts. Successful-payment counts and the most recent successful-payment time support Favorites and Recents. These values stay in local app storage. |
-| Payment information | Process invoices, recipients, amounts, fees, status, and payment receipts. Unresolved-payment records, including the invoice and funding-wallet details, are stored locally so the app can check their outcome after a restart and help prevent duplicate payments. |
+| Payment information | Process invoices, recipients, amounts, fees, status, and payment receipts. Payment requests are processed in memory, and the last ten resolved payment receipts are kept for the current app session. The apps do not persist payment attempts or restore them after a restart. |
 | Preferences | Remember appearance, language, display currency, and payment-confirmation settings locally. |
 | QR codes and pasted text | Read a wallet key or payment request that you provide. Camera frames are processed on the device and are not saved or uploaded by the apps. Clipboard text is read when you use a paste action. |
 
@@ -103,7 +103,7 @@ do not provide their own cloud backup or cross-app synchronization.
 ## Retention, deletion, and your choices
 
 - **Remove a wallet in the app's Settings** to erase its locally stored API key,
-  connection details, and unresolved-payment records. Contacts, preferences,
+  connection details, and current-session payment receipts. Contacts, preferences,
   Hub widgets, and Hub usage counts and timestamps remain on the device.
 - **Delete contacts or widgets in the Hub** to remove those items. Removing a
   widget does not delete its contact or the contact's payment usage information.
@@ -112,9 +112,10 @@ do not provide their own cloud backup or cross-app synchronization.
   or archiving an app and installing an update normally preserve that data.
   After an iOS reinstall, the app clears any old wallet credential left in the
   Keychain before using the credential store. Existing OS backups are separate.
-- **Unresolved payments** are retained until resolved or the connection data is
-  removed. Resolved payment results may remain for the current app session;
-  Hub usage information remains with the saved Hub data.
+- **Payment receipts** remain only in memory for the current app session and
+  are cleared when the app process ends or the wallet connection is removed.
+  Closing the app does not cancel a payment already submitted to Blink. Hub usage
+  information remains with the saved Hub data.
 - **Blink account data and API-key authority are separate.** Removing a wallet
   or deleting an app does not delete your Blink account or Blink's records,
   revoke the key at Blink, reverse a payment, or cancel a payment in progress.

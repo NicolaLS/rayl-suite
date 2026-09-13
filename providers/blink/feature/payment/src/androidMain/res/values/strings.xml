@@ -1,8 +1,4 @@
 <resources>
-    <string name="tap_dismiss_pending_blink">Blink reported this payment as pending. Check your Blink wallet for its final status.</string>
-    <string name="transaction_status_sending">Sending</string>
-    <string name="transaction_status_pending_blink">Pending in Blink</string>
-    <string name="transaction_status_unknown">Status unknown</string>
     <string name="transaction_status_success">Paid</string>
     <string name="transaction_status_already_paid">Already paid</string>
     <string name="transaction_status_failure">Failed</string>
@@ -15,6 +11,7 @@
     <string name="error_payment_rejected_generic">Payment was rejected.</string>
     <string name="error_payment_rejected_message">Payment was rejected: %1$s</string>
     <string name="error_network_unavailable">No internet connection. Check your network.</string>
+    <string name="error_payment_status_unknown">Unable to confirm this payment. Check your Blink wallet before paying again.</string>
     <string name="error_payment_unconfirmed">Payment status unknown. It may have succeeded.</string>
     <string name="error_payment_unconfirmed_message">Payment status unknown: %1$s</string>
     <string name="error_blink_permission_denied">Your API key doesn\'t have permission to send payments. Create a new key with all permissions enabled.</string>

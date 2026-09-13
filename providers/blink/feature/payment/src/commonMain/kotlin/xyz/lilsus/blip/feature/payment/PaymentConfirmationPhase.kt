@@ -2,6 +2,8 @@ package xyz.lilsus.blip.feature.payment
 
 import fr.acinq.lightning.utils.msat
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import xyz.lilsus.blip.integration.blink.BlinkApiError
 import xyz.lilsus.blip.integration.blink.BlinkApiException
 import xyz.lilsus.blip.integration.blink.BlinkConnectionException
@@ -25,124 +27,94 @@ internal class PaymentConfirmationPhase(
     private val confirmationPolicy: PaymentConfirmationPolicy,
     private val presentation: PaymentPresentationPhase
 ) {
-    private val confirmationSession = PaymentConfirmationSession()
+    private var confirmation: ExecutablePayment? = null
 
-    val isIdle: Boolean
-        get() = confirmationSession.state == PaymentConfirmationState.Idle
-
-    suspend fun requestPayment(
-        request: PreparedPayment,
-        token: PaymentTaskToken
-    ): ConfirmationResult {
-        if (!confirmationSession.begin(token)) return ConfirmationResult.Presented
-        try {
-            val amountMsats = request.amountOverrideMsats ?: request.invoice.amount?.msat
-            if (
-                request.paymentQuote != null &&
-                request.paymentQuote.amountMsats != amountMsats
-            ) {
-                presentation.presentError(
-                    PaymentUiError.InvalidInvoice("Quoted amount does not match invoice")
-                )
-                return ConfirmationResult.Presented
-            }
-            val fundingWallet = snapshotFundingWallet()
-                ?: return ConfirmationResult.Presented
-            token.ensureCurrent()
-            val fundingAmountCents =
-                if (
-                    request.amountOverrideMsats != null &&
-                    fundingWallet.currency == BlinkWalletCurrency.USD
-                ) {
-                    usdPaymentAmountCents(
-                        amountMsats = request.amountOverrideMsats,
-                        paymentQuote = request.paymentQuote,
-                        token = token
-                    )
-                        ?: run {
-                            presentation.presentError(
-                                PaymentUiError.ExchangeRateUnavailable(USD_CODE)
-                            )
-                            return ConfirmationResult.Presented
-                        }
-                } else {
-                    null
-                }
-            val isManualEntry =
-                request.origin == PendingOrigin.ManualEntry ||
-                    request.origin == PendingOrigin.LnurlManual
-            val requiresConfirmation =
-                !isManualEntry &&
-                    (
-                        request.source == PaymentRequestSource.DeepLink ||
-                            (
-                                amountMsats != null &&
-                                    confirmationPolicy.shouldConfirm(
-                                        amountMsats = amountMsats,
-                                        isManualEntry = isManualEntry,
-                                        isPresetTarget =
-                                            request.targetContext?.isPreset == true
-                                    )
-                                )
-                        )
-            token.ensureCurrent()
-            val payment =
-                ExecutablePayment(
-                    invoice = request.invoice,
-                    amountOverrideMsats = request.amountOverrideMsats,
-                    fundingWallet = fundingWallet,
-                    fundingAmountCents = fundingAmountCents,
-                    origin = request.origin,
-                    dynamicSourceKey = request.dynamicSourceKey,
-                    targetContext = request.targetContext,
-                    replacesDynamicGuardId = request.replacesDynamicGuardId
-                )
-            if (!requiresConfirmation) {
-                return ConfirmationResult.Execute(payment)
-            }
-
-            val display =
-                confirmationAmount(
-                    amountMsats = amountMsats ?: 0L,
-                    paymentQuote = request.paymentQuote,
-                    token = token
-                )
-            if (
-                !confirmationSession.await(
-                    token,
-                    payment
-                )
-            ) {
-                return ConfirmationResult.Presented
-            }
-            presentation.showConfirmation(
-                amount = display,
-                fundingWallet = fundingWallet,
-                lnurlPayDisplay = request.lnurlPayDisplay
+    suspend fun requestPayment(request: PreparedPayment): ConfirmationResult {
+        if (confirmation != null) return ConfirmationResult.Presented
+        val amountMsats = request.amountOverrideMsats ?: request.invoice.amount?.msat
+        if (
+            request.paymentQuote != null &&
+            request.paymentQuote.amountMsats != amountMsats
+        ) {
+            presentation.presentError(
+                PaymentUiError.InvalidInvoice("Quoted amount does not match invoice")
             )
             return ConfirmationResult.Presented
-        } finally {
-            confirmationSession.finishPreparation(token)
         }
+        presentation.showLoading(LoadingKind.Resolving)
+        val fundingWallet = snapshotFundingWallet()
+            ?: return ConfirmationResult.Presented
+        currentCoroutineContext().ensureActive()
+        val fundingAmountCents =
+            if (
+                request.amountOverrideMsats != null &&
+                fundingWallet.currency == BlinkWalletCurrency.USD
+            ) {
+                usdPaymentAmountCents(
+                    amountMsats = request.amountOverrideMsats,
+                    paymentQuote = request.paymentQuote
+                )
+                    ?: run {
+                        presentation.presentError(
+                            PaymentUiError.ExchangeRateUnavailable(USD_CODE)
+                        )
+                        return ConfirmationResult.Presented
+                    }
+            } else {
+                null
+            }
+        val requiresConfirmation =
+            !request.isManualEntry &&
+                (
+                    request.source == PaymentRequestSource.DeepLink ||
+                        (
+                            amountMsats != null &&
+                                confirmationPolicy.shouldConfirm(
+                                    amountMsats = amountMsats,
+                                    isManualEntry = request.isManualEntry,
+                                    isPresetTarget =
+                                        request.targetContext?.isPreset == true
+                                )
+                            )
+                    )
+        currentCoroutineContext().ensureActive()
+        val payment =
+            ExecutablePayment(
+                invoice = request.invoice,
+                amountOverrideMsats = request.amountOverrideMsats,
+                fundingWallet = fundingWallet,
+                fundingAmountCents = fundingAmountCents,
+                targetContext = request.targetContext
+            )
+        if (!requiresConfirmation) {
+            return ConfirmationResult.Execute(payment)
+        }
+
+        val display =
+            confirmationAmount(
+                amountMsats = amountMsats ?: 0L,
+                paymentQuote = request.paymentQuote
+            )
+        confirmation = payment
+        presentation.showConfirmation(
+            amount = display,
+            fundingWallet = fundingWallet,
+            lnurlPayDisplay = request.lnurlPayDisplay
+        )
+        return ConfirmationResult.Presented
     }
 
-    fun submit(): ConfirmationResult = confirmationSession.take()?.let {
+    fun submit(): ConfirmationResult = takeConfirmation()?.let {
         ConfirmationResult.Execute(it)
     } ?: ConfirmationResult.Presented
 
-    fun dismiss(): ConfirmationDismissal = when (confirmationSession.take()?.origin) {
-        PendingOrigin.Invoice,
-        PendingOrigin.LnurlFixed -> ConfirmationDismissal.Active
-
-        PendingOrigin.ManualEntry,
-        PendingOrigin.LnurlManual -> ConfirmationDismissal.ManualAmount
-
-        null -> ConfirmationDismissal.None
-    }
+    fun dismiss(): Boolean = takeConfirmation() != null
 
     fun reset() {
-        confirmationSession.reset()
+        confirmation = null
     }
+
+    private fun takeConfirmation(): ExecutablePayment? = confirmation.also { confirmation = null }
 
     private fun snapshotFundingWallet(): BlinkFundingWallet? = try {
         blinkWallet.prepareFundingWallet()
@@ -160,8 +132,7 @@ internal class PaymentConfirmationPhase(
 
     private suspend fun confirmationAmount(
         amountMsats: Long,
-        paymentQuote: PaymentAmountQuote?,
-        token: PaymentTaskToken
+        paymentQuote: PaymentAmountQuote?
     ): PaymentConfirmationAmount {
         val exactSats =
             DisplayAmount(amountMsats / MSATS_PER_SAT, DisplayCurrency.Satoshi)
@@ -175,7 +146,7 @@ internal class PaymentConfirmationPhase(
             )
         }
         val preferredAmount = currencyManager.convertMsatsToFreshDisplay(amountMsats)
-        token.ensureCurrent()
+        currentCoroutineContext().ensureActive()
         return PaymentConfirmationAmount(
             primary = preferredAmount,
             exactSats = exactSats.takeIf { preferredAmount.currency is DisplayCurrency.Fiat },
@@ -185,8 +156,7 @@ internal class PaymentConfirmationPhase(
 
     private suspend fun usdPaymentAmountCents(
         amountMsats: Long,
-        paymentQuote: PaymentAmountQuote?,
-        token: PaymentTaskToken
+        paymentQuote: PaymentAmountQuote?
     ): Long? {
         val requestedAmount = paymentQuote?.requestedAmount
         val requestedCurrency = requestedAmount?.currency as? DisplayCurrency.Fiat
@@ -198,7 +168,7 @@ internal class PaymentConfirmationPhase(
         }
 
         val usdRate = bitcoinPriceProvider.pricePerBitcoin(USD_CODE)
-        token.ensureCurrent()
+        currentCoroutineContext().ensureActive()
         val validRate = usdRate?.takeIf { it.isFinite() && it > 0.0 } ?: return null
         return convertMsatsToDisplayAmount(
             msats = amountMsats,

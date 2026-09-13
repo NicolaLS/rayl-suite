@@ -124,7 +124,6 @@ class DefaultWalletAccess(
         val disconnected = disconnectCurrent()
         val credentialDeleted = vault.delete() != CredentialDeleteResult.FAILED
         val dataDeleted = directories.deleteWalletData()
-        paymentLifecycle.clearWalletData()
         val markerFinished = directories.finishReset()
 
         if (markerCreated && disconnected && credentialDeleted && dataDeleted && markerFinished) {
@@ -161,7 +160,6 @@ class DefaultWalletAccess(
         val disconnected = disconnectCurrent()
         val credentialDeleted = vault.delete() != CredentialDeleteResult.FAILED
         val dataDeleted = directories.deleteWalletData()
-        paymentLifecycle.clearWalletData()
         val markerFinished = directories.finishReset()
         val finished = disconnected && credentialDeleted && dataDeleted && markerFinished
         mutableState.value =

@@ -6,10 +6,8 @@ import xyz.lilsus.flint.feature.payment.R
 import xyz.lilsus.raylsuite.core.ui.format.AmountFormatter
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentLoadingKind
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentScreenState
-import xyz.lilsus.raylsuite.feature.paymentui.PaymentSessionReference
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentSessionTransaction
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentStatusTone
-import xyz.lilsus.raylsuite.feature.paymentui.PreviousPaymentSituation
 
 @Composable
 internal fun PaymentUiState.toPaymentScreenState(
@@ -17,15 +15,11 @@ internal fun PaymentUiState.toPaymentScreenState(
 ): PaymentScreenState = when (this) {
     PaymentUiState.Active -> PaymentScreenState.Active
 
-    PaymentUiState.Detected -> PaymentScreenState.Detected
-
     is PaymentUiState.Loading -> PaymentScreenState.Loading(kind.toPresentation())
 
     is PaymentUiState.EnterAmount -> PaymentScreenState.EnterAmount(entry, lnurlPayDisplay)
 
     is PaymentUiState.Confirm -> PaymentScreenState.Confirm(amount, lnurlPayDisplay)
-
-    is PaymentUiState.PendingRetry -> PaymentScreenState.PendingRetry(id)
 
     is PaymentUiState.Success ->
         PaymentScreenState.Success(
@@ -38,12 +32,6 @@ internal fun PaymentUiState.toPaymentScreenState(
 
     is PaymentUiState.Error -> PaymentScreenState.Error(errorMessageFor(error))
 }
-
-internal fun SessionTransactionItem.toPaymentSessionReference() = PaymentSessionReference(
-    id = id,
-    statusKey = status.name,
-    previousPaymentSituation = status.toPreviousPaymentSituation()
-)
 
 @Composable
 internal fun SessionTransactionItem.toPaymentSessionTransaction(
@@ -58,15 +46,12 @@ internal fun SessionTransactionItem.toPaymentSessionTransaction(
         createdAtMs = createdAtMs,
         supportingText =
             when (status) {
-                PendingStatus.Succeeded -> fee?.let {
+                TransactionStatus.Succeeded -> fee?.let {
                     stringResource(R.string.transaction_fee, formatter.format(it))
                 }
 
-                PendingStatus.OutcomeUnknown,
-                PendingStatus.Failed -> errorMessage
-
-                PendingStatus.Sending,
-                PendingStatus.Resolving -> null
+                TransactionStatus.Failed ->
+                    flintPaymentErrorMessageFor(error ?: PaymentUiError.Unexpected())
             }
     )
 }
@@ -76,33 +61,15 @@ private fun LoadingKind.toPresentation(): PaymentLoadingKind = when (this) {
     LoadingKind.Paying -> PaymentLoadingKind.Paying
 }
 
-private fun PendingStatus.toPreviousPaymentSituation(): PreviousPaymentSituation = when (this) {
-    PendingStatus.Sending,
-    PendingStatus.Resolving -> PreviousPaymentSituation.InProgress
-
-    PendingStatus.OutcomeUnknown -> PreviousPaymentSituation.OutcomeUnknown
-
-    PendingStatus.Succeeded,
-    PendingStatus.Failed -> PreviousPaymentSituation.Completed
-}
-
 @Composable
-private fun PendingStatus.presentation(): StatusPresentation = when (this) {
-    PendingStatus.Sending,
-    PendingStatus.Resolving ->
-        StatusPresentation(
-            stringResource(R.string.transaction_status_pending),
-            PaymentStatusTone.Pending
-        )
-
-    PendingStatus.Succeeded ->
+private fun TransactionStatus.presentation(): StatusPresentation = when (this) {
+    TransactionStatus.Succeeded ->
         StatusPresentation(
             stringResource(R.string.transaction_status_success),
             PaymentStatusTone.Success
         )
 
-    PendingStatus.OutcomeUnknown,
-    PendingStatus.Failed ->
+    TransactionStatus.Failed ->
         StatusPresentation(
             stringResource(R.string.transaction_status_failure),
             PaymentStatusTone.Failure

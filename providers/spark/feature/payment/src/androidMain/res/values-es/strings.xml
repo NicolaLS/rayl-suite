@@ -1,13 +1,10 @@
 <resources>
-    <string name="transaction_status_pending">Pendiente</string>
     <string name="transaction_status_success">Pagado</string>
     <string name="transaction_status_failure">Fallido</string>
     <string name="transaction_fee">Comisión %1$s</string>
     <string name="error_missing_wallet_connection">Conecta una billetera para continuar.</string>
     <string name="error_payment_rejected_generic">El pago fue rechazado.</string>
     <string name="error_payment_rejected_message">El pago fue rechazado: %1$s</string>
-    <string name="error_network_unavailable">Sin conexión a internet. Verifica tu red.</string>
     <string name="error_relay_connection_failed">No se pudo conectar a la billetera. Inténtalo de nuevo.</string>
-    <string name="error_payment_unconfirmed">Estado de pago desconocido. Es posible que el pago haya sido exitoso.</string>
-    <string name="error_payment_unconfirmed_message">Estado de pago desconocido: %1$s</string>
+    <string name="error_payment_unconfirmed">No se pudo confirmar este pago. Verifica su estado antes de volver a pagar.</string>
 </resources>

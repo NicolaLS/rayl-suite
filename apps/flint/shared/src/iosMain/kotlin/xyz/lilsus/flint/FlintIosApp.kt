@@ -7,8 +7,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import xyz.lilsus.flint.application.wallet.WalletAccessState
 import xyz.lilsus.flint.feature.payment.PaymentEvent
-import xyz.lilsus.flint.feature.payment.PaymentUiState
-import xyz.lilsus.flint.feature.payment.previousPaymentSituation
 import xyz.lilsus.flint.feature.payment.toNativePaymentScreenState
 import xyz.lilsus.flint.feature.payment.toNativeRecentItem
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
@@ -21,7 +19,6 @@ import xyz.lilsus.raylsuite.feature.appshell.nativeColorSchemeValue
 import xyz.lilsus.raylsuite.feature.paymenthub.NativePaymentHubController
 import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentRecentController
 import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentScanController
-import xyz.lilsus.raylsuite.feature.paymentui.PaymentIntent
 import xyz.lilsus.raylsuite.feature.paymentui.localizedMessage
 import xyz.lilsus.raylsuite.feature.settings.NativeSettingsController
 import xyz.lilsus.raylsuite.feature.settings.nativeSettingsAppVersionName
@@ -76,7 +73,8 @@ class FlintIosApp(host: FlintAppHost) {
         FlintNativeWalletSettingsController(
             walletAccess = runtime.walletAccess,
             networkLabel = runtime.networkLabel,
-            languageChanges = runtime.languageRepository.preference
+            languageChanges = runtime.languageRepository.preference,
+            isSubmitting = runtime.paymentCoordinator.isSubmitting
         )
     }
 
@@ -131,7 +129,9 @@ class FlintIosApp(host: FlintAppHost) {
     }
 
     fun selectTab(tab: String) {
-        runtime.tabState.select(AppTab.fromStoredValue(tab))
+        if (!runtime.paymentCoordinator.isSubmitting.value) {
+            runtime.tabState.select(AppTab.fromStoredValue(tab))
+        }
     }
 
     fun settingsController(): NativeSettingsController = nativeSettingsController
@@ -156,21 +156,15 @@ class FlintIosApp(host: FlintAppHost) {
         observerScope.launch {
             combine(
                 runtime.paymentCoordinator.uiState,
-                runtime.paymentCoordinator.sessionTransactions,
                 runtime.paymentHub.state,
                 runtime.languageRepository.preference
-            ) { payment, transactions, hubState, _ ->
-                val previousSituation =
-                    (payment as? PaymentUiState.PendingRetry)?.id?.let { id ->
-                        transactions.firstOrNull { it.id == id }?.previousPaymentSituation()
-                    }
+            ) { payment, hubState, _ ->
                 controller.update(
                     payment = payment.toNativePaymentScreenState(),
                     appTitle = nativeString(
                         NativeStringResource(table = "FlintApp", key = "app_name")
                     ),
                     estimatedFeeHint = null,
-                    previousPaymentSituation = previousSituation,
                     savePrompt = hubState.savePrompt
                 )
             }.collect {}
@@ -187,15 +181,6 @@ class FlintIosApp(host: FlintAppHost) {
                         is PaymentEvent.ShowToast -> event.message.localizedMessage()
                     }
                 controller.emitMessage(message)
-            }
-        }
-        observerScope.launch {
-            runtime.paymentCoordinator.transactionDetailNavigationTarget.collect { id ->
-                if (id == null) return@collect
-                runtime.tabState.openTransaction(id)
-                runtime.paymentCoordinator.dispatch(
-                    PaymentIntent.TransactionDetailNavigationHandled(id)
-                )
             }
         }
         return controller

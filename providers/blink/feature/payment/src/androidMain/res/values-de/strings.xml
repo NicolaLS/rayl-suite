@@ -1,8 +1,4 @@
 <resources>
-    <string name="tap_dismiss_pending_blink">Blink meldet diese Zahlung als ausstehend. Prüfe den endgültigen Status in deiner Blink-Wallet.</string>
-    <string name="transaction_status_sending">Wird gesendet</string>
-    <string name="transaction_status_pending_blink">In Blink ausstehend</string>
-    <string name="transaction_status_unknown">Status unbekannt</string>
     <string name="transaction_status_success">Bezahlt</string>
     <string name="transaction_status_already_paid">Bereits bezahlt</string>
     <string name="transaction_status_failure">Fehlgeschlagen</string>
@@ -15,6 +11,7 @@
     <string name="error_payment_rejected_generic">Zahlung wurde abgewiesen.</string>
     <string name="error_payment_rejected_message">Zahlung wurde abgewiesen: %1$s</string>
     <string name="error_network_unavailable">Keine Internetverbindung. Prüfe dein Netzwerk.</string>
+    <string name="error_payment_status_unknown">Diese Zahlung konnte nicht bestätigt werden. Prüfe deine Blink-Wallet, bevor du erneut bezahlst.</string>
     <string name="error_payment_unconfirmed">Zahlungsstatus unbekannt. Die Zahlung ist möglicherweise erfolgt.</string>
     <string name="error_payment_unconfirmed_message">Zahlungsstatus unbekannt: %1$s</string>
     <string name="error_blink_permission_denied">Dein API-Schlüssel hat keine Berechtigung zum Senden von Zahlungen. Erstelle einen neuen Schlüssel mit allen Berechtigungen.</string>

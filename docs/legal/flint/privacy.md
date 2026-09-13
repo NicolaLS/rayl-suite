@@ -1,6 +1,6 @@
 # Flint Privacy Policy
 
-Last updated: September 4, 2026
+Last updated: September 13, 2026
 
 Flint is an open-source client for a self-custodial Spark wallet. The Flint
 maintainer does not operate an account service, payment processor, analytics
@@ -12,6 +12,11 @@ Flint stores the wallet recovery phrase and related credential material in
 app-scoped encrypted storage. It also stores wallet data, app preferences,
 contacts, and payment shortcuts locally. Flint does not include its local data
 in Android cloud backup or device transfer.
+
+Recent payment receipts are kept only in memory for the current app session.
+Flint does not keep a separate persisted payment-attempt queue or restore it
+after a restart. The Breez Spark SDK maintains its own wallet data, including
+transaction records. Closing Flint does not reverse a submitted payment.
 
 Removing the wallet deletes its stored credential. Compatible app updates and
 operating-system offload or archive features retain local data. Deleting Flint

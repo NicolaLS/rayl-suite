@@ -4,12 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import xyz.lilsus.blip.feature.payment.R
-import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.ui.format.rememberAmountFormatter
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentFlowState
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentSessionItem
@@ -32,7 +29,6 @@ fun rememberPaymentFlowState(coordinator: PaymentCoordinator): PaymentFlowState 
         sessionItems =
             sessionTransactions.map { transaction ->
                 PaymentSessionItem(
-                    reference = transaction.toPaymentSessionReference(),
                     transaction = transaction.toPaymentSessionTransaction(formatter),
                     detail = transaction.toPaymentTransactionDetail()
                 )
@@ -59,37 +55,5 @@ fun rememberPaymentMessages(coordinator: PaymentCoordinator): Flow<String> {
 @Composable
 private fun SessionTransactionItem.toPaymentTransactionDetail() = PaymentTransactionDetail(
     id = id,
-    state = toDetailUiState().toPaymentScreenState(::blipPaymentErrorMessageFor),
-    canRetry = status == PendingStatus.StatusUnknown || status == PendingStatus.Failure,
-    pendingMessage =
-        if (status == PendingStatus.PendingInBlink) {
-            stringResource(R.string.tap_dismiss_pending_blink)
-        } else {
-            null
-        }
+    state = toDetailUiState().toPaymentScreenState(::blipPaymentErrorMessageFor)
 )
-
-private fun SessionTransactionItem.toDetailUiState(): PaymentUiState = when (status) {
-    PendingStatus.Sending,
-    PendingStatus.PendingInBlink -> PaymentUiState.Loading()
-
-    PendingStatus.Success,
-    PendingStatus.AlreadyPaid -> {
-        val paidAmount = resultAmount ?: amount
-        PaymentUiState.Success(
-            amountPaid = paidAmount,
-            feePaid = fee ?: paidAmount.zero(),
-            showEstimatedFeeHint = showEstimatedFeeHint && !wasAlreadyPaid,
-            wasAlreadyPaid = status == PendingStatus.AlreadyPaid || wasAlreadyPaid,
-            preimage = preimage
-        )
-    }
-
-    PendingStatus.Failure,
-    PendingStatus.StatusUnknown ->
-        PaymentUiState.Error(
-            error ?: PaymentUiError.Unexpected(errorMessage)
-        )
-}
-
-private fun DisplayAmount.zero(): DisplayAmount = DisplayAmount(0, currency)

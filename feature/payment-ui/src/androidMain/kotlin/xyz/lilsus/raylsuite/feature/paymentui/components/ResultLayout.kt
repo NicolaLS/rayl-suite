@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -52,9 +51,7 @@ fun ResultLayout(
     receiptVisible: Boolean = false,
     estimatedFeeHint: String? = null,
     onViewReceipt: () -> Unit = {},
-    onContinue: (() -> Unit)? = null,
-    actionLabel: String? = null,
-    onAction: () -> Unit = {}
+    onContinue: (() -> Unit)? = null
 ) {
     val formatter = rememberAmountFormatter()
     Column(
@@ -149,12 +146,6 @@ fun ResultLayout(
                         textAlign = TextAlign.Center
                     )
                 }
-            }
-        }
-        actionLabel?.let { label ->
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = onAction) {
-                Text(text = label)
             }
         }
         onContinue?.let {

@@ -13,7 +13,6 @@ internal enum class FlintPaymentTextKey(override val key: String) : LocalizedTex
     ErrorPaymentRejectedGeneric("error_payment_rejected_generic"),
     ErrorPaymentRejectedMessage("error_payment_rejected_message"),
     ErrorPaymentUnconfirmed("error_payment_unconfirmed"),
-    ErrorPaymentUnconfirmedMessage("error_payment_unconfirmed_message"),
     ErrorRelayConnectionFailed("error_relay_connection_failed");
 
     override val table: String = "FlintPayment"
@@ -27,12 +26,6 @@ internal fun PaymentUiError.toLocalizedText(): LocalizedText = when (this) {
         SparkPaymentError.SdkUnavailable ->
             LocalizedText(FlintPaymentTextKey.ErrorRelayConnectionFailed)
 
-        SparkPaymentError.StorageUnavailable,
-        is SparkPaymentError.Unexpected -> unexpectedPaymentErrorText(sparkError.detail)
-
-        SparkPaymentError.CapacityReached ->
-            LocalizedText(FlintPaymentTextKey.ErrorPaymentRejectedGeneric)
-
         is SparkPaymentError.Rejected ->
             localizedTextWithOptionalDetail(
                 sparkError.detail,
@@ -40,12 +33,8 @@ internal fun PaymentUiError.toLocalizedText(): LocalizedText = when (this) {
                 FlintPaymentTextKey.ErrorPaymentRejectedMessage
             )
 
-        is SparkPaymentError.OutcomeUnknown ->
-            localizedTextWithOptionalDetail(
-                sparkError.detail,
-                FlintPaymentTextKey.ErrorPaymentUnconfirmed,
-                FlintPaymentTextKey.ErrorPaymentUnconfirmedMessage
-            )
+        SparkPaymentError.OutcomeUnknown ->
+            LocalizedText(FlintPaymentTextKey.ErrorPaymentUnconfirmed)
     }
 
     is PaymentUiError.InvalidInvoice -> invalidInvoicePaymentErrorText(reason)

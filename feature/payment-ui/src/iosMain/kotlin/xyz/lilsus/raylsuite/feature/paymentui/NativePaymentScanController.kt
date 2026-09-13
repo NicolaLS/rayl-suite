@@ -6,7 +6,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
@@ -26,7 +25,6 @@ import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountKey
 class NativePaymentScanController(
     private val onPaymentIntent: (PaymentIntent) -> Unit,
     private val onHubIntent: (PaymentHubIntent) -> Unit,
-    private val canOpenPreviousPayment: Boolean = true,
     private val offersRecentEntryPoint: Boolean = false
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -61,7 +59,6 @@ class NativePaymentScanController(
         payment: PaymentScreenState,
         appTitle: String,
         estimatedFeeHint: String?,
-        previousPaymentSituation: PreviousPaymentSituation?,
         savePrompt: HubSavePrompt?,
         recentCount: Int = 0,
         newRecentCount: Int = 0
@@ -97,7 +94,6 @@ class NativePaymentScanController(
                 payment = payment,
                 appTitle = appTitle,
                 estimatedFeeHint = estimatedFeeHint,
-                previousPaymentSituation = previousPaymentSituation,
                 savePrompt = savePrompt,
                 recentCount = recentCount,
                 newRecentCount = newRecentCount
@@ -174,18 +170,6 @@ class NativePaymentScanController(
         onPaymentIntent(PaymentIntent.ConfirmPaymentDismiss)
     }
 
-    fun chooseRepeatPayment(action: String) {
-        val intent =
-            when (action) {
-                "retry" -> PaymentIntent.PendingRetryRetryPrevious
-                "additional" -> PaymentIntent.PendingRetryCreateNewInvoice
-                "view" -> PaymentIntent.PendingRetryViewPending
-                "dismiss" -> PaymentIntent.PendingRetryDismiss
-                else -> return
-            }
-        onPaymentIntent(intent)
-    }
-
     fun updateSaveTargetTitle(title: String) {
         onHubIntent(PaymentHubIntent.SavePromptTitleChanged(title))
     }
@@ -212,10 +196,8 @@ class NativePaymentScanController(
                 payment = current.payment,
                 appTitle = current.appTitle,
                 estimatedFeeHint = current.estimatedFeeHint,
-                previousPaymentSituation = current.previousPaymentSituation,
                 savePrompt = current.savePrompt,
                 receiptVisible = receiptVisible,
-                canOpenPreviousPayment = canOpenPreviousPayment,
                 showResolvingContent = showResolvingContent,
                 recentCount = current.recentCount,
                 newRecentCount = current.newRecentCount,
@@ -308,7 +290,6 @@ private data class NativePaymentScanInput(
     val payment: PaymentScreenState,
     val appTitle: String,
     val estimatedFeeHint: String?,
-    val previousPaymentSituation: PreviousPaymentSituation?,
     val savePrompt: HubSavePrompt?,
     val recentCount: Int,
     val newRecentCount: Int

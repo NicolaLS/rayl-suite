@@ -5,7 +5,6 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyPermanentlyInvalidatedException
 import android.security.keystore.KeyProperties
 import android.security.keystore.UserNotAuthenticatedException
-import app.cash.sqldelight.driver.android.AndroidSqliteDriver
 import java.io.File
 import java.io.FileOutputStream
 import java.security.KeyStore
@@ -27,18 +26,13 @@ import xyz.lilsus.flint.application.wallet.DefaultWalletAccess
 import xyz.lilsus.flint.application.wallet.WalletAccess
 import xyz.lilsus.flint.application.wallet.WalletCredential
 import xyz.lilsus.flint.application.wallet.WalletDirectories
-import xyz.lilsus.flint.integration.wallet.persistence.FlintDatabase
-import xyz.lilsus.flint.integration.wallet.persistence.SqlPaymentAttemptRepository
 import xyz.lilsus.flint.integration.wallet.spark.BreezSparkSdkConnector
 
 fun createAndroidWalletAccess(context: Context, bootstrapConfig: AppBootstrapConfig): WalletAccess {
     val appContext = context.applicationContext
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    val driver = AndroidSqliteDriver(FlintDatabase.Schema, appContext, PAYMENT_DATABASE_NAME)
     val paymentEngine = DefaultPaymentEngine(
-        environment = bootstrapConfig.environment,
-        repository = SqlPaymentAttemptRepository(driver),
-        applicationScope = applicationScope
+        environment = bootstrapConfig.environment
     )
     val walletAccess = DefaultWalletAccess(
         bootstrapConfig = bootstrapConfig,
@@ -51,8 +45,6 @@ fun createAndroidWalletAccess(context: Context, bootstrapConfig: AppBootstrapCon
     ).also(WalletAccess::start)
     return walletAccess
 }
-
-private const val PAYMENT_DATABASE_NAME = "flint-payment-intents.db"
 
 private class AndroidWalletDirectories(context: Context) : WalletDirectories {
     private val filesDirectory = context.filesDir

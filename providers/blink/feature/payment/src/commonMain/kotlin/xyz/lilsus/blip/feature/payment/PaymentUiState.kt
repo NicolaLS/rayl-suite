@@ -10,8 +10,6 @@ import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountUiState
 sealed interface PaymentUiState {
     data object Active : PaymentUiState
 
-    data object Detected : PaymentUiState
-
     data class Loading(val kind: LoadingKind = LoadingKind.Paying) : PaymentUiState
 
     data class EnterAmount(
@@ -24,8 +22,6 @@ sealed interface PaymentUiState {
         val fundingWallet: BlinkFundingWallet,
         val lnurlPayDisplay: LnurlPayDisplay? = null
     ) : PaymentUiState
-
-    data class PendingRetry(val id: String) : PaymentUiState
 
     data class Success(
         val amountPaid: DisplayAmount,
@@ -44,6 +40,8 @@ enum class LoadingKind {
 }
 
 sealed interface PaymentUiError {
+    data object StatusUnknown : PaymentUiError
+
     data class Blink(val error: BlinkApiError) : PaymentUiError
 
     data class InvalidInvoice(val reason: String? = null) : PaymentUiError
@@ -58,22 +56,34 @@ sealed interface PaymentUiError {
 data class SessionTransactionItem(
     val id: String,
     val amount: DisplayAmount,
-    val status: PendingStatus,
+    val status: TransactionStatus,
     val createdAtMs: Long,
     val resultAmount: DisplayAmount? = null,
     val fee: DisplayAmount? = null,
     val error: PaymentUiError? = null,
-    val errorMessage: String? = null,
     val showEstimatedFeeHint: Boolean = false,
     val wasAlreadyPaid: Boolean = false,
     val preimage: String? = null
 )
 
-enum class PendingStatus {
-    Sending,
-    PendingInBlink,
-    StatusUnknown,
+enum class TransactionStatus {
     Success,
     AlreadyPaid,
     Failure
+}
+
+internal fun SessionTransactionItem.toDetailUiState(): PaymentUiState = when (status) {
+    TransactionStatus.Success,
+    TransactionStatus.AlreadyPaid -> {
+        val paidAmount = resultAmount ?: amount
+        PaymentUiState.Success(
+            amountPaid = paidAmount,
+            feePaid = fee ?: DisplayAmount(0, paidAmount.currency),
+            showEstimatedFeeHint = showEstimatedFeeHint && !wasAlreadyPaid,
+            wasAlreadyPaid = status == TransactionStatus.AlreadyPaid || wasAlreadyPaid,
+            preimage = preimage
+        )
+    }
+
+    TransactionStatus.Failure -> PaymentUiState.Error(error ?: PaymentUiError.Unexpected())
 }

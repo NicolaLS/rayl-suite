@@ -103,8 +103,7 @@ internal class LasrRuntime(
             currencyPreferences = currencyPreferences,
             paymentPreferences = paymentPreferences,
             paymentHub = paymentHub,
-            haptics = haptics,
-            paymentAttemptSettings = walletSettings
+            haptics = haptics
         )
     }
 
@@ -133,7 +132,12 @@ internal class LasrRuntime(
     }
 
     fun requestSettingsWalletFlow() {
-        if (!canAcceptWalletInput) return
+        if (
+            !canAcceptWalletInput ||
+            (runtimeStarted && paymentCoordinator.isSubmitting.value)
+        ) {
+            return
+        }
         mutableSettingsWalletFlow.value = true
     }
 
@@ -148,7 +152,11 @@ internal class LasrRuntime(
     }
 
     private fun routeDeepLink(uri: String) {
-        if (closed || mutableRemovalPending.value) return
+        if (closed || mutableRemovalPending.value ||
+            (runtimeStarted && paymentCoordinator.isSubmitting.value)
+        ) {
+            return
+        }
         val scheme = uri.substringBefore(":", missingDelimiterValue = "")
         if (scheme.equals(NWC_SCHEME, ignoreCase = true)) {
             connectionDraft.set(normalizeNwcUri(uri))

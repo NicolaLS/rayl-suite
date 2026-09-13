@@ -1,6 +1,6 @@
 # Rayl and Blip iOS encryption assessment
 
-Assessment revision: **2026-09-12 / MOB-48** (original assessment: MOB-59).
+Assessment revision: **2026-09-13 / MOB-72** (original assessment: MOB-59).
 
 This maintained record explains the App Store Connect answers and the matching
 `Info.plist` declarations for Rayl and Blip 1.0. It covers app code, linked iOS
@@ -81,6 +81,16 @@ including external URL overrides. This does not remove or change the bundled
 ACINQ/NWC cryptography listed below. Both plist Booleans remain `false` under the
 same France-excluded scope; their revision comments are refreshed. Historical
 binary evidence below remains historical, not a new candidate assessment.
+
+The 13 September foreground-payment simplification removes the Blink and NWC
+payment features' direct JSON serialization dependencies and serialization
+compiler plugins with their pending-attempt stores. NWC payment also drops its
+direct multiplatform-settings dependency. JSON serialization and settings remain
+supplied by the existing integration/features that use them; no library version,
+cryptographic implementation, framework export, or territory changes. Foreground
+Blink status queries use the existing Apollo/HTTPS client. Both plist Booleans remain `false`
+under the same France-excluded scope; their assessment revision comments are
+refreshed. This source review does not replace candidate binary evidence.
 
 Relevant core/provider dependency definitions agree between these release tips.
 The `iosArm64CompileKlibraries` reports resolved on the assessment date show:

@@ -36,6 +36,7 @@ class BlinkApiClientTest {
                         "errors": [],
                         "transaction": {
                             "__typename": "Transaction",
+                            "id": "transaction-123",
                             "status": "SUCCESS",
                             "direction": "SEND",
                             "settlementFee": -10,

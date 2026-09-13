@@ -415,6 +415,29 @@
         }
       }
     },
+    "error_payment_status_unknown" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Zahlung konnte nicht bestätigt werden. Prüfe deine Blink-Wallet, bevor du erneut bezahlst."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to confirm this payment. Check your Blink wallet before paying again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo confirmar este pago. Revisa tu billetera Blink antes de volver a pagar."
+          }
+        }
+      }
+    },
     "error_payment_unconfirmed" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -457,29 +480,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Estado de pago desconocido: %1$@"
-          }
-        }
-      }
-    },
-    "tap_dismiss_pending_blink" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blink meldet diese Zahlung als ausstehend. Prüfe den endgültigen Status in deiner Blink-Wallet."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blink reported this payment as pending. Check your Blink wallet for its final status."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blink indicó que este pago está pendiente. Comprueba su estado final en tu billetera Blink."
           }
         }
       }
@@ -553,52 +553,6 @@
         }
       }
     },
-    "transaction_status_pending_blink" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In Blink ausstehend"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pending in Blink"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pendiente en Blink"
-          }
-        }
-      }
-    },
-    "transaction_status_sending" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wird gesendet"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sending"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Enviando"
-          }
-        }
-      }
-    },
     "transaction_status_success" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -618,29 +572,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Pagado"
-          }
-        }
-      }
-    },
-    "transaction_status_unknown" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Status unbekannt"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Status unknown"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Estado desconocido"
           }
         }
       }

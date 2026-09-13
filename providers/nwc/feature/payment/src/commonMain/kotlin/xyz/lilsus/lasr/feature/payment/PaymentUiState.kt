@@ -8,8 +8,6 @@ import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountUiState
 sealed interface PaymentUiState {
     data object Active : PaymentUiState
 
-    data object Detected : PaymentUiState
-
     data class Loading(val kind: LoadingKind = LoadingKind.Paying) : PaymentUiState
 
     data class EnterAmount(
@@ -22,13 +20,10 @@ sealed interface PaymentUiState {
         val lnurlPayDisplay: LnurlPayDisplay? = null
     ) : PaymentUiState
 
-    data class PendingRetry(val id: String) : PaymentUiState
-
     data class Success(
         val amountPaid: DisplayAmount,
         val feePaid: DisplayAmount,
         val showEstimatedFeeHint: Boolean = false,
-        val wasAlreadyPaid: Boolean = false,
         val preimage: String? = null
     ) : PaymentUiState
 
@@ -55,23 +50,30 @@ sealed interface PaymentUiError {
 data class SessionTransactionItem(
     val id: String,
     val amount: DisplayAmount,
-    val status: PendingStatus,
+    val status: TransactionStatus,
     val createdAtMs: Long,
-    val resultAmount: DisplayAmount? = null,
     val fee: DisplayAmount? = null,
     val error: PaymentUiError? = null,
-    val errorMessage: String? = null,
     val showEstimatedFeeHint: Boolean = false,
-    val wasAlreadyPaid: Boolean = false,
     val preimage: String? = null
 )
 
-enum class PendingStatus {
-    Sending,
-    Resolving,
-    OutcomeUnknown,
-    Succeeded,
-    Failed
+enum class TransactionStatus {
+    Success,
+    Failure
+}
+
+internal fun SessionTransactionItem.toDetailUiState(): PaymentUiState = when (status) {
+    TransactionStatus.Success -> {
+        PaymentUiState.Success(
+            amountPaid = amount,
+            feePaid = fee ?: DisplayAmount(0, amount.currency),
+            showEstimatedFeeHint = showEstimatedFeeHint,
+            preimage = preimage
+        )
+    }
+
+    TransactionStatus.Failure -> PaymentUiState.Error(error ?: PaymentUiError.Unexpected())
 }
 
 sealed interface NwcPaymentError {

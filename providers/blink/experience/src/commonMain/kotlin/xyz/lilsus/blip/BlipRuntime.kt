@@ -99,8 +99,7 @@ internal class BlipRuntime(
             paymentPreferences = paymentPreferences,
             paymentHub = paymentHub,
             haptics = haptics,
-            showEstimatedFeeHint = true,
-            paymentAttemptSettings = walletSettings
+            showEstimatedFeeHint = true
         )
     }
     val paymentCoordinator by paymentCoordinatorDelegate

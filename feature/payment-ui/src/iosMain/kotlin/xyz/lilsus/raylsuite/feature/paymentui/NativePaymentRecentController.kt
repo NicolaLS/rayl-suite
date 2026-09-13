@@ -5,7 +5,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
@@ -19,10 +18,16 @@ data class NativePaymentRecentItem(
     val statusTone: String,
     val createdAtMs: Long,
     val supportingText: String?,
-    val detailState: PaymentScreenState,
-    val canRetry: Boolean,
-    val pendingMessage: String?
-)
+    val detailState: PaymentScreenState
+) {
+    init {
+        require(
+            detailState is PaymentScreenState.Success || detailState is PaymentScreenState.Error
+        ) {
+            "Recent payments must have a resolved result"
+        }
+    }
+}
 
 data class NativePaymentRecentSnapshot(
     val title: String,
@@ -37,9 +42,7 @@ data class NativePaymentRecentDetail(
     val id: String,
     val heroPhase: String,
     val receiptPreimage: String?,
-    val content: NativePaymentScanContent?,
-    val pendingMessage: String?,
-    val retryTitle: String?
+    val content: NativePaymentScanContent
 )
 
 /** Native Recent host boundary. Its inputs are already localized, app-owned projections. */
@@ -101,14 +104,6 @@ class NativePaymentRecentController(
         scope.launch { publishSnapshot() }
     }
 
-    fun retrySelected() {
-        val id = selectedTransactionId ?: return
-        receiptVisible = false
-        onIntent(PaymentIntent.RetryTransaction(id))
-        onSelectTransaction(null)
-        onIntent(PaymentIntent.DismissResult)
-    }
-
     fun clear() {
         scope.cancel()
     }
@@ -132,33 +127,13 @@ class NativePaymentRecentController(
             )
     }
 
-    private suspend fun NativePaymentRecentItem.toNativeDetail(): NativePaymentRecentDetail {
-        val terminal =
-            detailState is PaymentScreenState.Success || detailState is PaymentScreenState.Error
-        return NativePaymentRecentDetail(
+    private suspend fun NativePaymentRecentItem.toNativeDetail(): NativePaymentRecentDetail =
+        NativePaymentRecentDetail(
             id = id,
             heroPhase = detailState.toNativeHeroPhaseValue(),
             receiptPreimage = detailState.receiptPreimage().takeIf { receiptVisible },
-            content =
-                detailState
-                    .toNativeRecentDetailContent(estimatedFeeHint, receiptVisible)
-                    .takeIf { terminal },
-            pendingMessage =
-                if (terminal) {
-                    null
-                } else {
-                    pendingMessage
-                        ?: nativeString(
-                            NativeStringResource(table = "PaymentUI", key = "tap_dismiss_pending")
-                        )
-                },
-            retryTitle = nativeString(
-                NativeStringResource(table = "PaymentUI", key = "retry_payment")
-            ).takeIf {
-                canRetry
-            }
+            content = detailState.toNativeRecentDetailContent(estimatedFeeHint, receiptVisible)
         )
-    }
 }
 
 private fun PaymentScreenState.receiptPreimage(): String? = (this as? PaymentScreenState.Success)

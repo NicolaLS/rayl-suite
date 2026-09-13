@@ -21,8 +21,8 @@ databases, or installation state.
 | `apps/*` | Identity, storage scopes, legal links, entry points, composition | Owning app |
 | Root `core/*`, `feature/*`, `integration/*` | Provider-neutral values and reusable implementation | Applicable consumers |
 
-Each provider owns payment validation, authorization, errors, retry decisions,
-uncertain outcomes, and recovery. Rayl selects a concrete native experience; it
+Each provider owns payment validation, authorization, errors, uncertain outcomes,
+and foreground completion checks. Rayl selects a concrete native experience; it
 does not combine providers into one payment state machine or universal wallet API.
 Apps do not depend on one another, providers do not depend on other providers or
 apps, and neutral modules do not depend on either. `verifyModuleDependencies`
@@ -40,7 +40,7 @@ directly into its provider experience:
   It retains funding-wallet selection, automatic contact import after connection,
   and fee presentation.
 - The retained NWC experience exposes Scan, Recent, Hub, and Settings in Lasr,
-  with its own discovery, connection details, and reconciliation behavior. It
+  with its own discovery, connection details, and payment completion behavior. It
   is unavailable in Rayl 1.0.
 
 Rayl and Blip save their current onboarding stage independently of the wallet
@@ -82,9 +82,13 @@ instances, refreshed content, and future purchases.
 ## Connection removal and input isolation
 
 Remove the current connection before changing wallets. Removal is blocked during
-active payment submission. Pending or unknown outcomes require explicit
-acknowledgment that local payment records will be erased and the original wallet
-must be checked before retrying. Removal does not cancel or reverse a payment.
+active payment preparation or submission. Each provider keeps one payment on
+the loading screen until it completes; a provider-side pending response is
+checked in that same foreground operation. Recent holds only the last ten resolved
+payments for the current process. If the outcome cannot be confirmed, check the
+original wallet before paying again; an uncertain outcome is not recorded as a
+failure in Recent.
+Removal does not cancel or reverse a payment.
 
 Keep imported contacts, onboarding completion, general preferences, and local Hub
 widgets, layout, and action history. Imported Blink contacts remain available across
@@ -120,8 +124,10 @@ Do not add forwarding wrappers, a shared payment coordinator, or provider flags
 to disguise different behavior.
 
 Keep app-specific storage and separate named provider connection stores. Blink
-and NWC both use `payments.pendingAttempts.v1`, so they must never receive the
-same connection-settings instance. On iOS, general preferences use standard
+and NWC keep only resolved receipts in memory; neither persists or restores
+payment attempts. Spark keeps its session receipts in memory separately from its
+SDK-owned wallet storage. Providers must never receive the same
+connection-settings instance. On iOS, general preferences use standard
 app-specific UserDefaults; erasable provider data uses the explicit named
 connection-settings factory.
 

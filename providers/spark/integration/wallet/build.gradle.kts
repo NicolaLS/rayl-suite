@@ -1,7 +1,6 @@
 plugins {
     id("xyz.lilsus.raylsuite.kmp.library")
     alias(libs.plugins.breezSpark)
-    alias(libs.plugins.sqldelight)
 }
 
 kotlin {
@@ -17,21 +16,6 @@ kotlin {
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.okio)
-        }
-        androidMain.dependencies {
-            implementation(libs.sqldelight.android.driver)
-        }
-        iosMain.dependencies {
-            implementation(libs.sqldelight.native.driver)
-        }
-    }
-}
-
-sqldelight {
-    databases {
-        create("FlintDatabase") {
-            packageName.set("xyz.lilsus.flint.integration.wallet.persistence")
-            verifyMigrations.set(true)
         }
     }
 }

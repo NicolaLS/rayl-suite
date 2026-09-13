@@ -1,6 +1,5 @@
 package xyz.lilsus.flint.feature.payment
 
-import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.ui.format.AmountFormatter
 import xyz.lilsus.raylsuite.core.ui.format.currentAmountFormatter
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
@@ -8,13 +7,10 @@ import xyz.lilsus.raylsuite.core.ui.resources.nativeString
 import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentRecentItem
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentLoadingKind
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentScreenState
-import xyz.lilsus.raylsuite.feature.paymentui.PreviousPaymentSituation
 
 /** Flint-owned projection into the provider-neutral native Scan presentation state. */
 suspend fun PaymentUiState.toNativePaymentScreenState(): PaymentScreenState = when (this) {
     PaymentUiState.Active -> PaymentScreenState.Active
-
-    PaymentUiState.Detected -> PaymentScreenState.Detected
 
     is PaymentUiState.Loading ->
         PaymentScreenState.Loading(
@@ -29,8 +25,6 @@ suspend fun PaymentUiState.toNativePaymentScreenState(): PaymentScreenState = wh
 
     is PaymentUiState.Confirm -> PaymentScreenState.Confirm(amount, lnurlPayDisplay)
 
-    is PaymentUiState.PendingRetry -> PaymentScreenState.PendingRetry(id)
-
     is PaymentUiState.Success ->
         PaymentScreenState.Success(
             amountPaid = amountPaid,
@@ -43,16 +37,6 @@ suspend fun PaymentUiState.toNativePaymentScreenState(): PaymentScreenState = wh
     is PaymentUiState.Error -> PaymentScreenState.Error(getFlintPaymentErrorMessageFor(error))
 }
 
-fun SessionTransactionItem.previousPaymentSituation(): PreviousPaymentSituation = when (status) {
-    PendingStatus.Sending,
-    PendingStatus.Resolving -> PreviousPaymentSituation.InProgress
-
-    PendingStatus.OutcomeUnknown -> PreviousPaymentSituation.OutcomeUnknown
-
-    PendingStatus.Succeeded,
-    PendingStatus.Failed -> PreviousPaymentSituation.Completed
-}
-
 suspend fun SessionTransactionItem.toNativeRecentItem(
     formatter: AmountFormatter = currentAmountFormatter()
 ): NativePaymentRecentItem = NativePaymentRecentItem(
@@ -61,19 +45,12 @@ suspend fun SessionTransactionItem.toNativeRecentItem(
     statusLabel =
         nativeString(
             when (status) {
-                PendingStatus.Sending,
-                PendingStatus.Resolving -> NativeStringResource(
-                    table = "FlintPayment",
-                    key = "transaction_status_pending"
-                )
-
-                PendingStatus.Succeeded -> NativeStringResource(
+                TransactionStatus.Succeeded -> NativeStringResource(
                     table = "FlintPayment",
                     key = "transaction_status_success"
                 )
 
-                PendingStatus.OutcomeUnknown,
-                PendingStatus.Failed -> NativeStringResource(
+                TransactionStatus.Failed -> NativeStringResource(
                     table = "FlintPayment",
                     key = "transaction_status_failure"
                 )
@@ -83,56 +60,22 @@ suspend fun SessionTransactionItem.toNativeRecentItem(
     createdAtMs = createdAtMs,
     supportingText =
         when (status) {
-            PendingStatus.Succeeded -> fee?.let {
+            TransactionStatus.Succeeded -> fee?.let {
                 nativeString(
                     NativeStringResource(table = "FlintPayment", key = "transaction_fee"),
                     formatter.format(it)
                 )
             }
 
-            PendingStatus.OutcomeUnknown,
-            PendingStatus.Failed ->
+            TransactionStatus.Failed ->
                 getFlintPaymentErrorMessageFor(
-                    error ?: PaymentUiError.Unexpected(errorMessage)
+                    error ?: PaymentUiError.Unexpected()
                 )
-
-            PendingStatus.Sending,
-            PendingStatus.Resolving -> null
         },
-    detailState = toNativeDetailState(),
-    canRetry = status == PendingStatus.OutcomeUnknown,
-    pendingMessage = null
+    detailState = toDetailUiState().toNativePaymentScreenState()
 )
 
-private suspend fun SessionTransactionItem.toNativeDetailState(): PaymentScreenState =
-    when (status) {
-        PendingStatus.Sending,
-        PendingStatus.Resolving -> PaymentUiState.Loading()
-
-        PendingStatus.Succeeded -> {
-            val paidAmount = resultAmount ?: amount
-            PaymentUiState.Success(
-                amountPaid = paidAmount,
-                feePaid = fee ?: paidAmount.zero(),
-                showEstimatedFeeHint = showEstimatedFeeHint && !wasAlreadyPaid,
-                wasAlreadyPaid = wasAlreadyPaid,
-                preimage = preimage
-            )
-        }
-
-        PendingStatus.OutcomeUnknown,
-        PendingStatus.Failed ->
-            PaymentUiState.Error(error ?: PaymentUiError.Unexpected(errorMessage))
-    }.toNativePaymentScreenState()
-
-private fun PendingStatus.nativeStatusTone(): String = when (this) {
-    PendingStatus.Sending,
-    PendingStatus.Resolving -> "pending"
-
-    PendingStatus.Succeeded -> "success"
-
-    PendingStatus.OutcomeUnknown,
-    PendingStatus.Failed -> "failure"
+private fun TransactionStatus.nativeStatusTone(): String = when (this) {
+    TransactionStatus.Succeeded -> "success"
+    TransactionStatus.Failed -> "failure"
 }
-
-private fun DisplayAmount.zero(): DisplayAmount = DisplayAmount(0, currency)

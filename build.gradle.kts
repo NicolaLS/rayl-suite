@@ -16,7 +16,6 @@ plugins {
     alias(libs.plugins.apollo) apply false
     alias(libs.plugins.mokkery) apply false
     alias(libs.plugins.breezSpark) apply false
-    alias(libs.plugins.sqldelight) apply false
     id("xyz.lilsus.raylsuite.kover")
 }
 
@@ -236,11 +235,13 @@ val verifyModuleDependencies = tasks.register("verifyModuleDependencies") {
                             val sourceProvider = source.path.providerOwner()
                             val targetProvider = targetPath.providerOwner()
                             when {
-                                targetPath.startsWith(":backend:") && !source.path.startsWith(":backend:") ->
+                                targetPath.startsWith(":backend:") &&
+                                    !source.path.startsWith(":backend:") ->
                                     "${source.path} -> $targetPath (client module depends on backend implementation)"
 
                                 source.path.startsWith(":backend:") &&
-                                    !targetPath.startsWith(":backend:") && targetPath != ":core:hub-api" ->
+                                    !targetPath.startsWith(":backend:") &&
+                                    targetPath != ":core:hub-api" ->
                                     "${source.path} -> $targetPath (backend may share only the Hub wire contract)"
 
                                 targetProvider != null && sourceOwner == null &&

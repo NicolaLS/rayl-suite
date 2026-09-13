@@ -54,7 +54,9 @@ private fun BlipTabs(
 
     AppTabScaffold(
         selectedTab = selectedTab,
-        onTabSelected = tabState::select,
+        onTabSelected = { tab ->
+            if (!runtime.paymentCoordinator.isSubmitting.value) tabState.select(tab)
+        },
         tabs = BLIP_PRIMARY_TABS
     ) { tab ->
         BlipTabContent(
@@ -75,6 +77,7 @@ internal fun BlipTabContent(
     onRemoveWallet: () -> Unit
 ) {
     val coordinator = runtime.paymentCoordinator
+    val isSubmitting by coordinator.isSubmitting.collectAsStateWithLifecycle()
     val tabState = runtime.tabState
     val selectedTransactionId by tabState.selectedTransactionId.collectAsStateWithLifecycle()
     val flowState = rememberPaymentFlowState(coordinator)
@@ -89,6 +92,12 @@ internal fun BlipTabContent(
         // Blip has no Recent tab, so its session history lives behind the Scan screen's button.
         AppTab.Scan -> {
             var showingRecent by rememberSaveable { mutableStateOf(false) }
+            LaunchedEffect(isSubmitting) {
+                if (isSubmitting) {
+                    tabState.selectTransaction(null)
+                    showingRecent = false
+                }
+            }
             if (showingRecent) {
                 PaymentRecentScreen(
                     state = flowState,
@@ -111,10 +120,16 @@ internal fun BlipTabContent(
                     onIntent = coordinator::dispatch,
                     onHubIntent = runtime.paymentHub::dispatch,
                     onOpenTransaction = { id ->
-                        tabState.selectTransaction(id)
-                        showingRecent = true
+                        if (!coordinator.isSubmitting.value) {
+                            tabState.selectTransaction(id)
+                            showingRecent = true
+                        }
                     },
-                    onOpenRecent = { showingRecent = true }
+                    onOpenRecent = if (isSubmitting) {
+                        null
+                    } else {
+                        { if (!coordinator.isSubmitting.value) showingRecent = true }
+                    }
                 )
             }
         }

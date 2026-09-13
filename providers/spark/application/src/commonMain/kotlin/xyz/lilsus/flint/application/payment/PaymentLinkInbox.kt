@@ -11,7 +11,6 @@ class PaymentLinkInbox internal constructor(
 ) {
     private val mutableRevision = MutableStateFlow(0L)
     private var current: Entry? = null
-    private var queued: Entry? = null
 
     val revision: StateFlow<Long> = mutableRevision.asStateFlow()
 
@@ -30,23 +29,12 @@ class PaymentLinkInbox internal constructor(
             )
         }
         val active = current
-        when {
-            active == null -> current = entry
-
-            active.digest == entry.digest -> entry.clear()
-
-            !active.claimed -> {
-                active.clear()
-                current = entry
-            }
-
-            queued?.digest == entry.digest -> entry.clear()
-
-            else -> {
-                queued?.clear()
-                queued = entry
-            }
+        if (active?.claimed == true || active?.digest == entry.digest) {
+            entry.clear()
+            return
         }
+        active?.clear()
+        current = entry
         publish()
     }
 
@@ -55,7 +43,6 @@ class PaymentLinkInbox internal constructor(
         val content = entry.content ?: return null
         if (!entry.claimed) {
             current = entry.copy(claimed = true)
-            publish()
         }
         return when (content) {
             is EntryContent.Request -> ClaimedPaymentLink.Request(entry.id, content.value)
@@ -67,15 +54,17 @@ class PaymentLinkInbox internal constructor(
         val entry = current?.takeIf { it.id == id } ?: return
         entry.clear()
         current = entry.copy(content = null, claimed = true)
-        publish()
     }
 
     fun finish(id: String) {
         val entry = current?.takeIf { it.id == id } ?: return
         entry.clear()
-        current = queued
-        queued = null
-        publish()
+        current = null
+    }
+
+    fun clear() {
+        current?.clear()
+        current = null
     }
 
     override fun toString(): String = "PaymentLinkInbox(<redacted>)"

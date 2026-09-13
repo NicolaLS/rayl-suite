@@ -13,8 +13,6 @@
     <string name="view_session_transactions">Transaktionen dieser Sitzung anzeigen</string>
     <string name="session_transactions_title">Letzte Zahlungen</string>
     <string name="session_transactions_empty">Noch keine Zahlungen in dieser Sitzung.</string>
-    <string name="tap_dismiss_pending">Tippen zum Schließen. Zahlung läuft im Hintergrund weiter.</string>
-    <string name="retry_payment">Zahlung erneut versuchen</string>
     <string name="toast_bitcoin_address">Das ist eine Bitcoin-Adresse. Bitte um eine Lightning-Rechnung.</string>
     <string name="toast_bolt12_not_supported">BOLT12-Angebote werden noch nicht unterstützt.</string>
     <string name="toast_lnurl_request_not_supported">Diese LNURL-Anfrage kann nicht bezahlt werden.</string>
@@ -53,14 +51,5 @@
     <string name="camera_permission_restricted_body">Der Kamerazugriff ist aufgrund der Einschränkungen dieses Geräts nicht verfügbar.</string>
     <string name="resolving_payment_title">Zahlung wird vorbereitet</string>
     <string name="resolving_payment_subtitle">Es wurde noch keine Zahlung gesendet.</string>
-    <string name="in_progress_title">Zahlung möglicherweise noch in Bearbeitung</string>
-    <string name="in_progress_body">Eine Zahlung für diese Anfrage läuft noch. Zeige sie an, um eine doppelte Zahlung zu vermeiden, oder erstelle nur dann eine zusätzliche Zahlung, wenn du erneut bezahlen möchtest.</string>
-    <string name="outcome_unknown_title">Status der vorherigen Zahlung unbekannt</string>
-    <string name="outcome_unknown_body">Die vorherige Zahlung könnte erfolgreich gewesen sein. Versuche genau diese Rechnung erneut, zeige die Zahlung an oder erstelle bewusst eine zusätzliche Zahlung.</string>
-    <string name="completed_title">Vorherige Zahlung abgeschlossen</string>
-    <string name="completed_body">Die vorherige Zahlung wurde abgeschlossen. Zeige sie an oder erstelle eine zusätzliche Zahlung, wenn du erneut bezahlen möchtest.</string>
-    <string name="retry_previous_invoice">Vorherige Rechnung erneut versuchen</string>
-    <string name="create_additional_payment">Zusätzliche Zahlung erstellen</string>
-    <string name="view_previous_payment">Vorherige Zahlung anzeigen</string>
     <string name="enter_amount_switch_currency">Zu %1$s wechseln</string>
 </resources>

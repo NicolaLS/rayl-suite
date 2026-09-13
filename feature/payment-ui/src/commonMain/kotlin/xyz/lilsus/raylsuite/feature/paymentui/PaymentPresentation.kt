@@ -7,8 +7,6 @@ import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountUiState
 sealed interface PaymentScreenState {
     data object Active : PaymentScreenState
 
-    data object Detected : PaymentScreenState
-
     data class Loading(val kind: PaymentLoadingKind) : PaymentScreenState
 
     data class EnterAmount(
@@ -21,8 +19,6 @@ sealed interface PaymentScreenState {
         val lnurlPayDisplay: LnurlPayDisplay? = null,
         val fundingSource: String? = null
     ) : PaymentScreenState
-
-    data class PendingRetry(val transactionId: String) : PaymentScreenState
 
     data class Success(
         val amountPaid: DisplayAmount,
@@ -55,28 +51,22 @@ data class PaymentSessionTransaction(
     val supportingText: String?
 )
 
-data class PaymentSessionReference(
-    val id: String,
-    val statusKey: String,
-    val previousPaymentSituation: PreviousPaymentSituation
-)
-
-data class PaymentTransactionDetail(
-    val id: String,
-    val state: PaymentScreenState,
-    val canRetry: Boolean = false,
-    val pendingMessage: String? = null
-)
+data class PaymentTransactionDetail(val id: String, val state: PaymentScreenState) {
+    init {
+        require(state is PaymentScreenState.Success || state is PaymentScreenState.Error) {
+            "Recent payments must have a resolved result"
+        }
+    }
+}
 
 data class PaymentSessionItem(
-    val reference: PaymentSessionReference,
     val transaction: PaymentSessionTransaction,
     val detail: PaymentTransactionDetail
 ) {
     val id: String = transaction.id
 
     init {
-        require(reference.id == id && detail.id == id) {
+        require(detail.id == id) {
             "Payment session projections must share an ID"
         }
     }
@@ -90,7 +80,6 @@ data class PaymentFlowState(
 )
 
 enum class PaymentStatusTone {
-    Pending,
     Success,
     Failure
 }
@@ -98,10 +87,8 @@ enum class PaymentStatusTone {
 fun PaymentScreenState.toHeroPhase(): RaylHeroPhase = when (this) {
     PaymentScreenState.Active -> RaylHeroPhase.Ready
 
-    is PaymentScreenState.Detected,
     is PaymentScreenState.Confirm,
-    is PaymentScreenState.EnterAmount,
-    is PaymentScreenState.PendingRetry -> RaylHeroPhase.Acknowledged
+    is PaymentScreenState.EnterAmount -> RaylHeroPhase.Acknowledged
 
     is PaymentScreenState.Loading ->
         if (kind == PaymentLoadingKind.Resolving) {

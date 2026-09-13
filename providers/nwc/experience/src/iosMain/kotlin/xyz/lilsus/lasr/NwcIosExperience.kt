@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import xyz.lilsus.lasr.feature.payment.PaymentEvent
-import xyz.lilsus.lasr.feature.payment.PaymentUiState
-import xyz.lilsus.lasr.feature.payment.previousPaymentSituation
 import xyz.lilsus.lasr.feature.payment.toNativePaymentScreenState
 import xyz.lilsus.lasr.feature.payment.toNativeRecentItem
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
@@ -226,7 +224,9 @@ class NwcIosExperience(private val configuration: NwcExperienceConfiguration) {
     }
 
     fun selectTab(tab: String) {
-        runtime.tabState.select(AppTab.fromStoredValue(tab))
+        if (!runtime.paymentCoordinator.isSubmitting.value) {
+            runtime.tabState.select(AppTab.fromStoredValue(tab))
+        }
     }
 
     fun settingsController(): NativeSettingsController = nativeSettingsController
@@ -251,19 +251,13 @@ class NwcIosExperience(private val configuration: NwcExperienceConfiguration) {
         observerScope.launch {
             combine(
                 runtime.paymentCoordinator.uiState,
-                runtime.paymentCoordinator.sessionTransactions,
                 runtime.paymentHub.state,
                 runtime.languageRepository.preference
-            ) { payment, transactions, hubState, _ ->
-                val previousSituation =
-                    (payment as? PaymentUiState.PendingRetry)?.id?.let { id ->
-                        transactions.firstOrNull { it.id == id }?.previousPaymentSituation()
-                    }
+            ) { payment, hubState, _ ->
                 controller.update(
                     payment = payment.toNativePaymentScreenState(),
                     appTitle = configuration.appName,
                     estimatedFeeHint = null,
-                    previousPaymentSituation = previousSituation,
                     savePrompt = hubState.savePrompt
                 )
             }.collect {}
@@ -298,7 +292,11 @@ class NwcIosExperience(private val configuration: NwcExperienceConfiguration) {
         val controller =
             NativePaymentRecentController(
                 onIntent = runtime.paymentCoordinator::dispatch,
-                onSelectTransaction = runtime.tabState::selectTransaction
+                onSelectTransaction = { id ->
+                    if (!runtime.paymentCoordinator.isSubmitting.value) {
+                        runtime.tabState.selectTransaction(id)
+                    }
+                }
             )
         observerScope.launch {
             combine(

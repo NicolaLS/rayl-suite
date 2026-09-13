@@ -1,6 +1,6 @@
 # Lasr Privacy Policy
 
-Last updated: September 4, 2026
+Last updated: September 13, 2026
 
 Lasr is an open-source client for connecting to a wallet through Nostr Wallet
 Connect (NWC). The Lasr maintainer does not operate an account service, payment
@@ -12,6 +12,10 @@ Lasr stores the NWC connection URI and its credential material in app-scoped
 encrypted storage. It also stores app preferences, contacts, and payment
 shortcuts locally. Lasr does not include its local data in Android cloud backup
 or device transfer.
+
+Recent payment receipts are kept only in memory for the current app session.
+Lasr does not persist payment attempts or restore them after a restart. Closing
+the app does not cancel a payment already submitted to the connected wallet.
 
 Removing the wallet deletes its stored credential. Compatible app updates and
 operating-system offload or archive features retain local data. Deleting Lasr

@@ -2,7 +2,7 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Encryption assessment 2026-09-12 (MOB-48; original MOB-59): standard bundled crypto; valid only with France excluded. See distribution/encryption.md. -->
+	<!-- Encryption assessment 2026-09-13 (MOB-72; original MOB-59): standard bundled crypto; valid only with France excluded. See distribution/encryption.md. -->
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>CADisableMinimumFrameDurationOnPhone</key>

@@ -6,15 +6,11 @@ import breez_sdk_spark.EventListener
 import breez_sdk_spark.GetInfoRequest
 import breez_sdk_spark.GetPaymentRequest
 import breez_sdk_spark.InputType
-import breez_sdk_spark.ListPaymentsRequest
 import breez_sdk_spark.LnurlPayRequest
 import breez_sdk_spark.LnurlPayRequestDetails
 import breez_sdk_spark.Payment
-import breez_sdk_spark.PaymentDetails
-import breez_sdk_spark.PaymentDetailsFilter
 import breez_sdk_spark.PaymentRequest
 import breez_sdk_spark.PaymentStatus
-import breez_sdk_spark.PaymentType
 import breez_sdk_spark.PrepareLnurlPayRequest
 import breez_sdk_spark.PrepareLnurlPayResponse
 import breez_sdk_spark.PrepareSendPaymentRequest
@@ -44,8 +40,6 @@ import xyz.lilsus.flint.application.payment.SdkPaymentStatus
 import xyz.lilsus.flint.application.payment.SdkPreparationResult
 import xyz.lilsus.flint.application.payment.SdkPreparedPayment
 import xyz.lilsus.flint.application.payment.SparkPaymentClient
-import xyz.lilsus.flint.application.payment.SparkPaymentEvent
-import xyz.lilsus.flint.application.payment.SparkPaymentEventListener
 import xyz.lilsus.raylsuite.core.model.Satoshi
 import xyz.lilsus.raylsuite.core.payment.LightningInputParser
 import xyz.lilsus.raylsuite.core.payment.PaymentInputParseAttempt
@@ -216,66 +210,19 @@ class BreezSparkPaymentClient(private val sdk: BreezSdk) : SparkPaymentClient {
     override suspend fun getPayment(paymentId: String): SdkPayment =
         sdk.getPayment(GetPaymentRequest(paymentId)).payment.toDomain()
 
-    override suspend fun listSentPayments(
-        method: PaymentMethod,
-        fromEpochSeconds: Long
-    ): List<SdkPayment> {
-        val payments = mutableListOf<SdkPayment>()
-        repeat(MAX_RECOVERY_PAGES) { page ->
-            val batch = sdk.listPayments(
-                ListPaymentsRequest(
-                    typeFilter = listOf(PaymentType.SEND),
-                    paymentDetailsFilter = listOf(
-                        when (method) {
-                            PaymentMethod.BOLT11 -> PaymentDetailsFilter.Lightning(
-                                htlcStatus = null
-                            )
-
-                            PaymentMethod.SPARK_INVOICE -> PaymentDetailsFilter.Spark(
-                                htlcStatus = null,
-                                conversionRefundNeeded = null
-                            )
-                        }
-                    ),
-                    fromTimestamp = fromEpochSeconds.coerceAtLeast(0).toULong(),
-                    offset = (page * RECOVERY_PAGE_SIZE.toInt()).toUInt(),
-                    limit = RECOVERY_PAGE_SIZE,
-                    sortAscending = true
-                )
-            ).payments
-            payments += batch.map { it.toDomain() }
-            if (batch.size < RECOVERY_PAGE_SIZE.toInt()) return payments
-        }
-        error("Bounded Breez recovery search was truncated")
-    }
-
-    override suspend fun addEventListener(listener: SparkPaymentEventListener): String =
-        sdk.addEventListener(
+    override suspend fun observePayments(onPayment: (SdkPayment) -> Unit): suspend () -> Unit {
+        val listenerId = sdk.addEventListener(
             object : EventListener {
                 override suspend fun onEvent(event: SdkEvent) {
                     when (event) {
-                        is SdkEvent.PaymentPending -> listener.onEvent(
-                            SparkPaymentEvent.PaymentChanged(event.payment.toDomain())
-                        )
-
-                        is SdkEvent.PaymentSucceeded -> listener.onEvent(
-                            SparkPaymentEvent.PaymentChanged(event.payment.toDomain())
-                        )
-
-                        is SdkEvent.PaymentFailed -> listener.onEvent(
-                            SparkPaymentEvent.PaymentChanged(event.payment.toDomain())
-                        )
-
-                        SdkEvent.Synced -> listener.onEvent(SparkPaymentEvent.Synced)
-
+                        is SdkEvent.PaymentSucceeded -> onPayment(event.payment.toDomain())
+                        is SdkEvent.PaymentFailed -> onPayment(event.payment.toDomain())
                         else -> Unit
                     }
                 }
             }
         )
-
-    override suspend fun removeEventListener(listenerId: String) {
-        sdk.removeEventListener(listenerId)
+        return { sdk.removeEventListener(listenerId) }
     }
 
     private suspend fun preparationResult(
@@ -286,32 +233,14 @@ class BreezSparkPaymentClient(private val sdk: BreezSdk) : SparkPaymentClient {
         SdkPreparationResult.InsufficientFunds
     }
 
-    private fun Payment.toDomain(): SdkPayment {
-        val detailMethodAndInvoice = when (val details = details) {
-            is PaymentDetails.Lightning -> PaymentMethod.BOLT11 to details.invoice
-
-            is PaymentDetails.Spark ->
-                PaymentMethod.SPARK_INVOICE to
-                    details.invoiceDetails?.invoice
-
-            else -> null to null
+    private fun Payment.toDomain(): SdkPayment = SdkPayment(
+        id = id,
+        status = when (status) {
+            PaymentStatus.PENDING -> SdkPaymentStatus.PENDING
+            PaymentStatus.COMPLETED -> SdkPaymentStatus.COMPLETED
+            PaymentStatus.FAILED -> SdkPaymentStatus.FAILED
         }
-        val fallbackMethod = when (method) {
-            breez_sdk_spark.PaymentMethod.LIGHTNING -> PaymentMethod.BOLT11
-            breez_sdk_spark.PaymentMethod.SPARK -> PaymentMethod.SPARK_INVOICE
-            else -> PaymentMethod.BOLT11
-        }
-        return SdkPayment(
-            id = id,
-            method = detailMethodAndInvoice.first ?: fallbackMethod,
-            status = when (status) {
-                PaymentStatus.PENDING -> SdkPaymentStatus.PENDING
-                PaymentStatus.COMPLETED -> SdkPaymentStatus.COMPLETED
-                PaymentStatus.FAILED -> SdkPaymentStatus.FAILED
-            },
-            invoice = detailMethodAndInvoice.second
-        )
-    }
+    )
 
     private fun ULong.checkedLong(label: String): Long {
         require(this <= Long.MAX_VALUE.toULong()) { "$label exceeds supported range" }
@@ -327,8 +256,6 @@ class BreezSparkPaymentClient(private val sdk: BreezSdk) : SparkPaymentClient {
     }
 
     companion object {
-        private const val RECOVERY_PAGE_SIZE = 200u
-        private const val MAX_RECOVERY_PAGES = 5
         private val SPARK_PREFIXES =
             listOf("spark1", "sparkt1", "sparkrt1", "sparks1", "sp1", "spt1", "sprt1", "sps1")
     }

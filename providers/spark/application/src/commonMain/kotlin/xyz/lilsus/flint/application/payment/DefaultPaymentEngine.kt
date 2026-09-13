@@ -2,77 +2,57 @@ package xyz.lilsus.flint.application.payment
 
 import kotlin.uuid.Uuid
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import xyz.lilsus.flint.application.AppEnvironment
 import xyz.lilsus.raylsuite.core.model.Satoshi
 
 class DefaultPaymentEngine(
     private val environment: AppEnvironment,
-    private val repository: PaymentAttemptRepository,
-    private val applicationScope: CoroutineScope,
     private val operationTimeouts: PaymentOperationTimeouts = PaymentOperationTimeouts(),
     private val nowEpochSeconds: () -> Long = ::currentEpochSeconds,
-    private val newAttemptId: () -> String = { Uuid.random().toString() }
+    private val newPaymentId: () -> String = { Uuid.random().toString() }
 ) : PaymentEngine,
     PaymentSessionLifecycle {
-    private val draftMutex = Mutex()
-    private val submissionMutex = Mutex()
-    private val sessionMutex = Mutex()
-    private val refreshMutex = Mutex()
-    private val policyMutex = Mutex()
-    private val draftRegistry = SparkPaymentDraftRegistry()
-    private val paymentsById = mutableMapOf<String, SdkPayment>()
-    private val mutableActivity = MutableStateFlow<List<PaymentActivity>>(emptyList())
+    private val operationMutex = Mutex()
+    private var amountDraft: AmountDraft? = null
+    private var preparedDraft: VerifiedDraft? = null
+    private val successfulPayments = mutableMapOf<InvoiceFingerprint, PaymentReceipt>()
     private val mutableConfirmationPolicy = MutableStateFlow(PaymentConfirmationPolicy.Default)
     private var client: SparkPaymentClient? = null
-    private var listenerId: String? = null
-    private var sessionGeneration = 0L
 
-    override val activity: StateFlow<List<PaymentActivity>> = mutableActivity.asStateFlow()
-    override val confirmationPolicy: StateFlow<PaymentConfirmationPolicy> =
-        mutableConfirmationPolicy.asStateFlow()
-
-    override suspend fun attach(client: SparkPaymentClient) {
-        val attached = sessionMutex.withLock {
-            if (this.client === client) return@withLock false
-            detachLocked()
+    override suspend fun attach(client: SparkPaymentClient) = operationMutex.withLock {
+        if (this.client !== client) {
+            clearSession()
             this.client = client
-            sessionGeneration += 1
-            val listenerGeneration = sessionGeneration
-            listenerId = client.addEventListener { event ->
-                when (event) {
-                    is SparkPaymentEvent.PaymentChanged ->
-                        onPaymentChanged(event.payment, client, listenerGeneration)
-
-                    SparkPaymentEvent.Synced -> requestRefresh()
-                }
-            }
-            true
         }
-        if (attached) refresh()
     }
 
-    override suspend fun detach() = sessionMutex.withLock { detachLocked() }
+    override suspend fun detach() = operationMutex.withLock {
+        client = null
+        clearSession()
+    }
 
-    override suspend fun clearWalletData(): Boolean = submissionMutex.withLock {
-        draftMutex.withLock {
-            if (storageAttempt { repository.clear() }.isFailure) return@withLock false
-            draftRegistry.clear()
-            paymentsById.clear()
-            mutableActivity.value = emptyList()
-            true
-        }
+    private fun clearSession() {
+        clearDrafts()
+        successfulPayments.clear()
+    }
+
+    private fun clearDrafts() {
+        amountDraft = null
+        preparedDraft = null
     }
 
     override suspend fun prepare(input: String, origin: PaymentOrigin): PreparePaymentResult =
-        draftMutex.withLock {
+        operationMutex.withLock {
+            clearDrafts()
             val currentClient = client ?: return@withLock PreparePaymentResult.WalletUnavailable
             val now = nowEpochSeconds()
             val admitted = sdkResult(operationTimeouts.resolutionMillis) {
@@ -85,24 +65,9 @@ class DefaultPaymentEngine(
             }
             admitted as Admission.Accepted
 
-            if (origin != PaymentOrigin.MANUAL_RECOVERY) {
-                val existing = try {
-                    repository.findByFingerprint(admitted.fingerprint)
-                } catch (cancellation: CancellationException) {
-                    throw cancellation
-                } catch (_: Throwable) {
-                    return@withLock PreparePaymentResult.StorageFailure
-                }
-                existing?.let {
-                    if (it.linkPhase == PaymentLinkPhase.SDK_PAYMENT_LINKED) {
-                        refreshLinked(it, currentClient)
-                    }
-                    publishActivity()
-                    return@withLock PreparePaymentResult.Existing(activityFor(it))
-                }
+            successfulPayments[admitted.fingerprint]?.let {
+                return@withLock PreparePaymentResult.Existing(it)
             }
-
-            draftRegistry.reusable(admitted.fingerprint, now)?.let { return@withLock it }
 
             if (admitted.amountSats == null) {
                 val handle = PaymentAmountHandle(Uuid.random().toString())
@@ -114,13 +79,10 @@ class DefaultPaymentEngine(
                     maximumAmountSats = admitted.maximumAmountSats,
                     lnurlPayDetails = admitted.lnurlRequest?.reviewDetails
                 )
-                draftRegistry.registerAmount(
-                    handle,
-                    AmountDraft(
-                        admission = admitted,
-                        projection = projection,
-                        origin = origin
-                    )
+                amountDraft = AmountDraft(
+                    admission = admitted,
+                    projection = projection,
+                    origin = origin
                 )
                 return@withLock PreparePaymentResult.AmountRequired(projection)
             }
@@ -156,7 +118,7 @@ class DefaultPaymentEngine(
                     lnurlRequest = null
                 )
             }
-            val policy = currentPolicy()
+            val policy = mutableConfirmationPolicy.value
 
             val handle = PaymentDraftHandle(Uuid.random().toString())
             val projection = PreparedPayment(
@@ -173,15 +135,11 @@ class DefaultPaymentEngine(
                 ),
                 lnurlPayDetails = admitted.lnurlRequest?.reviewDetails
             )
-            draftRegistry.register(
-                handle,
-                VerifiedDraft(
-                    admission = verifiedAdmission,
-                    prepared = prepared,
-                    projection = projection,
-                    origin = origin,
-                    fingerprints = setOf(admitted.fingerprint, verifiedAdmission.fingerprint)
-                )
+            preparedDraft = VerifiedDraft(
+                admission = verifiedAdmission,
+                prepared = prepared,
+                projection = projection,
+                origin = origin
             )
             PreparePaymentResult.Ready(projection)
         }
@@ -189,19 +147,15 @@ class DefaultPaymentEngine(
     override suspend fun prepareAmount(
         handle: PaymentAmountHandle,
         amountSats: Satoshi
-    ): PreparePaymentResult = prepareAmountInternal(handle, amountSats)
-
-    private suspend fun prepareAmountInternal(
-        handle: PaymentAmountHandle,
-        amountSats: Satoshi
-    ): PreparePaymentResult = draftMutex.withLock {
+    ): PreparePaymentResult = operationMutex.withLock {
         val currentClient = client ?: return@withLock PreparePaymentResult.WalletUnavailable
         val amountDraft =
-            draftRegistry.amount(handle) ?: return@withLock PreparePaymentResult.Rejected(
-                PaymentRejection.INVALID_AMOUNT
-            )
+            this.amountDraft?.takeIf { it.projection.handle == handle }
+                ?: return@withLock PreparePaymentResult.Rejected(
+                    PaymentRejection.INVALID_AMOUNT
+                )
         if (amountDraft.isExpired(nowEpochSeconds())) {
-            draftRegistry.consumeAmount(handle)
+            this.amountDraft = null
             return@withLock PreparePaymentResult.Rejected(PaymentRejection.EXPIRED)
         }
         if (amountSats.value < amountDraft.projection.minimumAmountSats.value ||
@@ -238,9 +192,9 @@ class DefaultPaymentEngine(
                 lnurlRequest = null
             )
         }
-        val policy = currentPolicy()
+        val policy = mutableConfirmationPolicy.value
 
-        draftRegistry.consumeAmount(handle)
+        this.amountDraft = null
         val draftHandle = PaymentDraftHandle(handle.value)
         val projection = PreparedPayment(
             handle = draftHandle,
@@ -256,32 +210,25 @@ class DefaultPaymentEngine(
             ),
             lnurlPayDetails = amountDraft.admission.lnurlRequest?.reviewDetails
         )
-        draftRegistry.register(
-            draftHandle,
-            VerifiedDraft(
-                admission = admitted,
-                prepared = prepared,
-                projection = projection,
-                origin = amountDraft.origin,
-                fingerprints = setOf(amountDraft.admission.fingerprint, admitted.fingerprint)
-            )
+        preparedDraft = VerifiedDraft(
+            admission = admitted,
+            prepared = prepared,
+            projection = projection,
+            origin = amountDraft.origin
         )
         PreparePaymentResult.Ready(projection)
     }
 
-    override suspend fun updateConfirmationPolicy(policy: PaymentConfirmationPolicy) =
-        policyMutex.withLock {
-            mutableConfirmationPolicy.value = policy
-        }
-
-    override suspend fun cancel(handle: PaymentDraftHandle) = draftMutex.withLock {
-        draftRegistry.consume(handle)
-        Unit
+    override suspend fun updateConfirmationPolicy(policy: PaymentConfirmationPolicy) {
+        mutableConfirmationPolicy.value = policy
     }
 
-    override suspend fun cancel(handle: PaymentAmountHandle) = draftMutex.withLock {
-        draftRegistry.consumeAmount(handle)
-        Unit
+    override suspend fun cancel(handle: PaymentDraftHandle) = operationMutex.withLock {
+        if (preparedDraft?.projection?.handle == handle) preparedDraft = null
+    }
+
+    override suspend fun cancel(handle: PaymentAmountHandle) = operationMutex.withLock {
+        if (amountDraft?.projection?.handle == handle) amountDraft = null
     }
 
     override suspend fun autoPay(handle: PaymentDraftHandle): ConfirmPaymentResult =
@@ -293,134 +240,76 @@ class DefaultPaymentEngine(
     private suspend fun submit(
         handle: PaymentDraftHandle,
         explicitlyConfirmed: Boolean
-    ): ConfirmPaymentResult = submissionMutex.withLock {
-        var confirmationRequired = false
-        val draft = draftMutex.withLock {
-            val existing = draftRegistry.draft(handle) ?: return@withLock null
-            if (!explicitlyConfirmed && existing.projection.requiresConfirmation) {
-                confirmationRequired = true
-                null
-            } else {
-                draftRegistry.consume(handle)
-            }
+    ): ConfirmPaymentResult = operationMutex.withLock {
+        val draft = preparedDraft?.takeIf { it.projection.handle == handle }
+            ?: return@withLock ConfirmPaymentResult.DraftUnavailable
+        if (!explicitlyConfirmed && draft.projection.requiresConfirmation) {
+            return@withLock ConfirmPaymentResult.ConfirmationRequired
         }
-        if (confirmationRequired) return@withLock ConfirmPaymentResult.ConfirmationRequired
-        draft ?: return@withLock ConfirmPaymentResult.DraftUnavailable
-        if (draft.isExpired(
-                nowEpochSeconds()
-            )
-        ) {
+        preparedDraft = null
+        if (draft.isExpired(nowEpochSeconds())) {
             return@withLock ConfirmPaymentResult.DraftUnavailable
         }
         val currentClient = client ?: return@withLock ConfirmPaymentResult.WalletUnavailable
-        val now = nowEpochSeconds()
-
-        val existingAttempt = storageAttempt {
-            repository.findByFingerprint(draft.admission.fingerprint)
+        successfulPayments[draft.admission.fingerprint]?.let {
+            return@withLock ConfirmPaymentResult.Completed(it, wasAlreadyPaid = true)
         }
-            .getOrElse { return@withLock ConfirmPaymentResult.PersistenceFailed }
-        val attempt = when (val existing = existingAttempt) {
-            null -> when (
-                val created = repository.createConfirmed(
-                    attemptId = newAttemptId(),
-                    fingerprint = draft.admission.fingerprint,
-                    method = draft.admission.method,
-                    amountSats = checkNotNull(draft.admission.amountSats),
-                    feeSats = draft.prepared.feeSats,
-                    origin = draft.origin,
-                    nowEpochSeconds = now
-                )
-            ) {
-                is CreateAttemptResult.Created -> created.attempt
-
-                is CreateAttemptResult.Existing -> created.attempt
-
-                CreateAttemptResult.CapacityReached ->
-                    return@withLock ConfirmPaymentResult.CapacityReached
-
-                CreateAttemptResult.Failed -> return@withLock ConfirmPaymentResult.PersistenceFailed
+        val id = newPaymentId()
+        val createdAt = nowEpochSeconds()
+        var payment = sdkAttempt { currentClient.send(draft.prepared, id) }
+            ?: return@withLock ConfirmPaymentResult.OutcomeUnknown
+        val paymentId = payment.id
+        if (paymentId.isBlank()) return@withLock ConfirmPaymentResult.OutcomeUnknown
+        if (payment.status == SdkPaymentStatus.PENDING) {
+            payment = sdkAttempt {
+                awaitPayment(currentClient, paymentId)
+            } ?: return@withLock ConfirmPaymentResult.OutcomeUnknown
+        }
+        val receipt = PaymentReceipt(
+            id = id,
+            method = draft.admission.method,
+            amountSats = checkNotNull(draft.admission.amountSats),
+            feeSats = draft.prepared.feeSats,
+            origin = draft.origin,
+            createdAtEpochSeconds = createdAt,
+            outcome = when (payment.status) {
+                SdkPaymentStatus.COMPLETED -> PaymentOutcome.COMPLETED
+                SdkPaymentStatus.FAILED -> PaymentOutcome.FAILED
+                SdkPaymentStatus.PENDING -> error("A receipt requires a terminal payment")
             }
-
-            else -> existing
+        )
+        if (receipt.outcome == PaymentOutcome.COMPLETED) {
+            successfulPayments[draft.admission.fingerprint] = receipt
         }
-
-        if (attempt.linkPhase == PaymentLinkPhase.SDK_PAYMENT_LINKED) {
-            refreshLinked(attempt, currentClient)
-            return@withLock ConfirmPaymentResult.Submitted(activityFor(attempt))
-        }
-        val submissionAttempt = if (attempt.linkPhase == PaymentLinkPhase.CONFIRMED) {
-            val startedAt = nowEpochSeconds()
-            val started = storageAttempt {
-                repository.markSubmissionStarted(attempt.attemptId, startedAt)
-            }
-                .getOrDefault(false)
-            if (!started) return@withLock ConfirmPaymentResult.PersistenceFailed
-            attempt.copy(
-                updatedAtEpochSeconds = startedAt,
-                linkPhase = PaymentLinkPhase.SUBMISSION_STARTED
-            )
-        } else {
-            attempt
-        }
-        publishActivity()
-
-        val payment = sdkResult(operationTimeouts.submissionMillis) {
-            currentClient.send(draft.prepared, attempt.attemptId)
-        }
-        if (payment != null) {
-            val linkedAt = nowEpochSeconds()
-            if (!storageAttempt {
-                    repository.linkPayment(attempt.attemptId, payment.id, linkedAt)
-                }.getOrDefault(false)
-            ) {
-                publishActivity()
-                return@withLock ConfirmPaymentResult.Submitted(activityFor(submissionAttempt))
-            }
-            cachePayment(payment)
-            publishActivity()
-            val linkedAttempt = submissionAttempt.copy(
-                updatedAtEpochSeconds = linkedAt,
-                linkPhase = PaymentLinkPhase.SDK_PAYMENT_LINKED,
-                breezPaymentId = payment.id
-            )
-            ConfirmPaymentResult.Submitted(activityFor(linkedAttempt))
-        } else {
-            publishActivity()
-            ConfirmPaymentResult.Submitted(activityFor(submissionAttempt))
-        }
+        ConfirmPaymentResult.Completed(receipt)
     }
 
-    private suspend fun currentPolicy(): PaymentConfirmationPolicy =
-        policyMutex.withLock { mutableConfirmationPolicy.value }
-
-    override fun requestRefresh() {
-        applicationScope.launch {
-            try {
-                refresh()
-            } catch (cancellation: CancellationException) {
-                throw cancellation
-            } catch (_: Throwable) {}
-        }
-    }
-
-    override suspend fun refresh() = refreshMutex.withLock {
-        val session = sessionMutex.withLock {
-            val currentClient = client ?: return@withLock null
-            val linked = repository.linked().filter { attempt ->
-                val status = attempt.breezPaymentId?.let(paymentsById::get)?.status
-                status !in setOf(SdkPaymentStatus.COMPLETED, SdkPaymentStatus.FAILED)
+    private suspend fun awaitPayment(client: SparkPaymentClient, paymentId: String): SdkPayment? {
+        val completion = CompletableDeferred<SdkPayment>()
+        var stopObserving: (suspend () -> Unit)? = null
+        try {
+            // Capture cleanup before cancellation can discard a registered listener.
+            withContext(NonCancellable) {
+                stopObserving = client.observePayments { payment ->
+                    if (payment.id == paymentId && payment.status != SdkPaymentStatus.PENDING) {
+                        completion.complete(payment)
+                    }
+                }
             }
-            PaymentSessionSnapshot(
-                currentClient,
-                sessionGeneration,
-                linked,
-                repository.unresolved()
-            )
-        } ?: return@withLock
-
-        session.linked.forEach { refreshLinked(it, session) }
-        session.unresolved.forEach { recoverExact(it, session) }
-        withCurrentSession(session) { publishActivity() }
+            currentCoroutineContext().ensureActive()
+            // A terminal event may have arrived before the listener was registered.
+            val payment = sdkResult(operationTimeouts.lookupMillis) {
+                client.getPayment(paymentId)
+            }
+            if (completion.isCompleted) return completion.await()
+            if (payment == null || payment.id != paymentId) return null
+            if (payment.status != SdkPaymentStatus.PENDING) return payment
+            return completion.await()
+        } finally {
+            withContext(NonCancellable) {
+                stopObserving?.invoke()
+            }
+        }
     }
 
     private suspend fun admit(
@@ -589,179 +478,38 @@ class DefaultPaymentEngine(
         AppEnvironment.PRODUCTION -> network == PaymentNetwork.MAINNET
     }
 
-    private suspend fun refreshLinked(attempt: PaymentAttempt, session: PaymentSessionSnapshot) {
-        val paymentId = attempt.breezPaymentId ?: return
-        val payment =
-            sdkResult(operationTimeouts.lookupMillis) { session.client.getPayment(paymentId) }
-                ?: return
-        withCurrentSession(session) { cachePayment(payment) }
-    }
-
-    private suspend fun refreshLinked(attempt: PaymentAttempt, client: SparkPaymentClient) {
-        val paymentId = attempt.breezPaymentId ?: return
-        sdkResult(operationTimeouts.lookupMillis) {
-            client.getPayment(paymentId)
-        }?.let(::cachePayment)
-    }
-
-    private suspend fun recoverExact(attempt: PaymentAttempt, session: PaymentSessionSnapshot) {
-        val exact = sdkResult(operationTimeouts.lookupMillis) {
-            session.client.listSentPayments(
-                attempt.method,
-                attempt.createdAtEpochSeconds
-            ).filter { candidate ->
-                candidate.method == attempt.method && candidate.invoice?.let { invoice ->
-                    sdkAttempt { fingerprint(session.client.parse(invoice)) == attempt.fingerprint }
-                        ?: false
-                } == true
-            }
-        } ?: return
-        if (exact.size == 1) {
-            withCurrentSession(session) {
-                if (repository.linkPayment(
-                        attempt.attemptId,
-                        exact.single().id,
-                        nowEpochSeconds()
-                    )
-                ) {
-                    cachePayment(exact.single())
-                }
-            }
-        }
-    }
-
-    private fun fingerprint(input: ParsedSdkInput): InvoiceFingerprint? = when (input) {
-        is ParsedSdkInput.Bolt11 -> InvoiceFingerprint.bolt11(input.paymentHash)
-        is ParsedSdkInput.SparkInvoice -> InvoiceFingerprint.spark(input.invoice)
-        is ParsedSdkInput.LnurlPay -> input.requestFingerprint
-        ParsedSdkInput.OnChain -> null
-        ParsedSdkInput.Unsupported -> null
-    }
-
-    private suspend fun onPaymentChanged(
-        payment: SdkPayment,
-        eventClient: SparkPaymentClient,
-        eventGeneration: Long
-    ) {
-        sessionMutex.withLock {
-            if (client !== eventClient || sessionGeneration != eventGeneration) return@withLock
-            if (repository.linked().any { it.breezPaymentId == payment.id }) {
-                cachePayment(payment)
-                publishActivity()
-            }
-        }
-    }
-
-    private suspend fun withCurrentSession(session: PaymentSessionSnapshot, block: () -> Unit) {
-        sessionMutex.withLock {
-            if (client === session.client && sessionGeneration == session.generation) block()
-        }
-    }
-
-    private fun publishActivity(): Boolean {
-        val attempts = storageAttempt { repository.all() }.getOrNull() ?: return false
-        mutableActivity.value = attempts.map(::activityFor)
-        return true
-    }
-
-    private fun activityFor(attempt: PaymentAttempt): PaymentActivity = PaymentActivity(
-        attemptId = attempt.attemptId,
-        method = attempt.method,
-        amountSats = attempt.amountSats,
-        feeSats = attempt.feeSats,
-        origin = attempt.origin,
-        createdAtEpochSeconds = attempt.createdAtEpochSeconds,
-        outcome = when (attempt.linkPhase) {
-            PaymentLinkPhase.CONFIRMED -> PaymentOutcome.CONFIRMATION_RECORDED
-
-            PaymentLinkPhase.SUBMISSION_STARTED -> PaymentOutcome.SUBMISSION_UNRESOLVED
-
-            PaymentLinkPhase.SDK_PAYMENT_LINKED ->
-                attempt.breezPaymentId
-                    ?.let(paymentsById::get)
-                    ?.status
-                    ?.toOutcome()
-                    ?: PaymentOutcome.STATUS_UNAVAILABLE
-        }
-    )
-
-    private fun SdkPaymentStatus.toOutcome(): PaymentOutcome = when (this) {
-        SdkPaymentStatus.PENDING -> PaymentOutcome.PENDING
-        SdkPaymentStatus.COMPLETED -> PaymentOutcome.COMPLETED
-        SdkPaymentStatus.FAILED -> PaymentOutcome.FAILED
-    }
-
-    private fun cachePayment(payment: SdkPayment) {
-        val existing = paymentsById[payment.id]
-        if (existing?.status in setOf(SdkPaymentStatus.COMPLETED, SdkPaymentStatus.FAILED) &&
-            payment.status == SdkPaymentStatus.PENDING
-        ) {
-            return
-        }
-        paymentsById[payment.id] = payment
-    }
-
     private suspend fun <T> sdkResult(timeoutMillis: Long, block: suspend () -> T): T? = try {
-        withTimeoutOrNull(timeoutMillis) { block() }
+        currentCoroutineContext().ensureActive()
+        val result = withTimeoutOrNull(timeoutMillis) { block() }
+        currentCoroutineContext().ensureActive()
+        result
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (_: Throwable) {
+        currentCoroutineContext().ensureActive()
         null
     }
 
     private suspend fun <T> sdkAttempt(block: suspend () -> T): T? = try {
-        block()
+        currentCoroutineContext().ensureActive()
+        val result = block()
+        currentCoroutineContext().ensureActive()
+        result
     } catch (cancellation: CancellationException) {
         throw cancellation
     } catch (_: Throwable) {
+        currentCoroutineContext().ensureActive()
         null
     }
-
-    private inline fun <T> storageAttempt(block: () -> T): Result<T> = try {
-        Result.success(block())
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (error: Throwable) {
-        Result.failure(error)
-    }
-
-    private suspend fun detachLocked() {
-        val previousClient = client
-        val previousListener = listenerId
-        client = null
-        listenerId = null
-        sessionGeneration += 1
-        try {
-            if (previousClient != null && previousListener != null) {
-                try {
-                    previousClient.removeEventListener(previousListener)
-                } catch (cancellation: CancellationException) {
-                    throw cancellation
-                } catch (_: Throwable) {}
-            }
-        } finally {
-            paymentsById.clear()
-            publishActivity()
-        }
-    }
-
-    private data class PaymentSessionSnapshot(
-        val client: SparkPaymentClient,
-        val generation: Long,
-        val linked: List<PaymentAttempt>,
-        val unresolved: List<PaymentAttempt>
-    )
 
     data class PaymentOperationTimeouts(
         val resolutionMillis: Long = 10_000,
         val preparationMillis: Long = 20_000,
-        val submissionMillis: Long = 20_000,
         val lookupMillis: Long = 10_000
     ) {
         init {
             require(resolutionMillis > 0)
             require(preparationMillis > 0)
-            require(submissionMillis > 0)
             require(lookupMillis > 0)
         }
     }

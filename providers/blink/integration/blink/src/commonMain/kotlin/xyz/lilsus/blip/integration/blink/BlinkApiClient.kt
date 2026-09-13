@@ -14,6 +14,7 @@ import fr.acinq.lightning.utils.msat
 import kotlin.math.absoluteValue
 import xyz.lilsus.blip.integration.blink.graphql.AuthorizationQuery
 import xyz.lilsus.blip.integration.blink.graphql.BlinkContactsQuery
+import xyz.lilsus.blip.integration.blink.graphql.BlinkPaymentTransactionQuery
 import xyz.lilsus.blip.integration.blink.graphql.FundingWalletsQuery
 import xyz.lilsus.blip.integration.blink.graphql.LnInvoicePaymentSendMutation
 import xyz.lilsus.blip.integration.blink.graphql.LnNoAmountInvoicePaymentSendMutation
@@ -23,6 +24,8 @@ import xyz.lilsus.blip.integration.blink.graphql.type.LnInvoicePaymentInput
 import xyz.lilsus.blip.integration.blink.graphql.type.LnNoAmountInvoicePaymentInput
 import xyz.lilsus.blip.integration.blink.graphql.type.LnNoAmountUsdInvoicePaymentInput
 import xyz.lilsus.blip.integration.blink.graphql.type.PaymentSendResult
+import xyz.lilsus.blip.integration.blink.graphql.type.TxDirection
+import xyz.lilsus.blip.integration.blink.graphql.type.TxStatus
 import xyz.lilsus.blip.integration.blink.graphql.type.WalletCurrency
 
 /**
@@ -274,12 +277,8 @@ class BlinkApiClient(
                 errors = data.lnInvoicePaymentSend.errors.map {
                     PaymentPayloadError(it.code, it.message)
                 },
-                feesPaid = data.lnInvoicePaymentSend.transaction
+                transaction = data.lnInvoicePaymentSend.transaction
                     ?.blinkTransactionPaymentResult
-                    ?.feesPaid(),
-                preimage = data.lnInvoicePaymentSend.transaction
-                    ?.blinkTransactionPaymentResult
-                    ?.preimage()
             )
         )
     }
@@ -320,12 +319,8 @@ class BlinkApiClient(
                 errors = data.lnNoAmountInvoicePaymentSend.errors.map {
                     PaymentPayloadError(it.code, it.message)
                 },
-                feesPaid = data.lnNoAmountInvoicePaymentSend.transaction
+                transaction = data.lnNoAmountInvoicePaymentSend.transaction
                     ?.blinkTransactionPaymentResult
-                    ?.feesPaid(),
-                preimage = data.lnNoAmountInvoicePaymentSend.transaction
-                    ?.blinkTransactionPaymentResult
-                    ?.preimage()
             )
         )
     }
@@ -357,14 +352,46 @@ class BlinkApiClient(
                 errors = data.lnNoAmountUsdInvoicePaymentSend.errors.map {
                     PaymentPayloadError(it.code, it.message)
                 },
-                feesPaid = data.lnNoAmountUsdInvoicePaymentSend.transaction
+                transaction = data.lnNoAmountUsdInvoicePaymentSend.transaction
                     ?.blinkTransactionPaymentResult
-                    ?.feesPaid(),
-                preimage = data.lnNoAmountUsdInvoicePaymentSend.transaction
-                    ?.blinkTransactionPaymentResult
-                    ?.preimage()
             )
         )
+    }
+
+    /** Returns null while the exact submitted transaction is still pending. */
+    internal suspend fun fetchPaymentOutcome(
+        apiKey: String,
+        walletId: String,
+        transactionId: String
+    ): BlinkPaymentOutcome? {
+        val data = executeGraphQlRequest(
+            apiKey = apiKey,
+            logLabel = "BlinkPaymentTransaction",
+            call = apolloClient.query(BlinkPaymentTransactionQuery(walletId, transactionId))
+        )
+        val transaction = data.me?.defaultAccount?.walletById?.transactionById
+            ?.blinkTransactionPaymentResult
+            ?: throw BlinkApiException(BlinkApiError.Unexpected("Missing payment transaction"))
+        if (transaction.id != transactionId || transaction.direction != TxDirection.SEND) {
+            throw BlinkApiException(BlinkApiError.Unexpected("Unexpected payment transaction"))
+        }
+
+        return when (transaction.status) {
+            TxStatus.SUCCESS -> BlinkPaymentOutcome.Paid(
+                preimageHex = transaction.preimage()?.toHex(),
+                feesPaidMsats = transaction.feesPaid()?.msat
+            )
+
+            TxStatus.FAILURE -> BlinkPaymentOutcome.DefinitiveFailure(
+                BlinkApiError.PaymentRejected()
+            )
+
+            TxStatus.PENDING -> null
+
+            TxStatus.UNKNOWN__ -> throw BlinkApiException(
+                BlinkApiError.Unexpected("Unknown payment transaction status")
+            )
+        }
     }
 
     private suspend fun <D : Operation.Data> executeGraphQlRequest(
@@ -423,19 +450,15 @@ class BlinkApiClient(
 
         return when (payload.status) {
             PaymentSendResult.SUCCESS -> BlinkPaymentResult.Success(
-                feesPaid = payload.feesPaid,
-                preimage = payload.preimage
+                feesPaid = payload.transaction?.feesPaid(),
+                preimage = payload.transaction?.preimage()
             )
 
             PaymentSendResult.PENDING -> BlinkPaymentResult.Pending(
-                feesPaid = payload.feesPaid,
-                preimage = payload.preimage
+                transactionId = payload.transaction?.id
             )
 
-            PaymentSendResult.ALREADY_PAID -> BlinkPaymentResult.AlreadyPaid(
-                feesPaid = payload.feesPaid,
-                preimage = payload.preimage
-            )
+            PaymentSendResult.ALREADY_PAID -> BlinkPaymentResult.AlreadyPaid
 
             PaymentSendResult.FAILURE -> throw BlinkApiException(BlinkApiError.PaymentRejected())
 
@@ -497,8 +520,7 @@ class BlinkApiClient(
     private data class PaymentPayload(
         val status: PaymentSendResult?,
         val errors: List<PaymentPayloadError>,
-        val feesPaid: MilliSatoshi?,
-        val preimage: ByteVector32?
+        val transaction: BlinkTransactionPaymentResult?
     )
 
     private data class PaymentPayloadError(val code: String?, val message: String?)
@@ -533,25 +555,14 @@ private fun WalletCurrency.toFundingWalletCurrency(): BlinkWalletCurrency? = whe
 /**
  * Result of a Blink payment operation.
  */
-sealed class BlinkPaymentResult(
-    open val feesPaid: MilliSatoshi?,
-    open val preimage: ByteVector32?
-) {
+sealed interface BlinkPaymentResult {
     /** Payment completed successfully. */
-    data class Success(
-        override val feesPaid: MilliSatoshi? = null,
-        override val preimage: ByteVector32? = null
-    ) : BlinkPaymentResult(feesPaid, preimage)
+    data class Success(val feesPaid: MilliSatoshi? = null, val preimage: ByteVector32? = null) :
+        BlinkPaymentResult
 
-    /** Payment is pending (may complete later). */
-    data class Pending(
-        override val feesPaid: MilliSatoshi? = null,
-        override val preimage: ByteVector32? = null
-    ) : BlinkPaymentResult(feesPaid, preimage)
+    /** The caller must wait for this transaction to settle before completing the payment flow. */
+    data class Pending(val transactionId: String?) : BlinkPaymentResult
 
     /** Invoice was already paid. */
-    data class AlreadyPaid(
-        override val feesPaid: MilliSatoshi? = null,
-        override val preimage: ByteVector32? = null
-    ) : BlinkPaymentResult(feesPaid, preimage)
+    data object AlreadyPaid : BlinkPaymentResult
 }

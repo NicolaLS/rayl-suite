@@ -7,6 +7,7 @@ import com.apollographql.apollo.api.Operation
 import com.apollographql.apollo.api.json.BufferedSourceJsonReader
 import com.apollographql.apollo.api.parseResponse
 import com.apollographql.apollo.network.NetworkTransport
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import okio.Buffer
@@ -22,6 +23,8 @@ internal class BlinkApolloTestTransport(private val handler: (ApolloRequest<*>) 
 
 internal fun createBlinkApolloTestClient(transport: BlinkApolloTestTransport): ApolloClient = ApolloClient.Builder()
     .networkTransport(transport)
+    // Keep the synchronous fake transport on the test coroutine, including under virtual time.
+    .dispatcher(Dispatchers.Unconfined)
     .build()
 
 internal fun <D : Operation.Data> ApolloRequest<D>.responseFromJson(json: String): ApolloResponse<D> = operation.parseResponse(

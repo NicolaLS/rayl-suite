@@ -1,5 +1,4 @@
 <resources>
-    <string name="transaction_status_pending">Ausstehend</string>
     <string name="transaction_status_success">Bezahlt</string>
     <string name="transaction_status_failure">Fehlgeschlagen</string>
     <string name="transaction_fee">Gebühr %1$s</string>

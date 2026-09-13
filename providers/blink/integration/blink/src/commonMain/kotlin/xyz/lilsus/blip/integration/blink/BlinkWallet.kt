@@ -1,6 +1,7 @@
 package xyz.lilsus.blip.integration.blink
 
 import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,8 +38,6 @@ sealed interface BlinkPaymentOutcome {
     data class Paid(val preimageHex: String?, val feesPaidMsats: Long?) : BlinkPaymentOutcome
 
     data object AlreadyPaid : BlinkPaymentOutcome
-
-    data object Pending : BlinkPaymentOutcome
 
     data class DefinitiveFailure(val error: BlinkApiError) : BlinkPaymentOutcome
 
@@ -167,39 +166,35 @@ class BlinkWallet internal constructor(
                 BlinkApiError.MissingWalletConnection
             )
 
-        val result =
+        val result = try {
             withTimeoutOrNull(PAYMENT_RESOURCE_GUARD_MS) {
-                try {
-                    when (val amount = request.amount) {
-                        null -> apiClient.payInvoice(
-                            apiKey = credentials.apiKey,
-                            walletId = request.fundingWallet.id,
-                            invoice = request.invoice
-                        )
+                when (val amount = request.amount) {
+                    null -> apiClient.payInvoice(
+                        apiKey = credentials.apiKey,
+                        walletId = request.fundingWallet.id,
+                        invoice = request.invoice
+                    )
 
-                        is BlinkPaymentAmount.Bitcoin -> apiClient.payNoAmountInvoice(
-                            apiKey = credentials.apiKey,
-                            walletId = request.fundingWallet.id,
-                            invoice = request.invoice,
-                            amountSats = amount.milliSatoshis.toSatsRoundedUp()
-                        )
+                    is BlinkPaymentAmount.Bitcoin -> apiClient.payNoAmountInvoice(
+                        apiKey = credentials.apiKey,
+                        walletId = request.fundingWallet.id,
+                        invoice = request.invoice,
+                        amountSats = amount.milliSatoshis.toSatsRoundedUp()
+                    )
 
-                        is BlinkPaymentAmount.Usd -> apiClient.payNoAmountUsdInvoice(
-                            apiKey = credentials.apiKey,
-                            walletId = request.fundingWallet.id,
-                            invoice = request.invoice,
-                            amountCents = amount.cents
-                        )
-                    }
-                } catch (error: BlinkApiException) {
-                    return@withTimeoutOrNull error.toPaymentOutcome()
+                    is BlinkPaymentAmount.Usd -> apiClient.payNoAmountUsdInvoice(
+                        apiKey = credentials.apiKey,
+                        walletId = request.fundingWallet.id,
+                        invoice = request.invoice,
+                        amountCents = amount.cents
+                    )
                 }
             }
-                ?: return BlinkPaymentOutcome.StatusUnknown(BlinkApiError.Timeout)
+        } catch (error: BlinkApiException) {
+            return error.toPaymentOutcome()
+        } ?: return BlinkPaymentOutcome.StatusUnknown(BlinkApiError.Timeout)
 
         return when (result) {
-            is BlinkPaymentOutcome -> result
-
             is BlinkPaymentResult.Success ->
                 BlinkPaymentOutcome.Paid(
                     preimageHex = result.preimage?.toHex(),
@@ -208,12 +203,34 @@ class BlinkWallet internal constructor(
 
             is BlinkPaymentResult.AlreadyPaid -> BlinkPaymentOutcome.AlreadyPaid
 
-            is BlinkPaymentResult.Pending -> BlinkPaymentOutcome.Pending
+            is BlinkPaymentResult.Pending -> awaitPaymentOutcome(
+                apiKey = credentials.apiKey,
+                walletId = request.fundingWallet.id,
+                transactionId = result.transactionId
+            )
+        }
+    }
 
-            else ->
-                BlinkPaymentOutcome.StatusUnknown(
-                    BlinkApiError.Unexpected("Unexpected payment response")
-                )
+    private suspend fun awaitPaymentOutcome(
+        apiKey: String,
+        walletId: String,
+        transactionId: String?
+    ): BlinkPaymentOutcome {
+        if (transactionId.isNullOrBlank()) {
+            return BlinkPaymentOutcome.StatusUnknown(
+                BlinkApiError.Unexpected("Blink did not identify the pending payment transaction")
+            )
+        }
+
+        while (true) {
+            delay(PAYMENT_STATUS_POLL_INTERVAL_MS)
+            val outcome = try {
+                apiClient.fetchPaymentOutcome(apiKey, walletId, transactionId)
+            } catch (error: BlinkApiException) {
+                // Failure to read a submitted payment is not evidence that the payment failed.
+                return BlinkPaymentOutcome.StatusUnknown(error.error)
+            }
+            if (outcome != null) return outcome
         }
     }
 
@@ -254,3 +271,4 @@ private fun BlinkApiException.toPaymentOutcome(): BlinkPaymentOutcome = when (er
 
 private val REQUIRED_SCOPES = setOf("READ", "WRITE")
 private const val PAYMENT_RESOURCE_GUARD_MS = 90_000L
+private const val PAYMENT_STATUS_POLL_INTERVAL_MS = 2_000L

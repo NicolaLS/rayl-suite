@@ -1,6 +1,5 @@
 package xyz.lilsus.lasr.feature.payment
 
-import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.ui.format.AmountFormatter
 import xyz.lilsus.raylsuite.core.ui.format.currentAmountFormatter
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
@@ -8,13 +7,10 @@ import xyz.lilsus.raylsuite.core.ui.resources.nativeString
 import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentRecentItem
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentLoadingKind
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentScreenState
-import xyz.lilsus.raylsuite.feature.paymentui.PreviousPaymentSituation
 
 /** Lasr-owned projection into the provider-neutral native Scan presentation state. */
 suspend fun PaymentUiState.toNativePaymentScreenState(): PaymentScreenState = when (this) {
     PaymentUiState.Active -> PaymentScreenState.Active
-
-    PaymentUiState.Detected -> PaymentScreenState.Detected
 
     is PaymentUiState.Loading ->
         PaymentScreenState.Loading(
@@ -29,28 +25,16 @@ suspend fun PaymentUiState.toNativePaymentScreenState(): PaymentScreenState = wh
 
     is PaymentUiState.Confirm -> PaymentScreenState.Confirm(amount, lnurlPayDisplay)
 
-    is PaymentUiState.PendingRetry -> PaymentScreenState.PendingRetry(id)
-
     is PaymentUiState.Success ->
         PaymentScreenState.Success(
             amountPaid = amountPaid,
             feePaid = feePaid,
             showEstimatedFeeHint = showEstimatedFeeHint,
-            wasAlreadyPaid = wasAlreadyPaid,
+            wasAlreadyPaid = false,
             preimage = preimage
         )
 
     is PaymentUiState.Error -> PaymentScreenState.Error(getLasrPaymentErrorMessageFor(error))
-}
-
-fun SessionTransactionItem.previousPaymentSituation(): PreviousPaymentSituation = when (status) {
-    PendingStatus.Sending,
-    PendingStatus.Resolving -> PreviousPaymentSituation.InProgress
-
-    PendingStatus.OutcomeUnknown -> PreviousPaymentSituation.OutcomeUnknown
-
-    PendingStatus.Succeeded,
-    PendingStatus.Failed -> PreviousPaymentSituation.Completed
 }
 
 suspend fun SessionTransactionItem.toNativeRecentItem(
@@ -58,81 +42,29 @@ suspend fun SessionTransactionItem.toNativeRecentItem(
 ): NativePaymentRecentItem = NativePaymentRecentItem(
     id = id,
     amount = formatter.format(amount),
-    statusLabel =
-        nativeString(
-            when (status) {
-                PendingStatus.Sending,
-                PendingStatus.Resolving -> NativeStringResource(
-                    table = "LasrPayment",
-                    key = "transaction_status_pending"
-                )
-
-                PendingStatus.Succeeded -> NativeStringResource(
-                    table = "LasrPayment",
-                    key = "transaction_status_success"
-                )
-
-                PendingStatus.OutcomeUnknown,
-                PendingStatus.Failed -> NativeStringResource(
-                    table = "LasrPayment",
-                    key = "transaction_status_failure"
-                )
+    statusLabel = nativeString(
+        NativeStringResource(
+            table = "LasrPayment",
+            key = when (status) {
+                TransactionStatus.Success -> "transaction_status_success"
+                TransactionStatus.Failure -> "transaction_status_failure"
             }
-        ),
-    statusTone = status.nativeStatusTone(),
+        )
+    ),
+    statusTone = when (status) {
+        TransactionStatus.Success -> "success"
+        TransactionStatus.Failure -> "failure"
+    },
     createdAtMs = createdAtMs,
-    supportingText =
-        when (status) {
-            PendingStatus.Succeeded -> fee?.let {
-                nativeString(
-                    NativeStringResource(table = "LasrPayment", key = "transaction_fee"),
-                    formatter.format(it)
-                )
-            }
-
-            PendingStatus.OutcomeUnknown,
-            PendingStatus.Failed ->
-                getLasrPaymentErrorMessageFor(
-                    error ?: PaymentUiError.Unexpected(errorMessage)
-                )
-
-            PendingStatus.Sending,
-            PendingStatus.Resolving -> null
-        },
-    detailState = toNativeDetailState(),
-    canRetry = status == PendingStatus.OutcomeUnknown || status == PendingStatus.Failed,
-    pendingMessage = null
-)
-
-private suspend fun SessionTransactionItem.toNativeDetailState(): PaymentScreenState =
-    when (status) {
-        PendingStatus.Sending,
-        PendingStatus.Resolving -> PaymentUiState.Loading()
-
-        PendingStatus.Succeeded -> {
-            val paidAmount = resultAmount ?: amount
-            PaymentUiState.Success(
-                amountPaid = paidAmount,
-                feePaid = fee ?: paidAmount.zero(),
-                showEstimatedFeeHint = showEstimatedFeeHint && !wasAlreadyPaid,
-                wasAlreadyPaid = wasAlreadyPaid,
-                preimage = preimage
+    supportingText = when (status) {
+        TransactionStatus.Success -> fee?.let {
+            nativeString(
+                NativeStringResource(table = "LasrPayment", key = "transaction_fee"),
+                formatter.format(it)
             )
         }
 
-        PendingStatus.OutcomeUnknown,
-        PendingStatus.Failed ->
-            PaymentUiState.Error(error ?: PaymentUiError.Unexpected(errorMessage))
-    }.toNativePaymentScreenState()
-
-private fun PendingStatus.nativeStatusTone(): String = when (this) {
-    PendingStatus.Sending,
-    PendingStatus.Resolving -> "pending"
-
-    PendingStatus.Succeeded -> "success"
-
-    PendingStatus.OutcomeUnknown,
-    PendingStatus.Failed -> "failure"
-}
-
-private fun DisplayAmount.zero(): DisplayAmount = DisplayAmount(0, currency)
+        TransactionStatus.Failure -> error?.let { getLasrPaymentErrorMessageFor(it) }
+    },
+    detailState = toDetailUiState().toNativePaymentScreenState()
+)

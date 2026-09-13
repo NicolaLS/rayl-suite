@@ -13,8 +13,6 @@
     <string name="view_session_transactions">View session transactions</string>
     <string name="session_transactions_title">Recent payments</string>
     <string name="session_transactions_empty">No payments in this session yet.</string>
-    <string name="tap_dismiss_pending">Tap to dismiss. Payment continues in background.</string>
-    <string name="retry_payment">Retry payment</string>
     <string name="toast_bitcoin_address">This is a Bitcoin address. Ask for a Lightning invoice.</string>
     <string name="toast_bolt12_not_supported">BOLT12 offers are not yet supported.</string>
     <string name="toast_lnurl_request_not_supported">This LNURL request cannot be paid.</string>
@@ -53,14 +51,5 @@
     <string name="camera_permission_restricted_body">Camera access is unavailable because of this device’s restrictions.</string>
     <string name="resolving_payment_title">Preparing payment</string>
     <string name="resolving_payment_subtitle">No payment has been sent yet.</string>
-    <string name="in_progress_title">Payment may still complete</string>
-    <string name="in_progress_body">A payment for this request is still in progress. Review it to avoid paying twice, or create an additional payment only if you intend to pay again.</string>
-    <string name="outcome_unknown_title">Previous payment status unknown</string>
-    <string name="outcome_unknown_body">The previous payment may still have succeeded. Retry its exact invoice, review it, or intentionally create an additional payment.</string>
-    <string name="completed_title">Previous payment completed</string>
-    <string name="completed_body">The previous payment completed. Review it or create an additional payment if you intend to pay again.</string>
-    <string name="retry_previous_invoice">Retry previous invoice</string>
-    <string name="create_additional_payment">Create additional payment</string>
-    <string name="view_previous_payment">View previous payment</string>
     <string name="enter_amount_switch_currency">Switch to %1$s</string>
 </resources>

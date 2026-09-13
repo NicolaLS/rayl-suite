@@ -62,12 +62,7 @@ private final class NativeShellModel: ObservableObject {
     @Published var tabTitles: [String: String] = [:]
     @Published var preferredColorScheme: ColorScheme?
     @Published var recentBadgeCount: Int
-    @Published var selectedTab: String {
-        didSet {
-            guard selectedTab != oldValue else { return }
-            adapter.selectTab(selectedTab)
-        }
-    }
+    @Published private(set) var selectedTab: String
 
     private let adapter: NativeShellAdapter
     private var cancels: [() -> Void] = []
@@ -121,6 +116,10 @@ private final class NativeShellModel: ObservableObject {
         cancels.forEach { $0() }
     }
 
+    func selectTab(_ tab: String) {
+        adapter.selectTab(tab)
+    }
+
     func title(_ tab: AppShellTab) -> String {
         tabTitles[tab.id] ?? ""
     }
@@ -158,7 +157,10 @@ struct NativeAppShell: View {
             switch model.stage {
             case .tabs:
                 if model.hasTabTitles {
-                    TabView(selection: $model.selectedTab) {
+                    TabView(selection: Binding(
+                        get: { model.selectedTab },
+                        set: model.selectTab
+                    )) {
                         ForEach(model.tabs) { tab in
                             // No whole-screen `privacySensitive()`. Redacting a whole tab means any
                             // active privacy redaction blanks the entire screen; apply it to the

@@ -4,7 +4,6 @@ import fr.acinq.lightning.payment.Bolt11Invoice
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.core.model.CurrencyInfo
 import xyz.lilsus.raylsuite.core.model.LightningAddress
-import xyz.lilsus.raylsuite.core.payment.DynamicPaymentSourceKey
 import xyz.lilsus.raylsuite.core.payment.LightningInputParser
 import xyz.lilsus.raylsuite.core.payment.LnurlInvoiceRequest
 import xyz.lilsus.raylsuite.core.payment.LnurlInvoiceResolution
@@ -56,15 +55,13 @@ internal class PaymentPreparation(lnurlPayClient: LnurlPayClient) {
 internal data class LnurlSession(
     val params: LnurlPayParams,
     val display: LnurlPayDisplay?,
-    val sourceKey: DynamicPaymentSourceKey?,
     val paymentSource: PaymentRequestSource,
     val targetContext: HubTargetContext?,
-    val comment: String?,
-    val replacesDynamicGuardId: String?
+    val comment: String?
 )
 
 /**
- * App-owned link between a pending payment and the hub. A known [targetId] receives the success
+ * App-owned link between a payment and the hub. A known [targetId] receives the success
  * statistic; an unknown address may be offered for saving. Never persisted.
  */
 internal data class HubTargetContext(

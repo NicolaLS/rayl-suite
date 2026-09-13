@@ -57,7 +57,9 @@ private fun LasrTabs(runtime: LasrRuntime, performanceDiagnostics: PerformanceDi
 
     AppTabScaffold(
         selectedTab = selectedTab,
-        onTabSelected = tabState::select,
+        onTabSelected = { tab ->
+            if (!runtime.paymentCoordinator.isSubmitting.value) tabState.select(tab)
+        },
         recentBadgeCount = flowState.newSessionTransactionCount
     ) { tab ->
         LasrTabContent(
@@ -95,7 +97,9 @@ internal fun LasrTabContent(
                 savePrompt = hubState.savePrompt,
                 onIntent = coordinator::dispatch,
                 onHubIntent = runtime.paymentHub::dispatch,
-                onOpenTransaction = tabState::openTransaction
+                onOpenTransaction = { id ->
+                    if (!coordinator.isSubmitting.value) tabState.openTransaction(id)
+                }
             )
 
         AppTab.Recent ->
@@ -103,7 +107,9 @@ internal fun LasrTabContent(
                 state = flowState,
                 estimatedFeeHint = null,
                 selectedTransactionId = selectedTransactionId,
-                onSelectTransaction = tabState::selectTransaction,
+                onSelectTransaction = { id ->
+                    if (!coordinator.isSubmitting.value) tabState.selectTransaction(id)
+                },
                 onIntent = coordinator::dispatch
             )
 

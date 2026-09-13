@@ -198,7 +198,7 @@ fun PaymentScanScreen(
 
     var showResolvingContent by remember { mutableStateOf(false) }
     val isResolvingLoading = state.payment is PaymentScreenState.Loading &&
-        (state.payment as PaymentScreenState.Loading).kind == PaymentLoadingKind.Resolving
+        state.payment.kind == PaymentLoadingKind.Resolving
     LaunchedEffect(state.payment) {
         showResolvingContent = false
         if (isResolvingLoading) {
@@ -232,7 +232,9 @@ fun PaymentScanScreen(
         floatingActionButton = {
             // Only products that do not show Recent as a tab pass this, and only once the
             // session actually has a payment to look back at.
-            if (onOpenRecent != null && state.sessionItems.isNotEmpty()) {
+            if (onOpenRecent != null && state.sessionItems.isNotEmpty() &&
+                state.payment !is PaymentScreenState.Loading
+            ) {
                 RecentPaymentsFab(
                     newTransactionCount = state.newSessionTransactionCount,
                     onClick = onOpenRecent
@@ -296,7 +298,7 @@ fun PaymentScanScreen(
     }
 
     if (state.payment is PaymentScreenState.EnterAmount) {
-        val enterAmount = state.payment as PaymentScreenState.EnterAmount
+        val enterAmount = state.payment
         ManualAmountBottomSheet(
             state = enterAmount.entry,
             lnurlPayDisplay = enterAmount.lnurlPayDisplay,
@@ -307,43 +309,13 @@ fun PaymentScanScreen(
     }
 
     if (state.payment is PaymentScreenState.Confirm) {
-        val confirm = state.payment as PaymentScreenState.Confirm
+        val confirm = state.payment
         ConfirmationBottomSheet(
             amount = confirm.amount,
             lnurlPayDisplay = confirm.lnurlPayDisplay,
             fundingSource = confirm.fundingSource,
             onPay = { onIntent(PaymentIntent.ConfirmPaymentSubmit) },
             onDismiss = { onIntent(PaymentIntent.ConfirmPaymentDismiss) }
-        )
-    }
-
-    if (state.payment is PaymentScreenState.PendingRetry) {
-        val pendingRetry = state.payment as PaymentScreenState.PendingRetry
-        val retryTransaction = state.sessionItems.firstOrNull { item ->
-            item.id == pendingRetry.transactionId
-        }
-        RepeatPaymentClarificationBottomSheet(
-            clarification =
-                RepeatPaymentClarification(
-                    retryTransaction?.reference?.previousPaymentSituation
-                        ?: PreviousPaymentSituation.InProgress
-                ),
-            canViewPreviousPayment = true,
-            onDecision = { decision ->
-                when (decision) {
-                    RepeatPaymentDecision.RetryPreviousInvoice ->
-                        onIntent(PaymentIntent.PendingRetryRetryPrevious)
-
-                    RepeatPaymentDecision.CreateAdditionalPayment ->
-                        onIntent(PaymentIntent.PendingRetryCreateNewInvoice)
-
-                    RepeatPaymentDecision.ViewPreviousPayment ->
-                        onIntent(PaymentIntent.PendingRetryViewPending)
-
-                    RepeatPaymentDecision.Dismiss ->
-                        onIntent(PaymentIntent.PendingRetryDismiss)
-                }
-            }
         )
     }
 

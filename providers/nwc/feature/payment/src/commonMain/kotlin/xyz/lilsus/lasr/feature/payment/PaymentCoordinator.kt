@@ -1,16 +1,18 @@
 package xyz.lilsus.lasr.feature.payment
 
-import com.russhwolf.settings.Settings
 import kotlin.coroutines.CoroutineContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import xyz.lilsus.lasr.integration.nwc.NwcPayOutcome
 import xyz.lilsus.lasr.integration.nwc.NwcWallet
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.core.payment.BitcoinPriceProvider
@@ -24,80 +26,21 @@ import xyz.lilsus.raylsuite.feature.paymentsettings.PaymentPreferencesRepository
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentIntent
 
 class PaymentCoordinator(
-    nwcWallet: NwcWallet,
-    lnurlPayClient: LnurlPayClient,
-    bitcoinPriceProvider: BitcoinPriceProvider,
-    currencyPreferences: CurrencyPreferences,
-    paymentPreferences: PaymentPreferencesRepository,
-    paymentHub: PaymentHubController,
-    haptics: HapticFeedbackManager,
-    showEstimatedFeeHint: Boolean = false,
-    paymentAttemptSettings: Settings,
-    coroutineContext: CoroutineContext = Dispatchers.Main
-) {
-    private val flow =
-        LasrPaymentFlow(
-            nwcWallet = nwcWallet,
-            lnurlPayClient = lnurlPayClient,
-            bitcoinPriceProvider = bitcoinPriceProvider,
-            currencyPreferences = currencyPreferences,
-            paymentPreferences = paymentPreferences,
-            paymentHub = paymentHub,
-            haptics = haptics,
-            showEstimatedFeeHint = showEstimatedFeeHint,
-            paymentAttemptSettings = paymentAttemptSettings,
-            coroutineContext = coroutineContext
-        )
-
-    val uiState: StateFlow<PaymentUiState> = flow.uiState
-    val events: SharedFlow<PaymentEvent> = flow.events
-    val sessionTransactions: StateFlow<List<SessionTransactionItem>> =
-        flow.sessionTransactions
-    val transactionDetailNavigationTarget: StateFlow<String?> =
-        flow.transactionDetailNavigationTarget
-    val newSessionTransactionCount: StateFlow<Int> =
-        flow.newSessionTransactionCount
-
-    val isSubmitting: StateFlow<Boolean> get() = flow.isSubmitting
-
-    fun dispatch(intent: PaymentIntent) {
-        flow.dispatch(intent)
-    }
-
-    fun clear() {
-        flow.clear()
-    }
-
-    fun resetSession() {
-        flow.resetSession()
-    }
-}
-
-private class LasrPaymentFlow(
-    nwcWallet: NwcWallet,
+    private val nwcWallet: NwcWallet,
     lnurlPayClient: LnurlPayClient,
     bitcoinPriceProvider: BitcoinPriceProvider,
     currencyPreferences: CurrencyPreferences,
     paymentPreferences: PaymentPreferencesRepository,
     private val paymentHub: PaymentHubController,
     private val haptics: HapticFeedbackManager,
-    showEstimatedFeeHint: Boolean,
-    paymentAttemptSettings: Settings,
-    coroutineContext: CoroutineContext
+    private val showEstimatedFeeHint: Boolean = false,
+    coroutineContext: CoroutineContext = Dispatchers.Main
 ) {
     private val scope = CoroutineScope(SupervisorJob() + coroutineContext)
     private val currencyManager = PaymentCurrencyManager(bitcoinPriceProvider, scope)
     private val presentation = PaymentPresentationPhase(currencyManager)
-    private val pendingTracker =
-        PendingPaymentTracker(
-            lookupInvoice = nwcWallet::lookupInvoice,
-            isInForeground = nwcWallet.isInForeground,
-            currencyManager = currencyManager,
-            scope = scope,
-            showEstimatedFeeHint = showEstimatedFeeHint,
-            store = PendingPaymentStore(paymentAttemptSettings)
-        )
-    private val sessionTasks = PaymentTaskRegistry(scope)
+    private val history = PaymentHistory(currencyManager, showEstimatedFeeHint)
+    private val operation = PaymentOperation(scope)
     private var runtimePreferences = PaymentRuntimePreferences()
     private val confirmation =
         PaymentConfirmationPhase(
@@ -109,34 +52,14 @@ private class LasrPaymentFlow(
         PaymentAdmissionPhase(
             lnurlPayClient = lnurlPayClient,
             currencyManager = currencyManager,
-            pendingTracker = pendingTracker,
+            history = history,
             presentation = presentation,
-            confirmationIsIdle = { confirmation.isIdle },
             notifyScanSuccess = ::notifyScanSuccess
         )
-    private val reconciliation =
-        PaymentReconciliationPhase(
-            pendingTracker = pendingTracker,
-            presentation = presentation,
-            paymentHub = paymentHub,
-            haptics = haptics,
-            showEstimatedFeeHint = showEstimatedFeeHint,
-            vibrateOnPayment = { runtimePreferences.vibrateOnPayment },
-            offerToSaveNewTargets = { runtimePreferences.offerToSaveNewTargets }
-        )
-    private val execution =
-        NwcPaymentExecutionPhase(
-            nwcWallet = nwcWallet,
-            scope = scope,
-            pendingTracker = pendingTracker,
-            presentation = presentation,
-            onAttemptRegistered = reconciliation::registerAttempt
-        )
-
     val uiState: StateFlow<PaymentUiState> = presentation.uiState
     val events: SharedFlow<PaymentEvent> = presentation.events
     val sessionTransactions: StateFlow<List<SessionTransactionItem>> =
-        pendingTracker.displayItems
+        history.displayItems
     val transactionDetailNavigationTarget: StateFlow<String?> =
         presentation.transactionDetailNavigationTarget
     val newSessionTransactionCount: StateFlow<Int> =
@@ -155,9 +78,7 @@ private class LasrPaymentFlow(
         }
         scope.launch {
             paymentHub.paymentRequests.collect { intent ->
-                launchSessionTask { token ->
-                    handleAdmissionResult(admission.payTarget(intent, token), token)
-                }
+                launchOperation { handleAdmissionResult(admission.payTarget(intent)) }
             }
         }
         scope.launch {
@@ -169,7 +90,7 @@ private class LasrPaymentFlow(
             currencyManager.state.collectLatest {
                 admission.refreshManualAmountState()
                 presentation.refreshResult()
-                pendingTracker.refreshDisplayItems()
+                history.refreshDisplayItems()
             }
         }
         scope.launch {
@@ -179,48 +100,32 @@ private class LasrPaymentFlow(
             }
         }
         scope.launch {
-            pendingTracker.events.collect(::handlePendingEvent)
-        }
-        scope.launch {
-            pendingTracker.displayItems.collect { items ->
+            history.displayItems.collect { items ->
                 presentation.updateSessionTransactionIds(
                     items.mapTo(mutableSetOf(), SessionTransactionItem::id)
                 )
             }
         }
-        scope.launch {
-            nwcWallet.sentPayments.collect(pendingTracker::applySentPayment)
-        }
     }
 
-    val isSubmitting: StateFlow<Boolean> get() = execution.isSubmitting
-
-    fun dispatch(intent: PaymentIntent) {
-        launchSessionTask { token ->
-            handleIntent(intent, token)
-        }
-    }
+    val isSubmitting: StateFlow<Boolean> get() = operation.active
 
     fun clear() {
-        sessionTasks.reset()
-        execution.reset()
-        pendingTracker.close()
+        operation.reset()
         scope.cancel()
     }
 
     fun resetSession() {
-        sessionTasks.reset()
-        execution.reset()
+        operation.reset()
         admission.reset(currencyManager.state.value)
         confirmation.reset()
-        reconciliation.reset()
         presentation.reset()
-        pendingTracker.resetSession()
+        history.reset()
         paymentHub.resetSession()
     }
 
-    private suspend fun handleIntent(intent: PaymentIntent, token: PaymentTaskToken) {
-        token.ensureCurrent()
+    fun dispatch(intent: PaymentIntent) {
+        if (operation.active.value) return
         when (intent) {
             PaymentIntent.DismissResult -> presentation.dismissResult()
 
@@ -228,134 +133,155 @@ private class LasrPaymentFlow(
                 presentation.onTransactionDetailNavigationHandled(intent.id)
 
             PaymentIntent.SessionTransactionsOpened ->
-                reconciliation.sessionTransactionsOpened()
+                presentation.onSessionTransactionsOpened(
+                    sessionTransactions.value.map(SessionTransactionItem::id)
+                )
 
             is PaymentIntent.QrCodeScanned ->
-                handleAdmissionResult(
-                    admission.handlePaymentInput(
-                        rawInput = intent.rawValue,
-                        source = PaymentRequestSource.Camera,
-                        token = token
-                    ),
-                    token
-                )
+                launchOperation {
+                    handleAdmissionResult(
+                        admission.handlePaymentInput(
+                            rawInput = intent.rawValue,
+                            source = PaymentRequestSource.Camera
+                        )
+                    )
+                }
 
             is PaymentIntent.DeepLinkReceived ->
-                handleAdmissionResult(
-                    admission.handlePaymentInput(
-                        rawInput = intent.rawValue,
-                        source = PaymentRequestSource.DeepLink,
-                        token = token
-                    ),
-                    token
-                )
+                launchOperation {
+                    handleAdmissionResult(
+                        admission.handlePaymentInput(
+                            rawInput = intent.rawValue,
+                            source = PaymentRequestSource.DeepLink
+                        )
+                    )
+                }
 
             PaymentIntent.ManualAmountDismiss -> admission.dismissManualAmount()
 
             PaymentIntent.ManualAmountSubmit ->
-                handleAdmissionResult(admission.submitManualAmount(token), token)
+                launchOperation { handleAdmissionResult(admission.submitManualAmount()) }
 
             is PaymentIntent.ManualAmountKeyPress ->
                 admission.updateManualAmount(intent.key)
 
             PaymentIntent.ConfirmPaymentDismiss ->
-                handleConfirmationDismissal(confirmation.dismiss())
+                if (confirmation.dismiss()) presentation.showActive()
 
             PaymentIntent.ConfirmPaymentSubmit ->
-                handleConfirmationResult(confirmation.submit(), token)
-
-            PaymentIntent.PendingRetryCreateNewInvoice -> {
-                val choice = reconciliation.takeNewInvoiceChoice()
-                if (choice != null) {
-                    handleAdmissionResult(
-                        admission.continueDynamicPayment(
-                            recordId = choice.recordId,
-                            continuation = choice.continuation,
-                            token = token
-                        ),
-                        token
-                    )
-                }
-            }
-
-            PaymentIntent.PendingRetryRetryPrevious ->
-                reconciliation.takePendingRetryRecord()?.let(execution::retry)
-
-            PaymentIntent.PendingRetryViewPending ->
-                reconciliation.viewPendingPayment()
-
-            PaymentIntent.PendingRetryDismiss ->
-                reconciliation.dismissPendingRetry()
-
-            is PaymentIntent.RetryTransaction ->
-                reconciliation.retryRecord(intent.id)?.let(execution::retry)
+                launchOperation { handleConfirmationResult(confirmation.submit()) }
 
             is PaymentIntent.RawInputSubmitted ->
-                handleAdmissionResult(
-                    admission.handlePaymentInput(
-                        rawInput = intent.rawValue,
-                        source = PaymentRequestSource.Camera,
-                        token = token
-                    ),
-                    token
-                )
+                launchOperation {
+                    handleAdmissionResult(
+                        admission.handlePaymentInput(
+                            rawInput = intent.rawValue,
+                            source = PaymentRequestSource.Camera
+                        )
+                    )
+                }
         }
     }
 
-    private suspend fun handleAdmissionResult(result: AdmissionResult, token: PaymentTaskToken) {
-        token.ensureCurrent()
+    private suspend fun handleAdmissionResult(result: AdmissionResult) {
+        currentCoroutineContext().ensureActive()
         when (result) {
             AdmissionResult.Presented -> Unit
 
             is AdmissionResult.Payment ->
                 handleConfirmationResult(
-                    confirmation.requestPayment(result.payment, token),
-                    token
-                )
-
-            is AdmissionResult.PendingClarification ->
-                reconciliation.showPendingRetryPrompt(
-                    record = result.record,
-                    continuation = result.continuation
+                    confirmation.requestPayment(result.payment)
                 )
         }
     }
 
-    private suspend fun handleConfirmationResult(
-        result: ConfirmationResult,
-        token: PaymentTaskToken
-    ) {
-        token.ensureCurrent()
+    private suspend fun handleConfirmationResult(result: ConfirmationResult) {
+        currentCoroutineContext().ensureActive()
         when (result) {
             ConfirmationResult.Presented -> Unit
 
             is ConfirmationResult.Execute ->
-                execution.start(result.payment)
+                executePayment(result.payment)
         }
     }
 
-    private fun handleConfirmationDismissal(dismissal: ConfirmationDismissal) {
-        when (dismissal) {
-            ConfirmationDismissal.None -> Unit
-            ConfirmationDismissal.Active -> presentation.showActive()
-            ConfirmationDismissal.ManualAmount -> admission.restoreManualAmount()
+    private suspend fun executePayment(payment: ExecutablePayment) {
+        presentation.showLoading()
+        val amountMsats = payment.amountOverrideMsats ?: payment.invoice.amount?.msat ?: 0L
+        val outcome = try {
+            nwcWallet.payInvoice(
+                invoice = payment.invoice.write(),
+                amountMsats = payment.amountOverrideMsats,
+                paymentHash = payment.invoice.paymentHash.toHex()
+            )
+        } catch (cause: CancellationException) {
+            throw cause
+        } catch (_: Throwable) {
+            currentCoroutineContext().ensureActive()
+            NwcPayOutcome.Uncertain(null)
+        }
+        currentCoroutineContext().ensureActive()
+        admission.reset(currencyManager.state.value)
+        when (outcome) {
+            is NwcPayOutcome.Settled -> {
+                val result = CompletedPayment(
+                    amountMsats = amountMsats,
+                    feeMsats = outcome.feesPaidMsats ?: 0L,
+                    showEstimatedFeeHint = showEstimatedFeeHint,
+                    preimage = outcome.preimage
+                )
+                history.record(payment.invoice.paymentHash.toHex(), amountMsats, result = result)
+                reportPaymentSuccess(payment.targetContext, amountMsats)
+                if (runtimePreferences.vibrateOnPayment) haptics.notifyPaymentSuccess()
+                presentation.showPaymentSuccess(result)
+            }
+
+            is NwcPayOutcome.WalletRejected -> recordFailure(
+                payment,
+                amountMsats,
+                NwcPaymentError.Rejected(outcome.code, outcome.detail)
+            )
+
+            is NwcPayOutcome.DefinitelyNotSent -> recordFailure(
+                payment,
+                amountMsats,
+                NwcPaymentError.DefinitelyNotSent(outcome.detail)
+            )
+
+            is NwcPayOutcome.Uncertain -> presentation.presentError(
+                PaymentUiError.Nwc(NwcPaymentError.OutcomeUnknown(outcome.detail))
+            )
         }
     }
 
-    private fun handlePendingEvent(event: PendingEvent) {
-        admission.clearPaymentState(currencyManager.state.value)
-        confirmation.reset()
-        reconciliation.handlePendingEvent(event)
+    private fun recordFailure(
+        payment: ExecutablePayment,
+        amountMsats: Long,
+        cause: NwcPaymentError
+    ) {
+        val error = PaymentUiError.Nwc(cause)
+        history.record(payment.invoice.paymentHash.toHex(), amountMsats, error = error)
+        presentation.presentError(error)
     }
 
-    private fun launchSessionTask(block: suspend (PaymentTaskToken) -> Unit) {
-        sessionTasks.launch { token ->
+    private fun reportPaymentSuccess(context: HubTargetContext?, paidMsats: Long) {
+        if (context == null || paidMsats <= 0L) return
+        val targetId = context.targetId
+        if (targetId != null) {
+            paymentHub.recordSuccessfulPayment(targetId)
+        } else if (runtimePreferences.offerToSaveNewTargets) {
+            paymentHub.offerSave(context.address)
+        }
+    }
+
+    private fun launchOperation(block: suspend () -> Unit) {
+        operation.launch {
             try {
-                block(token)
+                block()
             } catch (cause: CancellationException) {
                 throw cause
             } catch (cause: Throwable) {
-                token.ensureCurrent()
+                currentCoroutineContext().ensureActive()
                 presentation.presentError(cause.toPaymentUiError())
             }
         }

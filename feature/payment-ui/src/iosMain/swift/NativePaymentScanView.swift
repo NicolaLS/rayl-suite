@@ -193,7 +193,11 @@ struct NativePaymentScanView: View {
             updateActivity()
         }
         .onChange(of: model.snapshot?.recent?.transactionCount) { _, count in
-            let total = Int(count ?? 0)
+            guard let count else {
+                showsRecent = false
+                return
+            }
+            let total = Int(count)
             seenRecentCount = showsRecent ? total : min(seenRecentCount, total)
         }
         .onChange(of: scenePhase) { _, _ in
@@ -250,7 +254,6 @@ struct NativePaymentScanView: View {
         switch kind {
         case "manualAmount": model.controller.dismissManualAmount()
         case "confirmation": model.controller.dismissConfirmation()
-        case "repeatPayment": model.controller.chooseRepeatPayment(action: "dismiss")
         case "saveTarget": model.controller.dismissSaveTarget()
         default: break
         }
@@ -633,17 +636,6 @@ private struct NativePaymentScanSheetView: View {
             .buttonStyle(.bordered)
             .controlSize(.large)
         }
-
-        if let tertiary = sheet.tertiaryActionTitle {
-            Button {
-                controller.chooseRepeatPayment(action: "view")
-            } label: {
-                Text(tertiary)
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-        }
     }
 
     private func primaryAction() {
@@ -656,8 +648,6 @@ private struct NativePaymentScanSheetView: View {
                 reviewingManualAmount = true
             }
         case "confirmation": controller.submitConfirmation()
-        case "repeatPayment":
-            controller.chooseRepeatPayment(action: sheet.primaryAction)
         case "saveTarget": controller.saveTarget()
         default: break
         }
@@ -667,7 +657,6 @@ private struct NativePaymentScanSheetView: View {
         switch sheet.kind {
         case "manualAmount": controller.dismissManualAmount()
         case "confirmation": controller.dismissConfirmation()
-        case "repeatPayment": controller.chooseRepeatPayment(action: "additional")
         case "saveTarget": controller.dismissSaveTarget()
         default: break
         }
@@ -906,19 +895,11 @@ private struct NativePaymentRecentRow: View {
     }
 
     private var symbol: String {
-        switch item.statusTone {
-        case "success": return "checkmark.circle.fill"
-        case "failure": return "exclamationmark.circle.fill"
-        default: return "hourglass.circle.fill"
-        }
+        item.statusTone == "success" ? "checkmark.circle.fill" : "exclamationmark.circle.fill"
     }
 
     private var toneColor: Color {
-        switch item.statusTone {
-        case "success": return .green
-        case "failure": return .red
-        default: return .orange
-        }
+        item.statusTone == "success" ? .green : .red
     }
 }
 
@@ -935,22 +916,11 @@ private struct NativePaymentRecentDetailView: View {
                 )
                 .frame(height: proxy.size.height * 0.48)
 
-                if let content = detail.content {
-                    NativePaymentRecentResultContent(
-                        content: content,
-                        retryTitle: detail.retryTitle,
-                        onViewReceipt: controller.viewReceipt,
-                        onRetry: controller.retrySelected,
-                        onDone: controller.closeDetail
-                    )
-                } else if let message = detail.pendingMessage {
-                    Button(message, action: controller.closeDetail)
-                        .buttonStyle(.plain)
-                        .font(.body.weight(.medium))
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(24)
-                }
+                NativePaymentRecentResultContent(
+                    content: detail.content,
+                    onViewReceipt: controller.viewReceipt,
+                    onDone: controller.closeDetail
+                )
             }
         }
         .background(Color(uiColor: .systemBackground))
@@ -960,9 +930,7 @@ private struct NativePaymentRecentDetailView: View {
 
 private struct NativePaymentRecentResultContent: View {
     let content: NativePaymentScanContent
-    let retryTitle: String?
     let onViewReceipt: () -> Void
-    let onRetry: () -> Void
     let onDone: () -> Void
 
     var body: some View {
@@ -1002,10 +970,6 @@ private struct NativePaymentRecentResultContent: View {
                         Label(receipt, systemImage: "receipt")
                     }
                     .buttonStyle(.bordered)
-                }
-                if let retryTitle {
-                    Button(retryTitle, action: onRetry)
-                        .buttonStyle(.borderedProminent)
                 }
                 if let done = content.tapToContinue {
                     Button(done, action: onDone)
