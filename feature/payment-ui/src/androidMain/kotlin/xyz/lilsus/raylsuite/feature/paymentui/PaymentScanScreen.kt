@@ -54,7 +54,7 @@ import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubIntent
 import xyz.lilsus.raylsuite.feature.paymentui.R
 import xyz.lilsus.raylsuite.feature.paymentui.components.BottomLayout
 import xyz.lilsus.raylsuite.feature.paymentui.components.ConfirmationBottomSheet
-import xyz.lilsus.raylsuite.feature.paymentui.components.ManualAmountBottomSheet
+import xyz.lilsus.raylsuite.feature.paymentui.components.ManualAmountScreen
 import xyz.lilsus.raylsuite.feature.paymentui.components.PaymentHero
 import xyz.lilsus.raylsuite.feature.paymentui.components.ResultLayout
 
@@ -299,7 +299,7 @@ fun PaymentScanScreen(
 
     if (state.payment is PaymentScreenState.EnterAmount) {
         val enterAmount = state.payment
-        ManualAmountBottomSheet(
+        ManualAmountScreen(
             state = enterAmount.entry,
             lnurlPayDisplay = enterAmount.lnurlPayDisplay,
             onKeyPress = { onIntent(PaymentIntent.ManualAmountKeyPress(it)) },

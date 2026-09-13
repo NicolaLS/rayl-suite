@@ -148,9 +148,14 @@ struct NativePaymentScanView: View {
             }
         }
         .sheet(isPresented: sheetPresented) {
-            if let sheet = model.snapshot?.sheet {
+            if let sheet = model.snapshot?.sheet, sheet.kind != "manualAmount" {
                 NativePaymentScanSheetView(sheet: sheet, controller: model.controller)
                     .presentationDragIndicator(.visible)
+            }
+        }
+        .fullScreenCover(isPresented: manualAmountPresented) {
+            if let sheet = model.snapshot?.sheet, sheet.kind == "manualAmount" {
+                NativePaymentManualAmountView(sheet: sheet, controller: model.controller)
             }
         }
         .onAppear {
@@ -301,17 +306,30 @@ struct NativePaymentScanView: View {
 
     private var sheetPresented: Binding<Bool> {
         Binding(
-            get: { model.snapshot?.sheet != nil },
+            get: {
+                guard let sheet = model.snapshot?.sheet else { return false }
+                return sheet.kind != "manualAmount"
+            },
             set: { presented in
-                guard !presented, let kind = model.snapshot?.sheet?.kind else { return }
+                guard !presented, let kind = model.snapshot?.sheet?.kind,
+                    kind != "manualAmount" else { return }
                 dismissSheet(kind)
+            }
+        )
+    }
+
+    private var manualAmountPresented: Binding<Bool> {
+        Binding(
+            get: { model.snapshot?.sheet?.kind == "manualAmount" },
+            set: { presented in
+                guard !presented, model.snapshot?.sheet?.kind == "manualAmount" else { return }
+                model.controller.dismissManualAmount()
             }
         )
     }
 
     private func dismissSheet(_ kind: String) {
         switch kind {
-        case "manualAmount": model.controller.dismissManualAmount()
         case "confirmation": model.controller.dismissConfirmation()
         case "saveTarget": model.controller.dismissSaveTarget()
         default: break
@@ -444,138 +462,93 @@ private struct NativePaymentScanContentView: View {
     }
 }
 
-private struct NativePaymentScanSheetView: View {
+private struct NativePaymentManualAmountView: View {
     let sheet: NativePaymentScanSheet
     let controller: NativePaymentScanController
-    @State private var contentHeight: CGFloat = 320
     @State private var reviewingManualAmount = false
 
     var body: some View {
-        if sheet.kind == "manualAmount" {
-            amountEntry
-        } else {
-            standardSheet
+        NavigationStack {
+            amountPage(reviewing: false)
+                .navigationDestination(isPresented: $reviewingManualAmount) {
+                    amountPage(reviewing: true)
+                }
+        }
+        .accessibilityIdentifier("payment_manual_amount_screen")
+        .onChange(of: sheet.amount) { _, _ in reviewingManualAmount = false }
+        .onChange(of: sheet.currencyLabel) { _, _ in reviewingManualAmount = false }
+        .onChange(of: sheet.canSubmit) { _, canSubmit in
+            if !canSubmit { reviewingManualAmount = false }
         }
     }
 
-    private var standardSheet: some View {
+    private func amountPage(reviewing: Bool) -> some View {
         ScrollView {
-            VStack(spacing: 16) {
-                Text(sheet.title)
-                    .font(.title2.weight(.semibold))
-                    .multilineTextAlignment(.center)
-
+            VStack(spacing: 24) {
+                NativePaymentRecipientView(sheet: sheet)
                 if let body = sheet.body {
                     Text(body)
-                        .font(.body)
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
                 }
-
-                NativePaymentRecipientView(sheet: sheet)
-
-                switch sheet.kind {
-                case "confirmation": confirmationContent
-                case "saveTarget": saveTargetContent
-                default: EmptyView()
-                }
-
-                actionButtons
-            }
-            .padding(.horizontal, 24)
-            .padding(.top, 20)
-            .padding(.bottom, 32)
-            .onGeometryChange(for: CGFloat.self) { proxy in
-                ceil(proxy.size.height)
-            } action: { height in
-                contentHeight = max(1, height)
-            }
-        }
-        // Measure the content, not the scroll viewport, so longer copy and Dynamic Type can
-        // grow the sheet. The scroll view remains usable when the content exceeds the screen.
-        .presentationDetents(
-            sheet.kind == "confirmation" || sheet.kind == "repeatPayment"
-                ? [.height(contentHeight)] : [.large]
-        )
-        .scrollBounceBehavior(.basedOnSize)
-    }
-
-    private var amountEntry: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    NativePaymentRecipientView(sheet: sheet)
-                    if let body = sheet.body {
-                        Text(body)
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
+                if reviewing {
+                    if let amount = sheet.manualReview?.amount {
+                        Text(amount)
+                            .font(.largeTitle.weight(.semibold))
                             .multilineTextAlignment(.center)
+                            .accessibilityIdentifier("payment_manual_amount_review")
                     }
-                    if reviewingManualAmount, let review = sheet.manualReview {
-                        if let amount = review.amount {
-                            Text(amount)
-                                .font(.largeTitle.weight(.semibold))
-                                .multilineTextAlignment(.center)
-                                .accessibilityIdentifier("payment_manual_amount_review")
-                        }
-                    } else {
-                        manualAmountContent
-                        NativePaymentAmountKeypad(
-                            controller: controller, allowsDecimal: sheet.allowsDecimal)
-                    }
+                } else {
+                    manualAmountContent
+                    NativePaymentAmountKeypad(
+                        controller: controller, allowsDecimal: sheet.allowsDecimal)
                 }
-                .padding(24)
-                .frame(maxWidth: 480)
-                .frame(maxWidth: .infinity)
             }
+            .padding(24)
+            .frame(maxWidth: 480)
+            .frame(maxWidth: .infinity)
+        }
+        .background(Color(uiColor: .systemGroupedBackground))
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Button {
+                guard sheet.canSubmit else { return }
+                if reviewing {
+                    controller.submitManualAmount()
+                } else if sheet.manualReview != nil {
+                    reviewingManualAmount = true
+                }
+            } label: {
+                Text(
+                    reviewing
+                        ? sheet.manualReview?.payTitle ?? sheet.primaryActionTitle
+                        : sheet.primaryActionTitle
+                )
+                .font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 28)
+                .padding(.vertical, 4)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.roundedRectangle(radius: 16))
+            .controlSize(.large)
+            .disabled(!sheet.canSubmit)
+            .accessibilityIdentifier(
+                reviewing
+                    ? "payment_manual_amount_pay_button"
+                    : "payment_manual_amount_continue_button")
+            .padding(.horizontal, 24)
+            .padding(.vertical, 16)
+            .frame(maxWidth: 480)
+            .frame(maxWidth: .infinity)
             .background(Color(uiColor: .systemGroupedBackground))
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                VStack(spacing: 8) {
-                    if reviewingManualAmount, let review = sheet.manualReview {
-                        Button(review.editTitle) {
-                            reviewingManualAmount = false
-                        }
-                        .accessibilityIdentifier("payment_manual_amount_edit_button")
-                    }
-                    Button(action: primaryAction) {
-                        Text(
-                            reviewingManualAmount
-                                ? sheet.manualReview?.payTitle ?? sheet.primaryActionTitle
-                                : sheet.primaryActionTitle
-                        )
-                        .font(.headline)
-                        .frame(maxWidth: .infinity, minHeight: 28)
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.roundedRectangle(radius: 16))
-                    .controlSize(.large)
-                    .disabled(!sheet.canSubmit)
-                    .accessibilityIdentifier(
-                        reviewingManualAmount
-                            ? "payment_manual_amount_pay_button"
-                            : "payment_manual_amount_continue_button")
-                }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
-                .frame(maxWidth: 480)
-                .frame(maxWidth: .infinity)
-                .background(Color(uiColor: .systemGroupedBackground))
-            }
-            .navigationTitle(
-                reviewingManualAmount ? sheet.manualReview?.title ?? sheet.title : sheet.title
-            )
-            .navigationBarTitleDisplayMode(.inline)
-            .onChange(of: sheet.amount) { _, _ in reviewingManualAmount = false }
-            .onChange(of: sheet.currencyLabel) { _, _ in reviewingManualAmount = false }
-            .onChange(of: sheet.canSubmit) { _, canSubmit in
-                if !canSubmit { reviewingManualAmount = false }
-            }
-            .toolbar {
-                if let cancel = sheet.secondaryActionTitle {
-                    ToolbarItem(placement: .cancellationAction) {
-                        Button(cancel, action: secondaryAction)
-                    }
+        }
+        .navigationTitle(reviewing ? sheet.manualReview?.title ?? sheet.title : sheet.title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            if let cancel = sheet.secondaryActionTitle {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button(cancel, action: controller.dismissManualAmount)
+                        .accessibilityIdentifier("payment_manual_amount_cancel_button")
                 }
             }
         }
@@ -630,6 +603,54 @@ private struct NativePaymentScanSheetView: View {
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.red)
         }
+    }
+}
+
+private struct NativePaymentScanSheetView: View {
+    let sheet: NativePaymentScanSheet
+    let controller: NativePaymentScanController
+    @State private var contentHeight: CGFloat = 320
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 16) {
+                Text(sheet.title)
+                    .font(.title2.weight(.semibold))
+                    .multilineTextAlignment(.center)
+
+                if let body = sheet.body {
+                    Text(body)
+                        .font(.body)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+
+                NativePaymentRecipientView(sheet: sheet)
+
+                switch sheet.kind {
+                case "confirmation": confirmationContent
+                case "saveTarget": saveTargetContent
+                default: EmptyView()
+                }
+
+                actionButtons
+            }
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 32)
+            .onGeometryChange(for: CGFloat.self) { proxy in
+                ceil(proxy.size.height)
+            } action: { height in
+                contentHeight = max(1, height)
+            }
+        }
+        // Measure the content, not the scroll viewport, so longer copy and Dynamic Type can
+        // grow the sheet. The scroll view remains usable when the content exceeds the screen.
+        .presentationDetents(
+            sheet.kind == "confirmation" || sheet.kind == "repeatPayment"
+                ? [.height(contentHeight)] : [.large]
+        )
+        .scrollBounceBehavior(.basedOnSize)
     }
 
     @ViewBuilder
@@ -686,13 +707,6 @@ private struct NativePaymentScanSheetView: View {
 
     private func primaryAction() {
         switch sheet.kind {
-        case "manualAmount":
-            guard sheet.canSubmit else { return }
-            if reviewingManualAmount {
-                controller.submitManualAmount()
-            } else if sheet.manualReview != nil {
-                reviewingManualAmount = true
-            }
         case "confirmation": controller.submitConfirmation()
         case "saveTarget": controller.saveTarget()
         default: break
@@ -701,7 +715,6 @@ private struct NativePaymentScanSheetView: View {
 
     private func secondaryAction() {
         switch sheet.kind {
-        case "manualAmount": controller.dismissManualAmount()
         case "confirmation": controller.dismissConfirmation()
         case "saveTarget": controller.dismissSaveTarget()
         default: break

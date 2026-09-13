@@ -57,7 +57,7 @@ switching back without edits restores the exact original input to avoid rounding
 drift. Exchange-rate refreshes preserve the selected unit and input. Without a
 rate, the equivalent is unavailable and a newly selected currency starts empty;
 switching back can still restore the prior input. Background rate failures do
-not dismiss the sheet, and SAT entry works without a rate.
+not close amount entry, and SAT entry works without a rate.
 
 Manual entry shows no minimum/maximum labels or preset buttons. Zero or empty
 input keeps Continue disabled without an error. A positive amount outside the
@@ -66,13 +66,14 @@ too low” or “Amount is too large” error. Validation uses the whole-satoshi
 amount, including conversion and upward rounding for fiat input. The error clears
 when the entry returns to the permitted range.
 
-Manual amount entry has two steps within the same sheet: enter an amount and tap
+Manual amount entry is a full-screen task on Android and iOS: enter an amount and tap
 Continue, then review the entered amount, currency, and available recipient
-details before tapping Pay. The sheet keeps its height across both steps, with
-Continue and Pay anchored at the bottom and scrollable content above. Edit amount
-returns to the keypad with the input preserved. Continue does not submit a payment;
-Pay invokes provider validation, amount conversion, and payment submission.
-No separate confirmation sheet opens,
+details before tapping Pay. Continue and Pay stay anchored at the bottom, with
+scrollable content above. Back from review returns to the keypad with the input
+and currency preserved. Cancel exits the task from either step; Android system
+Back also cancels from the entry step. Each platform supplies its native navigation
+controls. Continue does not submit a payment; Pay invokes provider validation,
+amount conversion, and payment submission. No separate confirmation sheet opens,
 regardless of Always or the Auto Pay threshold, including after an amountless
 deep link. Amounts supplied by deep links still require confirmation; scanned
 invoice amounts follow the Always or Auto Pay threshold setting.

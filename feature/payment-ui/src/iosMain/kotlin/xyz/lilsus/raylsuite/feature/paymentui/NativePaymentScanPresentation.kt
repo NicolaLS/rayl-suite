@@ -73,12 +73,7 @@ data class NativeManualCurrencySwitch(
     val equivalent: String?
 )
 
-data class NativeManualAmountReview(
-    val title: String,
-    val amount: String?,
-    val payTitle: String,
-    val editTitle: String
-)
+data class NativeManualAmountReview(val title: String, val amount: String?, val payTitle: String)
 
 /**
  * Converts provider-neutral payment presentation into values consumed by SwiftUI.
@@ -292,7 +287,7 @@ private suspend fun ManualAmountUiState.toNativeSheet(
         NativeStringResource(table = "PaymentUI", key = "continue_button")
     ),
     secondaryActionTitle = nativeString(
-        NativeStringResource(table = "PaymentUI", key = "dismiss_button")
+        NativeStringResource(table = "PaymentUI", key = "manual_amount_cancel_button")
     ),
     textFieldLabel = null,
     textFieldValue = null,
@@ -311,10 +306,7 @@ private suspend fun ManualAmountUiState.toNativeSheet(
             NativeStringResource(table = "PaymentUI", key = "confirm_payment_title")
         ),
         amount = amount?.let(formatter::format),
-        payTitle = nativeString(NativeStringResource(table = "PaymentUI", key = "pay_button")),
-        editTitle = nativeString(
-            NativeStringResource(table = "PaymentUI", key = "edit_amount_button")
-        )
+        payTitle = nativeString(NativeStringResource(table = "PaymentUI", key = "pay_button"))
     )
 )
 

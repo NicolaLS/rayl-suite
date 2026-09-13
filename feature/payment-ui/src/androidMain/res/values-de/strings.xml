@@ -1,6 +1,6 @@
 <resources>
     <string name="continue_button">Weiter</string>
-    <string name="edit_amount_button">Betrag bearbeiten</string>
+    <string name="manual_amount_cancel_button">Abbrechen</string>
     <string name="settings_title">Einstellungen</string>
     <string name="tap_continue">Zum Fortfahren tippen…</string>
     <string name="confirm_payment_title">Zahlung bestätigen</string>

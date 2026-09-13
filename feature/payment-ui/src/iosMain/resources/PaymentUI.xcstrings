@@ -24,25 +24,25 @@
         }
       }
     },
-    "edit_amount_button" : {
+    "manual_amount_cancel_button" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Betrag bearbeiten"
+            "value" : "Abbrechen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Edit amount"
+            "value" : "Cancel"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Editar importe"
+            "value" : "Cancelar"
           }
         }
       }

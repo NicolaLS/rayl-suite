@@ -17,6 +17,7 @@ kotlin {
             api(libs.kotlinx.coroutines.core)
         }
         androidMain.dependencies {
+            implementation(libs.androidx.core.ktx)
             implementation(libs.compose.ui)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material.icons.extended)

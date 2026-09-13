@@ -1,6 +1,6 @@
 <resources>
     <string name="continue_button">Continue</string>
-    <string name="edit_amount_button">Edit amount</string>
+    <string name="manual_amount_cancel_button">Cancel</string>
     <string name="settings_title">Settings</string>
     <string name="tap_continue">Tap to continue…</string>
     <string name="confirm_payment_title">Confirm Payment</string>
