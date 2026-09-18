@@ -31,6 +31,8 @@ prerelease; no migration or cross-app data transfer is implemented.
 
 Use JDK 21 and the root Gradle wrapper.
 
+For upload-key setup and Google Play releases, see [Distribution](distribution/README.md).
+
 ```shell
 ./gradlew :rayl:androidApp:assembleDebug
 ./gradlew :blip:androidApp:assembleDebug

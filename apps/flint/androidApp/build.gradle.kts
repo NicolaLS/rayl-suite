@@ -14,6 +14,19 @@ val productionBreezApiKey =
         .orElse(providers.environmentVariable("FLINT_BREEZ_API_KEY"))
         .orElse(localProperties.getProperty("FLINT_BREEZ_API_KEY") ?: "")
 
+val validateProductionConfiguration = tasks.register("validateProductionConfiguration") {
+    description = "Checks that the production Breez API key is configured."
+    notCompatibleWithConfigurationCache("Reads the production API key at execution time.")
+    doLast {
+        check(productionBreezApiKey.get().isNotBlank()) {
+            "FLINT_BREEZ_API_KEY is required for a Flint release."
+        }
+    }
+}
+tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+    dependsOn(validateProductionConfiguration)
+}
+
 fun String.asBuildConfigString(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {

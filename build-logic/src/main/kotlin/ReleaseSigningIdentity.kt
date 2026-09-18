@@ -3,12 +3,13 @@ import org.gradle.api.provider.Provider
 import org.gradle.api.provider.ProviderFactory
 
 /**
- * One keystore identity resolved from `<PREFIX>_*` environment variables.
+ * Google Play upload identity resolved from `RAYL_UPLOAD_*` environment variables.
  *
  * Each password may be given directly, or as a path to a file holding the password on its
  * first line. Key passwords fall back to the matching store password when unset.
  */
-internal class ReleaseSigningIdentity(providers: ProviderFactory, private val prefix: String) {
+internal class ReleaseSigningIdentity(providers: ProviderFactory) {
+    private val prefix = "RAYL_UPLOAD"
     val storeFile: Provider<String> = providers.environmentVariable("${prefix}_STORE_FILE")
 
     val keyAlias: Provider<String> = providers.environmentVariable("${prefix}_KEY_ALIAS")
@@ -28,12 +29,6 @@ internal class ReleaseSigningIdentity(providers: ProviderFactory, private val pr
     val keystore: File?
         get() = storeFile.orNull?.takeIf { it.isNotBlank() }?.let(::File)
 
-    val isConfigured: Boolean
-        get() = keystore?.isFile == true &&
-            !keyAlias.orNull.isNullOrBlank() &&
-            !resolveStorePassword().isNullOrBlank() &&
-            !resolveKeyPassword().isNullOrBlank()
-
     fun resolveStorePassword(): String? = readPassword(storePasswordFile, storePassword)
 
     fun resolveKeyPassword(): String? = readPassword(keyPasswordFile, keyPassword)
@@ -49,20 +44,6 @@ internal class ReleaseSigningIdentity(providers: ProviderFactory, private val pr
             add("${prefix}_KEY_PASSWORD or ${prefix}_KEY_PASSWORD_FILE")
         }
     }
-
-    /** Status lines that never contain secret material. */
-    fun statusLines(label: String): List<String> {
-        val located = if (keystore?.isFile == true) "found" else "missing"
-        return listOf(
-            "$label keystore: ${storeFile.orNull ?: "unset"} ($located)",
-            "$label key alias: ${keyAlias.orNull ?: "unset"}",
-            "$label store password: ${describe(resolveStorePassword())}",
-            "$label key password: ${describe(resolveKeyPassword())}"
-        )
-    }
-
-    private fun describe(password: String?): String =
-        if (password.isNullOrBlank()) "missing" else "configured"
 
     private fun readPassword(file: Provider<String>, value: Provider<String>): String? {
         val passwordFile = file.orNull?.takeIf { it.isNotBlank() }?.let(::File)
