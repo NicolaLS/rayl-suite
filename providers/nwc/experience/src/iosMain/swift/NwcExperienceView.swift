@@ -1,7 +1,7 @@
 import SwiftUI
 import Shared
 
-private func makeLasrShellAdapter(_ experience: NwcIosExperience) -> NativeShellAdapter {
+private func makeNwcShellAdapter(_ experience: NwcIosExperience) -> NativeShellAdapter {
     NativeShellAdapter(
     visibleTabIds: ["scan", "recent", "hub", "settings"],
     initialStage: {
@@ -43,7 +43,7 @@ private func makeLasrShellAdapter(_ experience: NwcIosExperience) -> NativeShell
             NativeSettingsView(
                 controller: experience.settingsController(),
                 leadingContent: AnyView(
-                    LasrWalletSettingsLink(
+                    NwcWalletSettingsLink(
                         controller: experience.walletSettingsController(),
                         onboardingController: experience.onboardingController()
                     )
@@ -53,7 +53,7 @@ private func makeLasrShellAdapter(_ experience: NwcIosExperience) -> NativeShell
     },
     nativeOnboardingView: {
         AnyView(
-            LasrNativeOnboardingView(controller: experience.onboardingController())
+            NwcNativeOnboardingView(controller: experience.onboardingController())
         )
     }
 )
@@ -81,7 +81,7 @@ struct NwcExperienceView: View {
 
     init(experience: NwcIosExperience) {
         self.experience = experience
-        self.adapter = makeLasrShellAdapter(experience)
+        self.adapter = makeNwcShellAdapter(experience)
         _removal = StateObject(wrappedValue: NwcRemovalModel(experience: experience))
     }
 
@@ -105,13 +105,13 @@ struct NwcExperienceView: View {
 }
 
 @MainActor
-private final class LasrNativeWalletSettingsModel: ObservableObject {
-    @Published private(set) var snapshot: LasrNativeWalletSettingsSnapshot?
+private final class NwcNativeWalletSettingsModel: ObservableObject {
+    @Published private(set) var snapshot: NwcNativeWalletSettingsSnapshot?
 
-    let controller: LasrNativeWalletSettingsController
+    let controller: NwcNativeWalletSettingsController
     private var cancel: (() -> Void)?
 
-    init(controller: LasrNativeWalletSettingsController) {
+    init(controller: NwcNativeWalletSettingsController) {
         self.controller = controller
         cancel = controller.observe { [weak self] snapshot in
             self?.snapshot = snapshot
@@ -123,15 +123,15 @@ private final class LasrNativeWalletSettingsModel: ObservableObject {
     }
 }
 
-private struct LasrWalletSettingsLink: View {
-    @StateObject private var model: LasrNativeWalletSettingsModel
-    let onboardingController: LasrNativeOnboardingController
+private struct NwcWalletSettingsLink: View {
+    @StateObject private var model: NwcNativeWalletSettingsModel
+    let onboardingController: NwcNativeOnboardingController
 
     init(
-        controller: LasrNativeWalletSettingsController,
-        onboardingController: LasrNativeOnboardingController
+        controller: NwcNativeWalletSettingsController,
+        onboardingController: NwcNativeOnboardingController
     ) {
-        _model = StateObject(wrappedValue: LasrNativeWalletSettingsModel(controller: controller))
+        _model = StateObject(wrappedValue: NwcNativeWalletSettingsModel(controller: controller))
         self.onboardingController = onboardingController
     }
 
@@ -142,14 +142,14 @@ private struct LasrWalletSettingsLink: View {
                     title: snapshot.settingsTitle,
                     subtitle: snapshot.settingsSubtitle
                 ) {
-                    LasrWalletManagementView(snapshot: snapshot, model: model)
+                    NwcWalletManagementView(snapshot: snapshot, model: model)
                 }
             } else {
                 ProgressView()
             }
         }
         .sheet(isPresented: walletFlowPresented) {
-            LasrNativeOnboardingView(controller: onboardingController)
+            NwcNativeOnboardingView(controller: onboardingController)
         }
     }
 
@@ -165,9 +165,9 @@ private struct LasrWalletSettingsLink: View {
     }
 }
 
-private struct LasrWalletManagementView: View {
-    let snapshot: LasrNativeWalletSettingsSnapshot
-    @ObservedObject var model: LasrNativeWalletSettingsModel
+private struct NwcWalletManagementView: View {
+    let snapshot: NwcNativeWalletSettingsSnapshot
+    @ObservedObject var model: NwcNativeWalletSettingsModel
 
     var body: some View {
         NativeWalletManagementView(
@@ -177,7 +177,7 @@ private struct LasrWalletManagementView: View {
             errorMessage: snapshot.removalErrorMessage,
             onAddWallet: model.controller.requestWalletConnection,
             walletDetails: {
-                LasrWalletDetailsView(snapshot: snapshot)
+                NwcWalletDetailsView(snapshot: snapshot)
             },
             showsWalletDetails: snapshot.walletId != nil,
             onRemoveWallet: model.controller.removeWallet
@@ -185,8 +185,8 @@ private struct LasrWalletManagementView: View {
     }
 }
 
-private struct LasrWalletDetailsView: View {
-    let snapshot: LasrNativeWalletSettingsSnapshot
+private struct NwcWalletDetailsView: View {
+    let snapshot: NwcNativeWalletSettingsSnapshot
 
     var body: some View {
         List {
@@ -220,7 +220,7 @@ private struct LasrWalletDetailsView: View {
     }
 }
 
-private extension LasrNativeWalletSettingsSnapshot {
+private extension NwcNativeWalletSettingsSnapshot {
     var managementText: NativeWalletManagementTextValue {
         NativeWalletManagementTextValue(
             screenTitle: screenTitle,

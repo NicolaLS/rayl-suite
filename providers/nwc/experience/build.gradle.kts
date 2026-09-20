@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.lasr.experience"
+        namespace = "xyz.lilsus.rayl.providers.nwc.experience"
     }
 
     sourceSets {

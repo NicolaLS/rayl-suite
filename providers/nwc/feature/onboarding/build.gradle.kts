@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.lasr.feature.onboarding"
+        namespace = "xyz.lilsus.rayl.providers.nwc.feature.onboarding"
     }
 
     sourceSets {

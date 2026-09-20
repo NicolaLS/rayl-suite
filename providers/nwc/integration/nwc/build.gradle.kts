@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.lasr.integration.nwc"
+        namespace = "xyz.lilsus.rayl.providers.nwc.integration.nwc"
     }
 
     sourceSets {

@@ -1,8 +1,8 @@
 package xyz.lilsus.rayl
 
 import xyz.lilsus.flint.SparkExperienceConfiguration
-import xyz.lilsus.lasr.NwcExperienceConfiguration
 import xyz.lilsus.rayl.providers.blink.BlinkExperienceConfiguration
+import xyz.lilsus.rayl.providers.nwc.NwcExperienceConfiguration
 import xyz.lilsus.raylsuite.feature.settings.SettingsLegalLinks
 
 internal const val RAYL_PREFERENCES = "rayl_preferences"

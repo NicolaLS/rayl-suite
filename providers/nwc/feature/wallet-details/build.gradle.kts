@@ -4,7 +4,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.lasr.feature.walletdetails"
+        namespace = "xyz.lilsus.rayl.providers.nwc.feature.walletdetails"
     }
 
     sourceSets {

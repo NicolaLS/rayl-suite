@@ -31,10 +31,10 @@
 		D30000000000000000000008 /* PaymentUI.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000008 /* PaymentUI.xcstrings */; };
 		D30000000000000000000009 /* Settings.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000009 /* Settings.xcstrings */; };
 		D3000000000000000000000A /* WalletManagement.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000A /* WalletManagement.xcstrings */; };
-		D3000000000000000000000B /* LasrOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000B /* LasrOnboarding.xcstrings */; };
-		D3000000000000000000000C /* LasrPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000C /* LasrPayment.xcstrings */; };
-		D3000000000000000000000D /* LasrWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000D /* LasrWalletConnection.xcstrings */; };
-		D3000000000000000000000E /* LasrWalletDetails.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000E /* LasrWalletDetails.xcstrings */; };
+		D3000000000000000000000B /* NwcOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000B /* NwcOnboarding.xcstrings */; };
+		D3000000000000000000000C /* NwcPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000C /* NwcPayment.xcstrings */; };
+		D3000000000000000000000D /* NwcWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000D /* NwcWalletConnection.xcstrings */; };
+		D3000000000000000000000E /* NwcWalletDetails.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000E /* NwcWalletDetails.xcstrings */; };
 		D3000000000000000000000F /* RaylApp.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000F /* RaylApp.xcstrings */; };
 		D3CF307EE6BABC7238C09DC0 /* BlinkUI.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0D78D1E3C8DCAC0CF7558919 /* BlinkUI.xcstrings */; };
 		D8D428B72EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D8D428B62EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy */; };
@@ -50,10 +50,10 @@
 		E30000000000000000000008 /* PaymentUI.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000008 /* PaymentUI.xcstrings */; };
 		E30000000000000000000009 /* Settings.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000009 /* Settings.xcstrings */; };
 		E3000000000000000000000A /* WalletManagement.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000A /* WalletManagement.xcstrings */; };
-		E3000000000000000000000B /* LasrOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000B /* LasrOnboarding.xcstrings */; };
-		E3000000000000000000000C /* LasrPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000C /* LasrPayment.xcstrings */; };
-		E3000000000000000000000D /* LasrWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000D /* LasrWalletConnection.xcstrings */; };
-		E3000000000000000000000E /* LasrWalletDetails.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000E /* LasrWalletDetails.xcstrings */; };
+		E3000000000000000000000B /* NwcOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000B /* NwcOnboarding.xcstrings */; };
+		E3000000000000000000000C /* NwcPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000C /* NwcPayment.xcstrings */; };
+		E3000000000000000000000D /* NwcWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000D /* NwcWalletConnection.xcstrings */; };
+		E3000000000000000000000E /* NwcWalletDetails.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000E /* NwcWalletDetails.xcstrings */; };
 		E3000000000000000000000F /* RaylApp.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000F /* RaylApp.xcstrings */; };
 		EE253643352FE7EBDE6C0C65 /* BlinkWalletSettings.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AC25F142F2335CECAEAB2D19 /* BlinkWalletSettings.xcstrings */; };
 		F66FC212555C239ADBBF0F03 /* blink_dashboard_api_keys.png in Resources */ = {isa = PBXBuildFile; fileRef = E44C5776A776765F3F772AE6 /* blink_dashboard_api_keys.png */; };
@@ -89,10 +89,10 @@
 		C30000000000000000000008 /* PaymentUI.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = PaymentUI.xcstrings; path = "../../feature/payment-ui/src/iosMain/resources/PaymentUI.xcstrings"; sourceTree = "<group>"; };
 		C30000000000000000000009 /* Settings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Settings.xcstrings; path = ../../feature/settings/src/iosMain/resources/Settings.xcstrings; sourceTree = "<group>"; };
 		C3000000000000000000000A /* WalletManagement.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = WalletManagement.xcstrings; path = "../../feature/wallet-management/src/iosMain/resources/WalletManagement.xcstrings"; sourceTree = "<group>"; };
-		C3000000000000000000000B /* LasrOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrOnboarding.xcstrings; path = ../../providers/nwc/feature/onboarding/src/iosMain/resources/LasrOnboarding.xcstrings; sourceTree = "<group>"; };
-		C3000000000000000000000C /* LasrPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrPayment.xcstrings; path = ../../providers/nwc/feature/payment/src/iosMain/resources/LasrPayment.xcstrings; sourceTree = "<group>"; };
-		C3000000000000000000000D /* LasrWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrWalletConnection.xcstrings; path = "../../providers/nwc/feature/wallet-connection/src/iosMain/resources/LasrWalletConnection.xcstrings"; sourceTree = "<group>"; };
-		C3000000000000000000000E /* LasrWalletDetails.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrWalletDetails.xcstrings; path = "../../providers/nwc/feature/wallet-details/src/iosMain/resources/LasrWalletDetails.xcstrings"; sourceTree = "<group>"; };
+		C3000000000000000000000B /* NwcOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = NwcOnboarding.xcstrings; path = ../../providers/nwc/feature/onboarding/src/iosMain/resources/NwcOnboarding.xcstrings; sourceTree = "<group>"; };
+		C3000000000000000000000C /* NwcPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = NwcPayment.xcstrings; path = ../../providers/nwc/feature/payment/src/iosMain/resources/NwcPayment.xcstrings; sourceTree = "<group>"; };
+		C3000000000000000000000D /* NwcWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = NwcWalletConnection.xcstrings; path = "../../providers/nwc/feature/wallet-connection/src/iosMain/resources/NwcWalletConnection.xcstrings"; sourceTree = "<group>"; };
+		C3000000000000000000000E /* NwcWalletDetails.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = NwcWalletDetails.xcstrings; path = "../../providers/nwc/feature/wallet-details/src/iosMain/resources/NwcWalletDetails.xcstrings"; sourceTree = "<group>"; };
 		C3000000000000000000000F /* RaylApp.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = RaylApp.xcstrings; path = ../shared/src/iosMain/resources/RaylApp.xcstrings; sourceTree = "<group>"; };
 		D8D428B62EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		E2E000000000000000000001 /* Rayl E2E.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rayl E2E.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -234,10 +234,10 @@
 				C30000000000000000000008 /* PaymentUI.xcstrings */,
 				C30000000000000000000009 /* Settings.xcstrings */,
 				C3000000000000000000000A /* WalletManagement.xcstrings */,
-				C3000000000000000000000B /* LasrOnboarding.xcstrings */,
-				C3000000000000000000000C /* LasrPayment.xcstrings */,
-				C3000000000000000000000D /* LasrWalletConnection.xcstrings */,
-				C3000000000000000000000E /* LasrWalletDetails.xcstrings */,
+				C3000000000000000000000B /* NwcOnboarding.xcstrings */,
+				C3000000000000000000000C /* NwcPayment.xcstrings */,
+				C3000000000000000000000D /* NwcWalletConnection.xcstrings */,
+				C3000000000000000000000E /* NwcWalletDetails.xcstrings */,
 				C3000000000000000000000F /* RaylApp.xcstrings */,
 				F22E00000000000000000001 /* App Shell Swift */,
 				F22E00000000000000000002 /* Settings Swift */,
@@ -423,10 +423,10 @@
 				D30000000000000000000008 /* PaymentUI.xcstrings in Resources */,
 				D30000000000000000000009 /* Settings.xcstrings in Resources */,
 				D3000000000000000000000A /* WalletManagement.xcstrings in Resources */,
-				D3000000000000000000000B /* LasrOnboarding.xcstrings in Resources */,
-				D3000000000000000000000C /* LasrPayment.xcstrings in Resources */,
-				D3000000000000000000000D /* LasrWalletConnection.xcstrings in Resources */,
-				D3000000000000000000000E /* LasrWalletDetails.xcstrings in Resources */,
+				D3000000000000000000000B /* NwcOnboarding.xcstrings in Resources */,
+				D3000000000000000000000C /* NwcPayment.xcstrings in Resources */,
+				D3000000000000000000000D /* NwcWalletConnection.xcstrings in Resources */,
+				D3000000000000000000000E /* NwcWalletDetails.xcstrings in Resources */,
 				D3000000000000000000000F /* RaylApp.xcstrings in Resources */,
 				D8D428B72EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy in Resources */,
 			);
@@ -459,10 +459,10 @@
 				E30000000000000000000008 /* PaymentUI.xcstrings in Resources */,
 				E30000000000000000000009 /* Settings.xcstrings in Resources */,
 				E3000000000000000000000A /* WalletManagement.xcstrings in Resources */,
-				E3000000000000000000000B /* LasrOnboarding.xcstrings in Resources */,
-				E3000000000000000000000C /* LasrPayment.xcstrings in Resources */,
-				E3000000000000000000000D /* LasrWalletConnection.xcstrings in Resources */,
-				E3000000000000000000000E /* LasrWalletDetails.xcstrings in Resources */,
+				E3000000000000000000000B /* NwcOnboarding.xcstrings in Resources */,
+				E3000000000000000000000C /* NwcPayment.xcstrings in Resources */,
+				E3000000000000000000000D /* NwcWalletConnection.xcstrings in Resources */,
+				E3000000000000000000000E /* NwcWalletDetails.xcstrings in Resources */,
 				E3000000000000000000000F /* RaylApp.xcstrings in Resources */,
 				E2E000000000000000000008 /* PrivacyInfo.xcprivacy in Resources */,
 			);

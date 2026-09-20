@@ -13,10 +13,10 @@ import xyz.lilsus.flint.FlintEnvironment
 import xyz.lilsus.flint.SparkDeepLinks
 import xyz.lilsus.flint.SparkIosExperience
 import xyz.lilsus.flint.createIOSAppHost
-import xyz.lilsus.lasr.LasrDeepLinks
-import xyz.lilsus.lasr.NwcIosExperience
 import xyz.lilsus.rayl.providers.blink.BlinkDeepLinks
 import xyz.lilsus.rayl.providers.blink.BlinkIosExperience
+import xyz.lilsus.rayl.providers.nwc.NwcDeepLinks
+import xyz.lilsus.rayl.providers.nwc.NwcIosExperience
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
@@ -74,9 +74,9 @@ object RaylIosApp {
                 if (uri.substringBefore(':').equals("nostr+walletconnect", true)) {
                     if (selected == null) {
                         choose("nwc")
-                        LasrDeepLinks.emit(uri)
+                        NwcDeepLinks.emit(uri)
                     } else if (selected == RaylWallet.Nwc && !hasConnection) {
-                        LasrDeepLinks.emit(uri)
+                        NwcDeepLinks.emit(uri)
                     } else {
                         messageKey.value = "connection_exists"
                     }
@@ -85,7 +85,7 @@ object RaylIosApp {
                 } else {
                     when (selected) {
                         RaylWallet.Blink -> BlinkDeepLinks.emit(uri)
-                        RaylWallet.Nwc -> LasrDeepLinks.emit(uri)
+                        RaylWallet.Nwc -> NwcDeepLinks.emit(uri)
                         RaylWallet.Spark -> SparkDeepLinks.emit(uri)
                         null -> Unit
                     }
@@ -343,7 +343,7 @@ object RaylIosApp {
         messageKey.value = null
         RaylDeepLinks.clear()
         BlinkDeepLinks.clear()
-        LasrDeepLinks.clear()
+        NwcDeepLinks.clear()
         SparkDeepLinks.clear()
         selection.clear()
     }

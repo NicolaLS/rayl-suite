@@ -31,10 +31,10 @@ import kotlinx.coroutines.flow.first
 import xyz.lilsus.flint.FlintEnvironment
 import xyz.lilsus.flint.SparkDeepLinks
 import xyz.lilsus.flint.SparkExperience
-import xyz.lilsus.lasr.LasrDeepLinks
-import xyz.lilsus.lasr.NwcExperience
 import xyz.lilsus.rayl.providers.blink.BlinkDeepLinks
 import xyz.lilsus.rayl.providers.blink.BlinkExperience
+import xyz.lilsus.rayl.providers.nwc.NwcDeepLinks
+import xyz.lilsus.rayl.providers.nwc.NwcExperience
 import xyz.lilsus.rayl.shared.R
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
@@ -62,7 +62,7 @@ fun App(
     val leave = {
         RaylDeepLinks.clear()
         BlinkDeepLinks.clear()
-        LasrDeepLinks.clear()
+        NwcDeepLinks.clear()
         SparkDeepLinks.clear()
         message = null
         connected = null
@@ -74,11 +74,11 @@ fun App(
             if (uri.substringBefore(':').equals("nostr+walletconnect", true)) {
                 if (selected == null) {
                     selection.choose(RaylWallet.Nwc)
-                    LasrDeepLinks.emit(uri)
+                    NwcDeepLinks.emit(uri)
                 } else if (selected == RaylWallet.Nwc &&
                     !snapshotFlow { connected }.filterNotNull().first()
                 ) {
-                    LasrDeepLinks.emit(uri)
+                    NwcDeepLinks.emit(uri)
                 } else {
                     message = R.string.connection_exists
                 }
@@ -89,7 +89,7 @@ fun App(
             } else {
                 when (selected) {
                     RaylWallet.Blink -> BlinkDeepLinks.emit(uri)
-                    RaylWallet.Nwc -> LasrDeepLinks.emit(uri)
+                    RaylWallet.Nwc -> NwcDeepLinks.emit(uri)
                     RaylWallet.Spark -> SparkDeepLinks.emit(uri)
                 }
             }
