@@ -20,7 +20,6 @@ plugins {
 }
 
 val ktlintCliVersion = libs.versions.ktlintCli
-val appProjectNames = setOf("rayl")
 val nativeLocalizationLocales = listOf("en", "de", "es")
 val androidOnlyLocalizationModules = setOf("feature/theme-settings")
 val appleOnlyLocalizationModules = emptySet<String>()
@@ -204,9 +203,7 @@ allprojects {
     }
 }
 
-fun String.appOwner(): String? = removePrefix(":")
-    .substringBefore(":")
-    .takeIf(appProjectNames::contains)
+fun String.isAppModule(): Boolean = startsWith(":app:")
 
 fun String.providerOwner(): String? =
     takeIf { it.startsWith(":providers:") }?.removePrefix(":providers:")?.substringBefore(":")
@@ -218,13 +215,13 @@ val verifyModuleDependencies = tasks.register("verifyModuleDependencies") {
     doLast {
         val violations =
             subprojects.flatMap { source ->
-                val sourceOwner = source.path.appOwner()
+                val sourceIsApp = source.path.isAppModule()
                 source.configurations.flatMap { configuration ->
                     configuration.dependencies
                         .withType(ProjectDependency::class.java)
                         .mapNotNull { dependency ->
                             val targetPath = dependency.path
-                            val targetOwner = targetPath.appOwner()
+                            val targetIsApp = targetPath.isAppModule()
                             val sourceProvider = source.path.providerOwner()
                             val targetProvider = targetPath.providerOwner()
                             when {
@@ -237,7 +234,7 @@ val verifyModuleDependencies = tasks.register("verifyModuleDependencies") {
                                     targetPath != ":core:hub-api" ->
                                     "${source.path} -> $targetPath (backend may share only the Hub wire contract)"
 
-                                targetProvider != null && sourceOwner == null &&
+                                targetProvider != null && !sourceIsApp &&
                                     sourceProvider == null ->
                                     "${source.path} -> $targetPath (neutral module depends on a provider)"
 
@@ -245,7 +242,7 @@ val verifyModuleDependencies = tasks.register("verifyModuleDependencies") {
                                     sourceProvider != targetProvider ->
                                     "${source.path} -> $targetPath (cross-provider dependency)"
 
-                                sourceOwner == null && targetOwner != null ->
+                                !sourceIsApp && targetIsApp ->
                                     "${source.path} -> $targetPath (root module depends on an app)"
 
                                 else -> null
@@ -319,7 +316,7 @@ val verifyNativeLocalizations = tasks.register("verifyNativeLocalizations") {
 
         val xcodeProjects =
             fileTree(rootDir) {
-                include("apps/*/iosApp/*.xcodeproj/project.pbxproj")
+                include("app/iosApp/*.xcodeproj/project.pbxproj")
                 exclude("**/build/**")
             }.files.associateWith { project ->
                 project.readText()
@@ -487,5 +484,5 @@ tasks.register("perfCheck") {
     description =
         "Runs Rayl startup and camera macrobenchmarks on a connected Android 10+ device. " +
         "Use a stable physical device for comparable numbers."
-    dependsOn(":rayl:benchmark:connectedBenchmarkAndroidTest")
+    dependsOn(":app:benchmark:connectedBenchmarkAndroidTest")
 }

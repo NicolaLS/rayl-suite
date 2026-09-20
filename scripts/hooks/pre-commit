@@ -34,30 +34,16 @@ while IFS= read -r file; do
         build-logic/*)
             CHECK_BUILD_LOGIC=true
             ;;
-        apps/*/feature/*/* | apps/*/integration/*/*)
-            path="${file#apps/}"
-            app="${path%%/*}"
-            path="${path#*/}"
-            group="${path%%/*}"
-            path="${path#*/}"
-            module="${path%%/*}"
-            task=":${app}:${group}:${module}:ktlintCheck"
-            ;;
-        apps/*/*)
-            path="${file#apps/}"
-            app="${path%%/*}"
-            path="${path#*/}"
-            module="${path%%/*}"
-            task=":${app}:${module}:ktlintCheck"
-            ;;
-        core/*/* | feature/*/* | integration/*/*)
-            group="${file%%/*}"
-            path="${file#*/}"
-            module="${path%%/*}"
-            task=":${group}:${module}:ktlintCheck"
-            ;;
         *)
-            task=":ktlintCheck"
+            module_dir="$(dirname "$file")"
+            while [ "$module_dir" != "." ] && [ ! -f "$GIT_ROOT/$module_dir/build.gradle.kts" ]; do
+                module_dir="$(dirname "$module_dir")"
+            done
+            if [ "$module_dir" = "." ]; then
+                task=":ktlintCheck"
+            else
+                task=":${module_dir//\//:}:ktlintCheck"
+            fi
             ;;
     esac
 

@@ -1,6 +1,6 @@
 # ARCH-providers: Wallet provider ownership
 
-Within [ARCH-rayl-suite](../../specs/ARCH-rayl-suite.md), each provider owns its
+Within [ARCH-rayl](../../specs/ARCH-rayl.md), each provider owns its
 wallet connection and payment execution. Shared `core/payment` utilities handle
 payment input; `feature/payment-ui` supplies presentation models, user intents,
 and platform UI. Provider payment features translate their own state into that

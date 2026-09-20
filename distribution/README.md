@@ -10,10 +10,10 @@ its production Spark integration.
 Build Rayl's Google Play bundle from the repository root:
 
 ```shell
-./gradlew :rayl:androidApp:bundleRelease
+./gradlew :app:androidApp:bundleRelease
 ```
 
-Upload `apps/rayl/androidApp/build/outputs/bundle/release/androidApp-release.aab`
+Upload `app/androidApp/build/outputs/bundle/release/androidApp-release.aab`
 manually in Google Play Console. Rayl's `androidApp/build.gradle.kts` owns its
 version.
 
@@ -29,7 +29,7 @@ Rayl. Maintain English, German, and Spanish copy together. Screenshots
 must depict the current native UI; do not reuse retired multi-wallet screens.
 
 Rayl's distribution identifier is `com.nicolasusca.rayl`. Its public legal URLs
-are configured in [RaylConfiguration](../apps/rayl/shared/src/commonMain/kotlin/xyz/lilsus/rayl/RaylConfiguration.kt).
+are configured in [RaylConfiguration](../app/shared/src/commonMain/kotlin/xyz/lilsus/rayl/RaylConfiguration.kt).
 
 [`encryption.md`](encryption.md) retains the historical Rayl and Blip iOS
 encryption assessment and its evidence. It excludes France from the assessed

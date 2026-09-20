@@ -1,12 +1,12 @@
-# ARCH-rayl-suite: Rayl application
+# ARCH-rayl: Rayl application
 
 The [Gradle project](../settings.gradle.kts) builds Rayl for Android and iOS.
-Rayl is the only distributed app. Product composition lives in `apps/rayl/`;
+Rayl is the only distributed app. Product composition lives in `app/`;
 independent Blink, Nostr Wallet Connect (NWC), and Spark implementations live in
 `providers/`.
 
 Rayl offers every integrated provider during setup, with no release availability
-gates. [RaylSelection](../apps/rayl/shared/src/commonMain/kotlin/xyz/lilsus/rayl/RaylSelection.kt)
+gates. [RaylSelection](../app/shared/src/commonMain/kotlin/xyz/lilsus/rayl/RaylSelection.kt)
 remembers one selected provider experience; it does not combine wallets into one
 payment engine.
 

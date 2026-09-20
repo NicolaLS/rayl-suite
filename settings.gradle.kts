@@ -1,4 +1,4 @@
-rootProject.name = "rayl-suite"
+rootProject.name = "rayl"
 
 pluginManagement {
     includeBuild("build-logic")
@@ -35,28 +35,7 @@ dependencyResolutionManagement {
     }
 }
 
-fun includeApp(name: String, modules: List<String>) {
-    val appPath = ":$name"
-    val allModules = listOf("shared", "androidApp") + modules
-
-    include(allModules.map { module -> "$appPath:$module" })
-
-    project(appPath).projectDir = file("apps/$name")
-
-    allModules
-        .flatMap { module ->
-            val segments = module.split(":")
-            segments.indices.map { index ->
-                segments.take(index + 1).joinToString(":")
-            }
-        }.distinct()
-        .forEach { module ->
-            project("$appPath:$module").projectDir =
-                file("apps/$name/${module.replace(':', '/')}")
-        }
-}
-
-includeApp("rayl", listOf("benchmark"))
+include(":app:shared", ":app:androidApp", ":app:benchmark")
 
 fun includeProvider(name: String, modules: List<String>) {
     modules.forEach { module ->

@@ -1,7 +1,7 @@
 # ARCH-payment-hub: Shared payment Hub
 
 The Hub is a provider-neutral feature in
-[ARCH-rayl-suite](../../../specs/ARCH-rayl-suite.md). Common Kotlin owns its saved
+[ARCH-rayl](../../../specs/ARCH-rayl.md). Common Kotlin owns its saved
 state and behavior, with Compose and SwiftUI presentations.
 
 ## Local state and payment handoff

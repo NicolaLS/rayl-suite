@@ -13,7 +13,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    targetProjectPath = ":rayl:androidApp"
+    targetProjectPath = ":app:androidApp"
     // The runner must stay alive while Macrobenchmark stops and restarts Rayl.
     experimentalProperties["android.experimental.self-instrumenting"] = true
 

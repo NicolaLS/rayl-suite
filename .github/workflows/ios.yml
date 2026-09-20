@@ -45,7 +45,7 @@ jobs:
       - name: Build Rayl for the iOS simulator
         run: |
           xcodebuild \
-            -project apps/rayl/iosApp/iosApp.xcodeproj \
+            -project app/iosApp/iosApp.xcodeproj \
             -scheme iosApp \
             -configuration Debug \
             -destination 'generic/platform=iOS Simulator' \

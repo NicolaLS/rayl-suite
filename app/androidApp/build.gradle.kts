@@ -92,7 +92,7 @@ android {
 }
 
 dependencies {
-    implementation(project(":rayl:shared"))
+    implementation(project(":app:shared"))
     implementation(project(":core:network"))
     implementation(project(":core:ui"))
     implementation(libs.androidx.camera.camera2)

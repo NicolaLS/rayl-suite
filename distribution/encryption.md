@@ -123,7 +123,7 @@ either of these two app projects at these baselines.
 Relevant entry points are [the version catalog](../gradle/libs.versions.toml),
 [shared payment dependencies](../core/payment/build.gradle.kts),
 [Blink integration](../providers/blink/integration/blink/build.gradle.kts),
-[Rayl framework exports](../apps/rayl/shared/build.gradle.kts). The assessed Blip
+[Rayl framework exports](../app/shared/build.gradle.kts). The assessed Blip
 framework exports remain in the historical source baseline listed above; that
 app's build target has been removed.
 
@@ -301,8 +301,8 @@ For a dependency-only inventory, run these **separate scoped tasks**; no app
 Release build is necessary to obtain the graph:
 
 ```sh
-./gradlew :rayl:shared:dependencies --configuration iosArm64CompileKlibraries --console=plain
-plutil -lint apps/rayl/iosApp/iosApp/Info.plist
+./gradlew :app:shared:dependencies --configuration iosArm64CompileKlibraries --console=plain
+plutil -lint app/iosApp/iosApp/Info.plist
 ```
 
 For an existing archive, use `shasum -a 256` on the app executable,

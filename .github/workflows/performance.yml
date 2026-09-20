@@ -64,7 +64,7 @@ jobs:
       - name: Summarize benchmark
         run: |
           scripts/summarize-android-benchmarks \
-            apps/rayl/benchmark/build/outputs/connected_android_test_additional_output \
+            app/benchmark/build/outputs/connected_android_test_additional_output \
             --baseline performance-baseline/latest.json \
             --save-current performance-baseline/latest.json \
             | tee performance-summary.md
@@ -78,7 +78,7 @@ jobs:
           if-no-files-found: warn
           retention-days: 30
           path: |
-            apps/rayl/benchmark/build/outputs/connected_android_test_additional_output/**
+            app/benchmark/build/outputs/connected_android_test_additional_output/**
             performance-summary.md
 
       - name: Save scheduled or release baseline

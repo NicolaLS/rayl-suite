@@ -70,37 +70,37 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0D78D1E3C8DCAC0CF7558919 /* BlipUI.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = BlipUI.xcstrings; path = ../../../providers/blink/ui/src/iosMain/resources/BlipUI.xcstrings; sourceTree = "<group>"; };
-		121F94BD3E44023657EF0431 /* BlipWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = BlipWalletConnection.xcstrings; path = "../../../providers/blink/feature/wallet-connection/src/iosMain/resources/BlipWalletConnection.xcstrings"; sourceTree = "<group>"; };
-		2452E53FCF66E3EE09362089 /* blink_dashboard_copy_key.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blink_dashboard_copy_key.png; path = ../../../providers/blink/feature/onboarding/src/iosMain/resources/assets/blink_dashboard_copy_key.png; sourceTree = "<group>"; };
+		0D78D1E3C8DCAC0CF7558919 /* BlipUI.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = BlipUI.xcstrings; path = ../../providers/blink/ui/src/iosMain/resources/BlipUI.xcstrings; sourceTree = "<group>"; };
+		121F94BD3E44023657EF0431 /* BlipWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = BlipWalletConnection.xcstrings; path = "../../providers/blink/feature/wallet-connection/src/iosMain/resources/BlipWalletConnection.xcstrings"; sourceTree = "<group>"; };
+		2452E53FCF66E3EE09362089 /* blink_dashboard_copy_key.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blink_dashboard_copy_key.png; path = ../../providers/blink/feature/onboarding/src/iosMain/resources/assets/blink_dashboard_copy_key.png; sourceTree = "<group>"; };
 		3E2F28A87C1CC1A08DDA1A6F /* Rayl.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Rayl.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		5390762BB6A88E0D26F7FE4C /* BlipPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = BlipPayment.xcstrings; path = ../../../providers/blink/feature/payment/src/iosMain/resources/BlipPayment.xcstrings; sourceTree = "<group>"; };
-		846C2B8D1C4AD650E9AB648D /* BlipOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = BlipOnboarding.xcstrings; path = ../../../providers/blink/feature/onboarding/src/iosMain/resources/BlipOnboarding.xcstrings; sourceTree = "<group>"; };
-		8BF1858AEA2F1117CB741F14 /* blink_dashboard_key_settings.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blink_dashboard_key_settings.png; path = ../../../providers/blink/feature/onboarding/src/iosMain/resources/assets/blink_dashboard_key_settings.png; sourceTree = "<group>"; };
-		AC25F142F2335CECAEAB2D19 /* BlipWalletSettings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = BlipWalletSettings.xcstrings; path = "../../../providers/blink/feature/wallet-settings/src/iosMain/resources/BlipWalletSettings.xcstrings"; sourceTree = "<group>"; };
-		BC2886D02E50CCBBE7296BF7 /* blink_dashboard_email.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blink_dashboard_email.png; path = ../../../providers/blink/feature/onboarding/src/iosMain/resources/assets/blink_dashboard_email.png; sourceTree = "<group>"; };
-		C30000000000000000000001 /* CoreUI.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = CoreUI.xcstrings; path = ../../../core/ui/src/iosMain/resources/CoreUI.xcstrings; sourceTree = "<group>"; };
-		C30000000000000000000002 /* AppShell.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = AppShell.xcstrings; path = "../../../feature/app-shell/src/iosMain/resources/AppShell.xcstrings"; sourceTree = "<group>"; };
-		C30000000000000000000003 /* CurrencySettings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = CurrencySettings.xcstrings; path = "../../../feature/currency-settings/src/iosMain/resources/CurrencySettings.xcstrings"; sourceTree = "<group>"; };
-		C30000000000000000000004 /* LanguageSettings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LanguageSettings.xcstrings; path = "../../../feature/language-settings/src/iosMain/resources/LanguageSettings.xcstrings"; sourceTree = "<group>"; };
-		C30000000000000000000005 /* Onboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Onboarding.xcstrings; path = ../../../feature/onboarding/src/iosMain/resources/Onboarding.xcstrings; sourceTree = "<group>"; };
-		C30000000000000000000006 /* PaymentHub.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = PaymentHub.xcstrings; path = "../../../feature/payment-hub/src/iosMain/resources/PaymentHub.xcstrings"; sourceTree = "<group>"; };
-		C30000000000000000000007 /* PaymentSettings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = PaymentSettings.xcstrings; path = "../../../feature/payment-settings/src/iosMain/resources/PaymentSettings.xcstrings"; sourceTree = "<group>"; };
-		C30000000000000000000008 /* PaymentUI.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = PaymentUI.xcstrings; path = "../../../feature/payment-ui/src/iosMain/resources/PaymentUI.xcstrings"; sourceTree = "<group>"; };
-		C30000000000000000000009 /* Settings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Settings.xcstrings; path = ../../../feature/settings/src/iosMain/resources/Settings.xcstrings; sourceTree = "<group>"; };
-		C3000000000000000000000A /* WalletManagement.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = WalletManagement.xcstrings; path = "../../../feature/wallet-management/src/iosMain/resources/WalletManagement.xcstrings"; sourceTree = "<group>"; };
-		C3000000000000000000000B /* LasrOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrOnboarding.xcstrings; path = ../../../providers/nwc/feature/onboarding/src/iosMain/resources/LasrOnboarding.xcstrings; sourceTree = "<group>"; };
-		C3000000000000000000000C /* LasrPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrPayment.xcstrings; path = ../../../providers/nwc/feature/payment/src/iosMain/resources/LasrPayment.xcstrings; sourceTree = "<group>"; };
-		C3000000000000000000000D /* LasrWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrWalletConnection.xcstrings; path = "../../../providers/nwc/feature/wallet-connection/src/iosMain/resources/LasrWalletConnection.xcstrings"; sourceTree = "<group>"; };
-		C3000000000000000000000E /* LasrWalletDetails.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrWalletDetails.xcstrings; path = "../../../providers/nwc/feature/wallet-details/src/iosMain/resources/LasrWalletDetails.xcstrings"; sourceTree = "<group>"; };
+		5390762BB6A88E0D26F7FE4C /* BlipPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = BlipPayment.xcstrings; path = ../../providers/blink/feature/payment/src/iosMain/resources/BlipPayment.xcstrings; sourceTree = "<group>"; };
+		846C2B8D1C4AD650E9AB648D /* BlipOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = BlipOnboarding.xcstrings; path = ../../providers/blink/feature/onboarding/src/iosMain/resources/BlipOnboarding.xcstrings; sourceTree = "<group>"; };
+		8BF1858AEA2F1117CB741F14 /* blink_dashboard_key_settings.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blink_dashboard_key_settings.png; path = ../../providers/blink/feature/onboarding/src/iosMain/resources/assets/blink_dashboard_key_settings.png; sourceTree = "<group>"; };
+		AC25F142F2335CECAEAB2D19 /* BlipWalletSettings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = BlipWalletSettings.xcstrings; path = "../../providers/blink/feature/wallet-settings/src/iosMain/resources/BlipWalletSettings.xcstrings"; sourceTree = "<group>"; };
+		BC2886D02E50CCBBE7296BF7 /* blink_dashboard_email.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blink_dashboard_email.png; path = ../../providers/blink/feature/onboarding/src/iosMain/resources/assets/blink_dashboard_email.png; sourceTree = "<group>"; };
+		C30000000000000000000001 /* CoreUI.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = CoreUI.xcstrings; path = ../../core/ui/src/iosMain/resources/CoreUI.xcstrings; sourceTree = "<group>"; };
+		C30000000000000000000002 /* AppShell.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = AppShell.xcstrings; path = "../../feature/app-shell/src/iosMain/resources/AppShell.xcstrings"; sourceTree = "<group>"; };
+		C30000000000000000000003 /* CurrencySettings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = CurrencySettings.xcstrings; path = "../../feature/currency-settings/src/iosMain/resources/CurrencySettings.xcstrings"; sourceTree = "<group>"; };
+		C30000000000000000000004 /* LanguageSettings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LanguageSettings.xcstrings; path = "../../feature/language-settings/src/iosMain/resources/LanguageSettings.xcstrings"; sourceTree = "<group>"; };
+		C30000000000000000000005 /* Onboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Onboarding.xcstrings; path = ../../feature/onboarding/src/iosMain/resources/Onboarding.xcstrings; sourceTree = "<group>"; };
+		C30000000000000000000006 /* PaymentHub.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = PaymentHub.xcstrings; path = "../../feature/payment-hub/src/iosMain/resources/PaymentHub.xcstrings"; sourceTree = "<group>"; };
+		C30000000000000000000007 /* PaymentSettings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = PaymentSettings.xcstrings; path = "../../feature/payment-settings/src/iosMain/resources/PaymentSettings.xcstrings"; sourceTree = "<group>"; };
+		C30000000000000000000008 /* PaymentUI.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = PaymentUI.xcstrings; path = "../../feature/payment-ui/src/iosMain/resources/PaymentUI.xcstrings"; sourceTree = "<group>"; };
+		C30000000000000000000009 /* Settings.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = Settings.xcstrings; path = ../../feature/settings/src/iosMain/resources/Settings.xcstrings; sourceTree = "<group>"; };
+		C3000000000000000000000A /* WalletManagement.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = WalletManagement.xcstrings; path = "../../feature/wallet-management/src/iosMain/resources/WalletManagement.xcstrings"; sourceTree = "<group>"; };
+		C3000000000000000000000B /* LasrOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrOnboarding.xcstrings; path = ../../providers/nwc/feature/onboarding/src/iosMain/resources/LasrOnboarding.xcstrings; sourceTree = "<group>"; };
+		C3000000000000000000000C /* LasrPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrPayment.xcstrings; path = ../../providers/nwc/feature/payment/src/iosMain/resources/LasrPayment.xcstrings; sourceTree = "<group>"; };
+		C3000000000000000000000D /* LasrWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrWalletConnection.xcstrings; path = "../../providers/nwc/feature/wallet-connection/src/iosMain/resources/LasrWalletConnection.xcstrings"; sourceTree = "<group>"; };
+		C3000000000000000000000E /* LasrWalletDetails.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = LasrWalletDetails.xcstrings; path = "../../providers/nwc/feature/wallet-details/src/iosMain/resources/LasrWalletDetails.xcstrings"; sourceTree = "<group>"; };
 		C3000000000000000000000F /* RaylApp.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = RaylApp.xcstrings; path = ../shared/src/iosMain/resources/RaylApp.xcstrings; sourceTree = "<group>"; };
 		D8D428B62EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		E2E000000000000000000001 /* Rayl E2E.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rayl E2E.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		E44C5776A776765F3F772AE6 /* blink_dashboard_api_keys.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blink_dashboard_api_keys.png; path = ../../../providers/blink/feature/onboarding/src/iosMain/resources/assets/blink_dashboard_api_keys.png; sourceTree = "<group>"; };
-		C40000000000000000000001 /* SparkExperience.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkExperience.xcstrings; path = "../../../providers/spark/experience/src/iosMain/resources/SparkExperience.xcstrings"; sourceTree = "<group>"; };
-		C40000000000000000000002 /* FlintOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintOnboarding.xcstrings; path = "../../../providers/spark/feature/onboarding/src/iosMain/resources/FlintOnboarding.xcstrings"; sourceTree = "<group>"; };
-		C40000000000000000000003 /* FlintPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintPayment.xcstrings; path = "../../../providers/spark/feature/payment/src/iosMain/resources/FlintPayment.xcstrings"; sourceTree = "<group>"; };
-		C40000000000000000000004 /* FlintWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintWalletConnection.xcstrings; path = "../../../providers/spark/feature/wallet-connection/src/iosMain/resources/FlintWalletConnection.xcstrings"; sourceTree = "<group>"; };
+		E44C5776A776765F3F772AE6 /* blink_dashboard_api_keys.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blink_dashboard_api_keys.png; path = ../../providers/blink/feature/onboarding/src/iosMain/resources/assets/blink_dashboard_api_keys.png; sourceTree = "<group>"; };
+		C40000000000000000000001 /* SparkExperience.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkExperience.xcstrings; path = "../../providers/spark/experience/src/iosMain/resources/SparkExperience.xcstrings"; sourceTree = "<group>"; };
+		C40000000000000000000002 /* FlintOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintOnboarding.xcstrings; path = "../../providers/spark/feature/onboarding/src/iosMain/resources/FlintOnboarding.xcstrings"; sourceTree = "<group>"; };
+		C40000000000000000000003 /* FlintPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintPayment.xcstrings; path = "../../providers/spark/feature/payment/src/iosMain/resources/FlintPayment.xcstrings"; sourceTree = "<group>"; };
+		C40000000000000000000004 /* FlintWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintWalletConnection.xcstrings; path = "../../providers/spark/feature/wallet-connection/src/iosMain/resources/FlintWalletConnection.xcstrings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -130,13 +130,13 @@
 		8AB20B57D09014CBC9805679 /* Blink Experience Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			name = "Blink Experience Swift";
-			path = ../../../providers/blink/experience/src/iosMain/swift;
+			path = ../../providers/blink/experience/src/iosMain/swift;
 			sourceTree = "<group>";
 		};
 		ABC5659E4400D0CC657B53E3 /* Nwc Experience Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			name = "Nwc Experience Swift";
-			path = ../../../providers/nwc/experience/src/iosMain/swift;
+			path = ../../providers/nwc/experience/src/iosMain/swift;
 			sourceTree = "<group>";
 		};
 		D90BDCC58B0B3EAC96B0EEB8 /* iosApp */ = {
@@ -156,43 +156,43 @@
 		F22E00000000000000000001 /* App Shell Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			name = "App Shell Swift";
-			path = "../../../feature/app-shell/src/iosMain/swift";
+			path = "../../feature/app-shell/src/iosMain/swift";
 			sourceTree = "<group>";
 		};
 		F22E00000000000000000002 /* Settings Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			name = "Settings Swift";
-			path = ../../../feature/settings/src/iosMain/swift;
+			path = ../../feature/settings/src/iosMain/swift;
 			sourceTree = "<group>";
 		};
 		F22E00000000000000000003 /* Payment UI Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			name = "Payment UI Swift";
-			path = "../../../feature/payment-ui/src/iosMain/swift";
+			path = "../../feature/payment-ui/src/iosMain/swift";
 			sourceTree = "<group>";
 		};
 		F22E00000000000000000004 /* Payment Hub Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			name = "Payment Hub Swift";
-			path = "../../../feature/payment-hub/src/iosMain/swift";
+			path = "../../feature/payment-hub/src/iosMain/swift";
 			sourceTree = "<group>";
 		};
 		F22E00000000000000000005 /* Onboarding Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			name = "Onboarding Swift";
-			path = ../../../feature/onboarding/src/iosMain/swift;
+			path = ../../feature/onboarding/src/iosMain/swift;
 			sourceTree = "<group>";
 		};
 		F22E00000000000000000006 /* Wallet Management Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			name = "Wallet Management Swift";
-			path = "../../../feature/wallet-management/src/iosMain/swift";
+			path = "../../feature/wallet-management/src/iosMain/swift";
 			sourceTree = "<group>";
 		};
 		F40000000000000000000001 /* Spark Experience Swift */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			name = "Spark Experience Swift";
-			path = ../../../providers/spark/experience/src/iosMain/swift;
+			path = ../../providers/spark/experience/src/iosMain/swift;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -488,7 +488,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/../../..\"\n\n# ---- Java setup ----\n\nif [ \"${CI_XCODE_CLOUD:-}\" = \"TRUE\" ]; then\n  echo \"Xcode Cloud: using Homebrew OpenJDK 21\"\n  # This path is printed by brew's caveats for openjdk@21 on Cloud\n  export JAVA_HOME=\"/usr/local/opt/openjdk@21\"\n  export PATH=\"$JAVA_HOME/bin:$PATH\"\nelse\n  echo \"Local build: using mise Java from mise.toml (if available)\"\n  export PATH=\"$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\n  if command -v mise >/dev/null 2>&1; then\n    eval \"$(mise env -s bash)\"\n  elif [ -n \"${JAVA_HOME:-}\" ]; then\n    export PATH=\"$JAVA_HOME/bin:$PATH\"\n  else\n    echo \"mise not found; falling back to existing PATH\"\n  fi\nfi\n\necho \"JAVA_HOME=${JAVA_HOME:-<not set>}\"\njava -version || echo \"⚠️ java -version failed; Gradle will likely fail too\"\n \n./gradlew :rayl:shared:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/../..\"\n\n# ---- Java setup ----\n\nif [ \"${CI_XCODE_CLOUD:-}\" = \"TRUE\" ]; then\n  echo \"Xcode Cloud: using Homebrew OpenJDK 21\"\n  # This path is printed by brew's caveats for openjdk@21 on Cloud\n  export JAVA_HOME=\"/usr/local/opt/openjdk@21\"\n  export PATH=\"$JAVA_HOME/bin:$PATH\"\nelse\n  echo \"Local build: using mise Java from mise.toml (if available)\"\n  export PATH=\"$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\n  if command -v mise >/dev/null 2>&1; then\n    eval \"$(mise env -s bash)\"\n  elif [ -n \"${JAVA_HOME:-}\" ]; then\n    export PATH=\"$JAVA_HOME/bin:$PATH\"\n  else\n    echo \"mise not found; falling back to existing PATH\"\n  fi\nfi\n\necho \"JAVA_HOME=${JAVA_HOME:-<not set>}\"\njava -version || echo \"⚠️ java -version failed; Gradle will likely fail too\"\n \n./gradlew :app:shared:embedAndSignAppleFrameworkForXcode\n";
 		};
 		E2E000000000000000000007 /* Compile Kotlin Framework */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -507,7 +507,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/../../..\"\n\n# ---- Java setup ----\n\nif [ \"${CI_XCODE_CLOUD:-}\" = \"TRUE\" ]; then\n  echo \"Xcode Cloud: using Homebrew OpenJDK 21\"\n  # This path is printed by brew's caveats for openjdk@21 on Cloud\n  export JAVA_HOME=\"/usr/local/opt/openjdk@21\"\n  export PATH=\"$JAVA_HOME/bin:$PATH\"\nelse\n  echo \"Local build: using mise Java from mise.toml (if available)\"\n  export PATH=\"$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\n  if command -v mise >/dev/null 2>&1; then\n    eval \"$(mise env -s bash)\"\n  elif [ -n \"${JAVA_HOME:-}\" ]; then\n    export PATH=\"$JAVA_HOME/bin:$PATH\"\n  else\n    echo \"mise not found; falling back to existing PATH\"\n  fi\nfi\n\necho \"JAVA_HOME=${JAVA_HOME:-<not set>}\"\njava -version || echo \"⚠️ java -version failed; Gradle will likely fail too\"\n \n./gradlew :rayl:shared:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "if [ \"YES\" = \"$OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED\" ]; then\n  echo \"Skipping Gradle build task invocation due to OVERRIDE_KOTLIN_BUILD_IDE_SUPPORTED environment variable set to \\\"YES\\\"\"\n  exit 0\nfi\ncd \"$SRCROOT/../..\"\n\n# ---- Java setup ----\n\nif [ \"${CI_XCODE_CLOUD:-}\" = \"TRUE\" ]; then\n  echo \"Xcode Cloud: using Homebrew OpenJDK 21\"\n  # This path is printed by brew's caveats for openjdk@21 on Cloud\n  export JAVA_HOME=\"/usr/local/opt/openjdk@21\"\n  export PATH=\"$JAVA_HOME/bin:$PATH\"\nelse\n  echo \"Local build: using mise Java from mise.toml (if available)\"\n  export PATH=\"$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH\"\n  if command -v mise >/dev/null 2>&1; then\n    eval \"$(mise env -s bash)\"\n  elif [ -n \"${JAVA_HOME:-}\" ]; then\n    export PATH=\"$JAVA_HOME/bin:$PATH\"\n  else\n    echo \"mise not found; falling back to existing PATH\"\n  fi\nfi\n\necho \"JAVA_HOME=${JAVA_HOME:-<not set>}\"\njava -version || echo \"⚠️ java -version failed; Gradle will likely fail too\"\n \n./gradlew :app:shared:embedAndSignAppleFrameworkForXcode\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
