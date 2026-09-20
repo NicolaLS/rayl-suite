@@ -11,9 +11,6 @@ data class NativeBlinkOnboardingPage(
 )
 
 data class NativeBlinkOnboardingText(
-    val welcomeTitle: String,
-    val welcomeSubtitle: String,
-    val welcomeDescription: String,
     val features: List<NativeBlinkOnboardingPage>,
     val autoPayBody: String,
     val agreementBody: String,
@@ -28,22 +25,6 @@ data class NativeBlinkOnboardingText(
 
 suspend fun nativeBlinkOnboardingText(appName: String): NativeBlinkOnboardingText =
     NativeBlinkOnboardingText(
-        welcomeTitle = nativeString(
-            NativeStringResource(table = "BlinkOnboarding", key = "blink_onboarding_welcome_title"),
-            appName
-        ),
-        welcomeSubtitle = nativeString(
-            NativeStringResource(
-                table = "BlinkOnboarding",
-                key = "blink_onboarding_welcome_subtitle_line1"
-            )
-        ),
-        welcomeDescription = nativeString(
-            NativeStringResource(
-                table = "BlinkOnboarding",
-                key = "blink_onboarding_welcome_subtitle_line2"
-            )
-        ),
         features =
             listOf(
                 NativeBlinkOnboardingPage(

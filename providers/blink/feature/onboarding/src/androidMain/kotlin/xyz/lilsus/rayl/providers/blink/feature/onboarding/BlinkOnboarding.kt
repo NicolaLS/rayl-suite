@@ -24,7 +24,6 @@ import xyz.lilsus.raylsuite.feature.onboarding.AutoPaySettingsScreen
 import xyz.lilsus.raylsuite.feature.onboarding.FeaturesScreen
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingFeaturePage
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingViewModel
-import xyz.lilsus.raylsuite.feature.onboarding.WelcomeScreen
 
 @Composable
 fun BlinkOnboarding(
@@ -33,8 +32,7 @@ fun BlinkOnboarding(
     onboardingViewModel: OnboardingViewModel,
     privacyPolicyUrl: String?,
     termsUrl: String?,
-    onStepChanged: (BlinkOnboardingStep) -> Unit,
-    onBackToWelcome: (() -> Unit)?
+    onStepChanged: (BlinkOnboardingStep) -> Unit
 ) {
     val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
     val back: (() -> Unit)? = when (step) {
@@ -45,21 +43,10 @@ fun BlinkOnboarding(
     BackHandler(enabled = back != null) { back?.invoke() }
 
     when (step) {
-        BlinkOnboardingStep.Welcome -> WelcomeScreen(
-            title = stringResource(
-                R.string.blink_onboarding_welcome_title,
-                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
-            ),
-            subtitle = stringResource(R.string.blink_onboarding_welcome_subtitle_line1),
-            description = stringResource(R.string.blink_onboarding_welcome_subtitle_line2),
-            onGetStarted = { onStepChanged(BlinkOnboardingStep.Connect) }
-        )
-
         BlinkOnboardingStep.Connect -> AddWalletDestination(
             blinkWallet = blinkWallet,
             privacyPolicyUrl = privacyPolicyUrl,
-            termsUrl = termsUrl,
-            onBack = onBackToWelcome
+            termsUrl = termsUrl
         )
 
         BlinkOnboardingStep.Features -> FeaturesScreen(
@@ -114,8 +101,7 @@ fun BlinkOnboarding(
 private fun AddWalletDestination(
     blinkWallet: BlinkWallet,
     privacyPolicyUrl: String?,
-    termsUrl: String?,
-    onBack: (() -> Unit)?
+    termsUrl: String?
 ) {
     val viewModel = remember(blinkWallet) { AddBlinkWalletViewModel(blinkWallet) }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -135,16 +121,12 @@ private fun AddWalletDestination(
         viewModel.events.collectLatest { event ->
             when (event) {
                 AddBlinkWalletEvent.Success -> clipboard.clearAfterSaving()
-
-                AddBlinkWalletEvent.Cancelled -> {
-                    clipboard.discard()
-                    onBack?.invoke()
-                }
+                AddBlinkWalletEvent.Cancelled -> clipboard.discard()
             }
         }
     }
-    BackHandler(enabled = showInstructions || onBack != null) {
-        if (showInstructions) showInstructions = false else viewModel.cancel()
+    BackHandler(enabled = showInstructions) {
+        showInstructions = false
     }
 
     if (showInstructions) {
@@ -157,7 +139,7 @@ private fun AddWalletDestination(
             state = state,
             privacyPolicyUrl = privacyPolicyUrl,
             termsUrl = termsUrl,
-            onBack = onBack?.let { viewModel::cancel },
+            onBack = null,
             onShowInstructions = {
                 viewModel.reset()
                 clipboard.discard()

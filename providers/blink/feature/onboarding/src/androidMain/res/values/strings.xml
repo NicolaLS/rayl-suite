@@ -1,7 +1,4 @@
 <resources>
-    <string name="blink_onboarding_welcome_title">Welcome to %1$s</string>
-    <string name="blink_onboarding_welcome_subtitle_line1">by Bitcoin Coast</string>
-    <string name="blink_onboarding_welcome_subtitle_line2">The quickest way to pay with the Blink wallet you already use.</string>
     <string name="blink_onboarding_features_page1_title">Quiet scanner, quick results</string>
     <string name="blink_onboarding_features_page1_subtitle">It’s working — even if you can’t see the camera.</string>
     <string name="blink_onboarding_features_page1_body">%1$s scans in the background so checkout stays smooth. Aim at the code, wait a beat, and you’re good.</string>

@@ -26,13 +26,9 @@ import xyz.lilsus.raylsuite.feature.onboarding.OnboardingFeaturePage
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingScaffold
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingViewModel
 import xyz.lilsus.raylsuite.feature.onboarding.WalletInstructionsScreen
-import xyz.lilsus.raylsuite.feature.onboarding.WelcomeScreen
 
 @Serializable
 sealed interface SparkOnboardingDestination {
-    @Serializable
-    data object Welcome : SparkOnboardingDestination
-
     @Serializable
     data object Features : SparkOnboardingDestination
 
@@ -59,20 +55,8 @@ fun NavGraphBuilder.sparkOnboarding(
     navController: NavController,
     onboardingViewModel: OnboardingViewModel,
     walletViewModel: WalletViewModel,
-    welcomeCompleted: Boolean = false,
     onWalletConnected: () -> Unit
 ) {
-    composable<SparkOnboardingDestination.Welcome> {
-        WelcomeScreen(
-            title = stringResource(
-                R.string.spark_onboarding_welcome_title,
-                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
-            ),
-            subtitle = stringResource(R.string.spark_onboarding_welcome_subtitle_line1),
-            description = stringResource(R.string.spark_onboarding_welcome_subtitle_line2),
-            onGetStarted = { navController.navigate(SparkOnboardingDestination.Features) }
-        )
-    }
     composable<SparkOnboardingDestination.Features> {
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
         val cameraPermission = rememberCameraPermissionState()
@@ -84,7 +68,7 @@ fun NavGraphBuilder.sparkOnboarding(
             onPageChanged = onboardingViewModel::setFeaturesPage,
             onContinue = { navController.navigate(SparkOnboardingDestination.AutoPay) },
             onRequestCameraPermission = cameraPermission::request,
-            onBack = if (welcomeCompleted) null else ({ navController.navigateUp() })
+            onBack = null
         )
     }
     composable<SparkOnboardingDestination.AutoPay> {
@@ -183,12 +167,7 @@ fun NavGraphBuilder.sparkOnboarding(
                 WalletAccessState.Connected -> onWalletConnected()
 
                 WalletAccessState.NoWallet -> {
-                    val destination = if (welcomeCompleted) {
-                        SparkOnboardingDestination.Features
-                    } else {
-                        SparkOnboardingDestination.Welcome
-                    }
-                    navController.navigate(destination) {
+                    navController.navigate(SparkOnboardingDestination.Features) {
                         popUpTo(navController.graph.id) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -260,7 +239,6 @@ private fun onboardingFeaturePages(): List<OnboardingFeaturePage> = listOf(
 )
 
 private enum class OnboardingStep(val index: Int) {
-    Welcome(0),
     Features(1),
     AutoPay(2),
     Agreement(3),

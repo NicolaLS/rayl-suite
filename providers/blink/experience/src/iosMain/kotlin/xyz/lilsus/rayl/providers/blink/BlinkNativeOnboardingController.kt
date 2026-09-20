@@ -42,10 +42,6 @@ data class BlinkNativeOnboardingSnapshot(
     val stepIndex: Int,
     val stepCount: Int,
     val backTitle: String,
-    val welcomeTitle: String,
-    val welcomeSubtitle: String,
-    val welcomeDescription: String,
-    val getStartedTitle: String,
     val featurePages: List<BlinkNativeOnboardingPage>,
     val featurePage: Int,
     val featuresNextTitle: String,
@@ -103,7 +99,6 @@ class BlinkNativeOnboardingController internal constructor(
     private val blinkWallet: BlinkWallet,
     languageChanges: Flow<*>,
     private val appName: String,
-    private val welcomeCompleted: Boolean,
     private val legalLinks: SettingsLegalLinks,
     private val progress: BlinkOnboardingState,
     private val canConnectWallet: () -> Boolean
@@ -139,7 +134,6 @@ class BlinkNativeOnboardingController internal constructor(
                     AddBlinkWalletEvent.Cancelled -> {
                         clipboard.discard()
                         clearCredentialSnapshot()
-                        progress.moveTo(BlinkOnboardingStep.Welcome)
                     }
                 }
                 publishSnapshot()
@@ -158,10 +152,6 @@ class BlinkNativeOnboardingController internal constructor(
             observers -= onChange
             job.cancel()
         }
-    }
-
-    fun continueWelcome() {
-        progress.moveTo(BlinkOnboardingStep.Connect)
     }
 
     fun setFeaturePage(page: Int) {
@@ -237,7 +227,6 @@ class BlinkNativeOnboardingController internal constructor(
             STEP_AUTO_PAY -> progress.moveTo(BlinkOnboardingStep.Features)
             STEP_AGREEMENT -> progress.moveTo(BlinkOnboardingStep.AutoPay)
             STEP_INSTRUCTIONS -> showWalletConnection()
-            STEP_WALLET -> if (canReturnToWelcome()) addWallet.cancel()
         }
     }
 
@@ -264,16 +253,12 @@ class BlinkNativeOnboardingController internal constructor(
     private fun currentStep(): String = when (
         progress.step.value.destination(blinkWallet.connection.value != null)
     ) {
-        BlinkOnboardingStep.Welcome -> STEP_WELCOME
         BlinkOnboardingStep.Connect -> if (showingInstructions) STEP_INSTRUCTIONS else STEP_WALLET
         BlinkOnboardingStep.Features -> STEP_FEATURES
         BlinkOnboardingStep.AutoPay -> STEP_AUTO_PAY
         BlinkOnboardingStep.Agreement -> STEP_AGREEMENT
         BlinkOnboardingStep.Complete -> "complete"
     }
-
-    private fun canReturnToWelcome(): Boolean =
-        !welcomeCompleted && progress.step.value == BlinkOnboardingStep.Connect
 
     private fun refresh() {
         scope.launch { publishSnapshot() }
@@ -309,15 +294,10 @@ class BlinkNativeOnboardingController internal constructor(
             BlinkNativeOnboardingSnapshot(
                 step = currentStep,
                 canGoBack = currentStep == STEP_AUTO_PAY || currentStep == STEP_AGREEMENT ||
-                    currentStep == STEP_INSTRUCTIONS ||
-                    (currentStep == STEP_WALLET && canReturnToWelcome()),
+                    currentStep == STEP_INSTRUCTIONS,
                 stepIndex = stepIndex(currentStep),
                 stepCount = ONBOARDING_STEP_COUNT,
                 backTitle = common.back,
-                welcomeTitle = blink.welcomeTitle,
-                welcomeSubtitle = blink.welcomeSubtitle,
-                welcomeDescription = blink.welcomeDescription,
-                getStartedTitle = common.getStarted,
                 featurePages =
                     blink.features.map { page ->
                         BlinkNativeOnboardingPage(
@@ -394,7 +374,6 @@ class BlinkNativeOnboardingController internal constructor(
     }
 
     private companion object {
-        const val STEP_WELCOME = "welcome"
         const val STEP_FEATURES = "features"
         const val STEP_AUTO_PAY = "autoPay"
         const val STEP_AGREEMENT = "agreement"

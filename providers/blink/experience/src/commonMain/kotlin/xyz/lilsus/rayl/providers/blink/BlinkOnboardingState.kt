@@ -6,16 +6,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import xyz.lilsus.rayl.providers.blink.feature.onboarding.BlinkOnboardingStep
 
 /** App-scoped progress survives interruption and removal of the provider connection. */
-internal class BlinkOnboardingState(private val settings: Settings, welcomeCompleted: Boolean) {
+internal class BlinkOnboardingState(private val settings: Settings) {
     private val mutableStep = MutableStateFlow(
         BlinkOnboardingStep.valueOf(
             settings.getString(
                 KEY_STEP,
-                if (welcomeCompleted) {
-                    BlinkOnboardingStep.Connect.name
-                } else {
-                    BlinkOnboardingStep.Welcome.name
-                }
+                BlinkOnboardingStep.Connect.name
             )
         )
     )

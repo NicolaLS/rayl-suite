@@ -38,9 +38,9 @@ import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalFailure
 fun BlinkExperience(
     configuration: BlinkExperienceConfiguration,
     performanceDiagnostics: PerformanceDiagnostics? = null,
-    onRemoved: () -> Unit = {},
-    onChooseWallet: (() -> Unit)? = null,
-    onConnectionChanged: (Boolean) -> Unit = {}
+    onRemoved: () -> Unit,
+    onChooseWallet: () -> Unit,
+    onConnectionChanged: (Boolean) -> Unit
 ) {
     val appSettings = rememberAppSettings(configuration.preferencesName)
     val secureSettings = rememberSecureSettings(configuration.credentialsName)
@@ -86,7 +86,7 @@ fun BlinkExperience(
     ) {
         RaylSuiteTheme(themePreference = themePreference) {
             Column(
-                modifier = if (connected == null && onChooseWallet != null) {
+                modifier = if (connected == null) {
                     Modifier.windowInsetsPadding(
                         WindowInsets.safeDrawing.only(
                             WindowInsetsSides.Top + WindowInsetsSides.Horizontal
@@ -96,7 +96,7 @@ fun BlinkExperience(
                     Modifier
                 }
             ) {
-                if (connected == null && onChooseWallet != null) {
+                if (connected == null) {
                     TextButton(onClick = {
                         if (runtime.blinkWallet.connection.value == null) {
                             runtime.clear()
@@ -111,14 +111,7 @@ fun BlinkExperience(
                         onboardingViewModel = runtime.onboardingViewModel,
                         privacyPolicyUrl = configuration.legalLinks.privacyPolicyUrl,
                         termsUrl = configuration.legalLinks.termsUrl,
-                        onStepChanged = runtime.onboardingState::moveTo,
-                        onBackToWelcome = if (!configuration.welcomeCompleted &&
-                            onboardingStep == BlinkOnboardingStep.Connect
-                        ) {
-                            { runtime.onboardingState.moveTo(BlinkOnboardingStep.Welcome) }
-                        } else {
-                            null
-                        }
+                        onStepChanged = runtime.onboardingState::moveTo
                     )
                 } else {
                     NavHost(

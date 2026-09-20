@@ -66,14 +66,6 @@ struct SparkNativeOnboardingView: View {
     @ViewBuilder
     private func screen(_ snapshot: SparkNativeOnboardingSnapshot) -> some View {
         switch snapshot.step {
-        case "welcome":
-            NativeOnboardingWelcomeView(
-                title: snapshot.welcomeTitle,
-                subtitle: snapshot.welcomeSubtitle,
-                description: snapshot.welcomeDescription,
-                actionTitle: snapshot.getStartedTitle,
-                action: model.controller.continueWelcome
-            )
         case "features":
             NativeOnboardingFeaturesView(
                 pages: featurePages(snapshot),

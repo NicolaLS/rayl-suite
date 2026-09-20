@@ -36,7 +36,7 @@ struct NwcNativeOnboardingView: View {
                 if let snapshot = model.snapshot {
                     screen(snapshot)
                         .toolbar {
-                            if snapshot.settingsFlow || (!snapshot.connectionOnly && snapshot.step != "welcome") {
+                            if snapshot.settingsFlow || (!snapshot.connectionOnly && snapshot.step != "features") {
                                 ToolbarItem(placement: .topBarLeading) {
                                     Button(
                                         action: snapshot.settingsFlow
@@ -69,14 +69,6 @@ struct NwcNativeOnboardingView: View {
     @ViewBuilder
     private func screen(_ snapshot: NwcNativeOnboardingSnapshot) -> some View {
         switch snapshot.step {
-        case "welcome":
-            NativeOnboardingWelcomeView(
-                title: snapshot.welcomeTitle,
-                subtitle: snapshot.welcomeSubtitle,
-                description: snapshot.welcomeDescription,
-                actionTitle: snapshot.getStartedTitle,
-                action: model.controller.continueWelcome
-            )
         case "features":
             NativeOnboardingFeaturesView(
                 pages: featurePages(snapshot),

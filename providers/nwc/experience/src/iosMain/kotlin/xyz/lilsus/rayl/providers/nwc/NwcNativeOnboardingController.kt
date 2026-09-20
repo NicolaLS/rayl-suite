@@ -44,10 +44,6 @@ data class NwcNativeOnboardingSnapshot(
     val stepIndex: Int,
     val stepCount: Int,
     val backTitle: String,
-    val welcomeTitle: String,
-    val welcomeSubtitle: String,
-    val welcomeDescription: String,
-    val getStartedTitle: String,
     val featurePages: List<NwcNativeOnboardingPage>,
     val featurePage: Int,
     val featuresNextTitle: String,
@@ -123,11 +119,7 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
     private val snapshot = MutableStateFlow<NwcNativeOnboardingSnapshot?>(null)
     private val observers = mutableSetOf<(NwcNativeOnboardingSnapshot) -> Unit>()
     private val connectionOnly = runtime.onboardingState.completed.value
-    private var currentStep = when {
-        connectionOnly -> STEP_WALLET
-        runtime.configuration.welcomeCompleted -> STEP_FEATURES
-        else -> STEP_WELCOME
-    }
+    private var currentStep = if (connectionOnly) STEP_WALLET else STEP_FEATURES
     private var confirmationPresented = false
     private var scannerActive = false
     private var scannerStarted = false
@@ -225,8 +217,6 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
             job.cancel()
         }
     }
-
-    fun continueWelcome() = moveTo(STEP_FEATURES)
 
     fun setFeaturePage(page: Int) {
         runtime.onboardingViewModel.setFeaturesPage(page)
@@ -347,14 +337,13 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
         runtime.connectionDraft.clear()
         runtime.walletFlowHandled()
         stopScanner()
-        currentStep = if (connectionOnly) STEP_WALLET else STEP_WELCOME
+        currentStep = if (connectionOnly) STEP_WALLET else STEP_FEATURES
         scope.launch { publishSnapshot() }
     }
 
     fun back() {
         if (connectionOnly) return
         when (currentStep) {
-            STEP_FEATURES -> moveTo(STEP_WELCOME)
             STEP_AUTO_PAY -> moveTo(STEP_FEATURES)
             STEP_AGREEMENT -> moveTo(STEP_AUTO_PAY)
             STEP_INSTRUCTIONS -> moveTo(STEP_AGREEMENT)
@@ -477,10 +466,6 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
                 stepIndex = stepIndex(currentStep),
                 stepCount = ONBOARDING_STEP_COUNT,
                 backTitle = common.back,
-                welcomeTitle = nwc.welcomeTitle,
-                welcomeSubtitle = nwc.welcomeSubtitle,
-                welcomeDescription = nwc.welcomeDescription,
-                getStartedTitle = common.getStarted,
                 featurePages = nwc.featurePages.map(NativeNwcOnboardingPage::toSnapshot),
                 featurePage = state.featuresPage,
                 featuresNextTitle = common.featuresContinue,
@@ -561,7 +546,6 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
     }
 
     private fun stepIndex(step: String): Int = when (step) {
-        STEP_WELCOME -> 0
         STEP_FEATURES -> 1
         STEP_AUTO_PAY -> 2
         STEP_AGREEMENT -> 3
@@ -569,7 +553,6 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
     }
 
     private companion object {
-        const val STEP_WELCOME = "welcome"
         const val STEP_FEATURES = "features"
         const val STEP_AUTO_PAY = "autoPay"
         const val STEP_AGREEMENT = "agreement"

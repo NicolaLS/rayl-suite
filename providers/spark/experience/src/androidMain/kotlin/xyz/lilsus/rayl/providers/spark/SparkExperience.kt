@@ -52,9 +52,9 @@ fun SparkExperience(
     environment: SparkEnvironment,
     breezApiKey: String? = null,
     performanceDiagnostics: PerformanceDiagnostics? = null,
-    onRemoved: (() -> Unit)? = null,
-    onChooseWallet: (() -> Unit)? = null,
-    onConnectionChanged: (Boolean) -> Unit = {}
+    onRemoved: () -> Unit,
+    onChooseWallet: () -> Unit,
+    onConnectionChanged: (Boolean) -> Unit
 ) {
     val appSettings = rememberAppSettings(configuration.preferencesName)
     val haptics = rememberHapticFeedbackManager()
@@ -87,7 +87,7 @@ fun SparkExperience(
     val closeFailed by runtime.closeFailed.collectAsStateWithLifecycle()
     LaunchedEffect(runtime) {
         runtime.removed.collect { removed ->
-            if (removed) onRemoved?.invoke()
+            if (removed) onRemoved()
         }
     }
     LaunchedEffect(runtime, exitAction, exitAttempt) {
@@ -135,7 +135,7 @@ fun SparkExperience(
                     dispatch = walletViewModel::dispatch
                 )
             } else {
-                val canChooseWallet = onChooseWallet != null && runtime.canCancelSetup
+                val canChooseWallet = runtime.canCancelSetup
                 val cancellationInsets = if (canChooseWallet) {
                     Modifier.windowInsetsPadding(
                         WindowInsets.safeDrawing.only(
@@ -158,13 +158,7 @@ fun SparkExperience(
                         remember {
                             when (walletState.access) {
                                 WalletAccessState.Connected -> SparkDestination.Home
-
-                                WalletAccessState.NoWallet -> if (configuration.welcomeCompleted) {
-                                    SparkOnboardingDestination.Features
-                                } else {
-                                    SparkOnboardingDestination.Welcome
-                                }
-
+                                WalletAccessState.NoWallet -> SparkOnboardingDestination.Features
                                 else -> SparkOnboardingDestination.WalletRecovery
                             }
                         }
@@ -176,7 +170,6 @@ fun SparkExperience(
                             navController = navController,
                             onboardingViewModel = runtime.onboardingViewModel,
                             walletViewModel = walletViewModel,
-                            welcomeCompleted = configuration.welcomeCompleted,
                             onWalletConnected = {
                                 navController.navigate(SparkDestination.Home) {
                                     popUpTo(navController.graph.id) { inclusive = true }
@@ -189,13 +182,7 @@ fun SparkExperience(
                             walletViewModel = walletViewModel,
                             performanceDiagnostics = performanceDiagnostics,
                             onWalletRemoved = {
-                                navController.navigate(
-                                    if (configuration.welcomeCompleted) {
-                                        SparkOnboardingDestination.Features
-                                    } else {
-                                        SparkOnboardingDestination.Welcome
-                                    }
-                                ) {
+                                navController.navigate(SparkOnboardingDestination.Features) {
                                     popUpTo(navController.graph.id) { inclusive = true }
                                     launchSingleTop = true
                                 }

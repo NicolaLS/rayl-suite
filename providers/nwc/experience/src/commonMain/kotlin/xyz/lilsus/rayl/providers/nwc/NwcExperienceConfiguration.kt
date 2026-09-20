@@ -8,6 +8,5 @@ data class NwcExperienceConfiguration(
     val preferencesName: String,
     val walletPreferencesName: String,
     val credentialsName: String,
-    val legalLinks: SettingsLegalLinks,
-    val welcomeCompleted: Boolean = false
+    val legalLinks: SettingsLegalLinks
 )

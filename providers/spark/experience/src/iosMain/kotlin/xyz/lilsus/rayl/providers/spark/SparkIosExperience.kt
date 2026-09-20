@@ -80,8 +80,7 @@ class SparkIosExperience(
             onboarding = runtime.onboardingViewModel,
             walletAccess = runtime.walletAccess,
             languageChanges = runtime.languageRepository.preference,
-            appName = configuration.appName,
-            welcomeCompleted = configuration.welcomeCompleted
+            appName = configuration.appName
         ).also { if (closed) it.clear() }
     }
     private val nativeOnboardingController by nativeOnboardingControllerDelegate

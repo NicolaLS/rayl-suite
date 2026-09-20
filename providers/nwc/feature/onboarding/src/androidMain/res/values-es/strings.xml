@@ -1,7 +1,4 @@
 <resources>
-    <string name="onboarding_welcome_title">Bienvenido a %1$s</string>
-    <string name="onboarding_welcome_subtitle_line1">por Bitcoin Coast</string>
-    <string name="onboarding_welcome_subtitle_line2">La forma más rápida de recibir pagos con la billetera que ya usas.</string>
     <string name="onboarding_features_page1_title">Escáner silencioso, resultados rápidos</string>
     <string name="onboarding_features_page1_subtitle">Está funcionando – aunque no veas la cámara.</string>
     <string name="onboarding_features_page1_body">%1$s escanea en segundo plano para un pago fluido. Apunta al código, espera un momento y listo.</string>

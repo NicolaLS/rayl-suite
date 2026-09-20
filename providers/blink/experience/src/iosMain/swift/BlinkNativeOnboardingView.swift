@@ -57,14 +57,6 @@ struct BlinkNativeOnboardingView: View {
     @ViewBuilder
     private func screen(_ snapshot: BlinkNativeOnboardingSnapshot) -> some View {
         switch snapshot.step {
-        case "welcome":
-            NativeOnboardingWelcomeView(
-                title: snapshot.welcomeTitle,
-                subtitle: snapshot.welcomeSubtitle,
-                description: snapshot.welcomeDescription,
-                actionTitle: snapshot.getStartedTitle,
-                action: model.controller.continueWelcome
-            )
         case "features":
             NativeOnboardingFeaturesView(
                 pages: featurePages(snapshot),

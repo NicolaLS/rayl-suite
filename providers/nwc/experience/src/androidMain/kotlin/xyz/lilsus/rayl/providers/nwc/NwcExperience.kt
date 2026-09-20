@@ -38,9 +38,9 @@ import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalFailure
 fun NwcExperience(
     configuration: NwcExperienceConfiguration,
     performanceDiagnostics: PerformanceDiagnostics? = null,
-    onRemoved: () -> Unit = {},
-    onChooseWallet: (() -> Unit)? = null,
-    onConnectionChanged: (Boolean) -> Unit = {}
+    onRemoved: () -> Unit,
+    onChooseWallet: () -> Unit,
+    onConnectionChanged: (Boolean) -> Unit
 ) {
     val appSettings = rememberAppSettings(configuration.preferencesName)
     val secureSettings = rememberSecureSettings(configuration.credentialsName)
@@ -74,7 +74,6 @@ fun NwcExperience(
             } else {
                 NwcExperienceContent(
                     runtime,
-                    configuration,
                     performanceDiagnostics,
                     onChooseWallet,
                     onConnectionChanged
@@ -87,9 +86,8 @@ fun NwcExperience(
 @Composable
 private fun NwcExperienceContent(
     runtime: NwcRuntime,
-    configuration: NwcExperienceConfiguration,
     performanceDiagnostics: PerformanceDiagnostics?,
-    onChooseWallet: (() -> Unit)?,
+    onChooseWallet: () -> Unit,
     onConnectionChanged: (Boolean) -> Unit
 ) {
     val connected by runtime.nwcWallet.connection.collectAsStateWithLifecycle()
@@ -106,11 +104,7 @@ private fun NwcExperienceContent(
             } else if (connectionOnly) {
                 NwcOnboardingDestination.AddWallet
             } else {
-                if (configuration.welcomeCompleted) {
-                    NwcOnboardingDestination.Features
-                } else {
-                    NwcOnboardingDestination.Welcome
-                }
+                NwcOnboardingDestination.Features
             }
         }
 
@@ -126,7 +120,7 @@ private fun NwcExperienceContent(
         }
     }
 
-    val cancellationInsets = if (connected == null && onChooseWallet != null) {
+    val cancellationInsets = if (connected == null) {
         Modifier.windowInsetsPadding(
             WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal)
         )
@@ -134,7 +128,7 @@ private fun NwcExperienceContent(
         Modifier
     }
     Column(modifier = cancellationInsets) {
-        if (connected == null && onChooseWallet != null) {
+        if (connected == null) {
             TextButton(
                 onClick = {
                     if (runtime.nwcWallet.connection.value == null &&

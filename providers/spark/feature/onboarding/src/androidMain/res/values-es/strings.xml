@@ -1,7 +1,4 @@
 <resources>
-    <string name="spark_onboarding_welcome_title">Te damos la bienvenida a %1$s</string>
-    <string name="spark_onboarding_welcome_subtitle_line1">por Bitcoin Coast</string>
-    <string name="spark_onboarding_welcome_subtitle_line2">La forma más rápida de pagar con tu billetera Spark.</string>
     <string name="spark_onboarding_features_page1_title">Escáner discreto, resultados rápidos</string>
     <string name="spark_onboarding_features_page1_subtitle">Funciona aunque la cámara permanezca fuera de vista.</string>
     <string name="spark_onboarding_features_page1_body">%1$s escanea en segundo plano para que el pago sea fluido. Apunta al código, espera un instante y listo.</string>

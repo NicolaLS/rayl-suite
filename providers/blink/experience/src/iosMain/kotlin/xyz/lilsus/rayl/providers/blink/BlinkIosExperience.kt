@@ -94,7 +94,6 @@ class BlinkIosExperience(private val configuration: BlinkExperienceConfiguration
             blinkWallet = runtime.blinkWallet,
             languageChanges = runtime.languageRepository.preference,
             appName = configuration.appName,
-            welcomeCompleted = configuration.welcomeCompleted,
             legalLinks = configuration.legalLinks,
             progress = runtime.onboardingState,
             canConnectWallet = { runtime.canConnect }

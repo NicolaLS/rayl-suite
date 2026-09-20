@@ -35,10 +35,6 @@ data class SparkNativeOnboardingSnapshot(
     val stepCount: Int,
     val canGoBack: Boolean,
     val backTitle: String,
-    val welcomeTitle: String,
-    val welcomeSubtitle: String,
-    val welcomeDescription: String,
-    val getStartedTitle: String,
     val featurePages: List<SparkNativeOnboardingPage>,
     val featurePage: Int,
     val featuresNextTitle: String,
@@ -85,17 +81,15 @@ class SparkNativeOnboardingController internal constructor(
     private val onboarding: OnboardingViewModel,
     walletAccess: WalletAccess,
     languageChanges: Flow<*>,
-    private val appName: String,
-    private val welcomeCompleted: Boolean
+    private val appName: String
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var closed = false
     private val wallet = WalletViewModel(walletAccess)
     private val snapshot = MutableStateFlow<SparkNativeOnboardingSnapshot?>(null)
     private var resolvingInitialWallet = walletAccess.state.value.isInitialising()
-    private val firstStep = if (welcomeCompleted) STEP_FEATURES else STEP_WELCOME
     private var currentStep =
-        if (walletAccess.state.value == WalletAccessState.NoWallet) firstStep else STEP_WALLET
+        if (walletAccess.state.value == WalletAccessState.NoWallet) STEP_FEATURES else STEP_WALLET
     private var resetRequested = false
 
     init {
@@ -116,8 +110,6 @@ class SparkNativeOnboardingController internal constructor(
         wallet.dispose()
         snapshot.value = null
     }
-
-    fun continueWelcome() = moveTo(STEP_FEATURES)
 
     fun setFeaturePage(page: Int) {
         if (closed) return
@@ -184,8 +176,6 @@ class SparkNativeOnboardingController internal constructor(
 
     fun back() {
         when (effectiveStep(wallet.state.value.access)) {
-            STEP_FEATURES -> if (!welcomeCompleted) moveTo(STEP_WELCOME)
-
             STEP_AUTO_PAY -> moveTo(STEP_FEATURES)
 
             STEP_AGREEMENT -> moveTo(STEP_AUTO_PAY)
@@ -212,11 +202,11 @@ class SparkNativeOnboardingController internal constructor(
         if (resolvingInitialWallet && !walletState.access.isInitialising()) {
             resolvingInitialWallet = false
             currentStep =
-                if (walletState.access == WalletAccessState.NoWallet) firstStep else STEP_WALLET
+                if (walletState.access == WalletAccessState.NoWallet) STEP_FEATURES else STEP_WALLET
         }
         if (resetRequested && walletState.access == WalletAccessState.NoWallet) {
             resetRequested = false
-            currentStep = firstStep
+            currentStep = STEP_FEATURES
             onboarding.setFeaturesPage(0)
             onboarding.setAgreement(false)
         }
@@ -239,12 +229,8 @@ class SparkNativeOnboardingController internal constructor(
                 step = step,
                 stepIndex = stepIndex(step),
                 stepCount = ONBOARDING_STEP_COUNT,
-                canGoBack = step != firstStep && !isRecovery(walletState.access),
+                canGoBack = step != STEP_FEATURES && !isRecovery(walletState.access),
                 backTitle = common.back,
-                welcomeTitle = spark.welcomeTitle,
-                welcomeSubtitle = spark.welcomeSubtitle,
-                welcomeDescription = spark.welcomeDescription,
-                getStartedTitle = common.getStarted,
                 featurePages = spark.featurePages.map(NativeSparkOnboardingPage::toSnapshot),
                 featurePage = state.featuresPage,
                 featuresNextTitle = common.featuresContinue,
@@ -305,7 +291,6 @@ class SparkNativeOnboardingController internal constructor(
         access == WalletAccessState.Removing
 
     private fun stepIndex(step: String): Int = when (step) {
-        STEP_WELCOME -> 0
         STEP_FEATURES -> 1
         STEP_AUTO_PAY -> 2
         STEP_AGREEMENT -> 3
@@ -313,7 +298,6 @@ class SparkNativeOnboardingController internal constructor(
     }
 
     private companion object {
-        const val STEP_WELCOME = "welcome"
         const val STEP_FEATURES = "features"
         const val STEP_AUTO_PAY = "autoPay"
         const val STEP_AGREEMENT = "agreement"

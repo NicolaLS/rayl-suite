@@ -16,9 +16,9 @@ class BlinkOnboardingStateTest {
     @Test
     fun connectingBeforeInterruptionDoesNotCompleteOnboarding() {
         val settings = MapSettings()
-        BlinkOnboardingState(settings, welcomeCompleted = false).moveTo(BlinkOnboardingStep.Connect)
+        BlinkOnboardingState(settings).moveTo(BlinkOnboardingStep.Connect)
 
-        val restarted = BlinkOnboardingState(settings, welcomeCompleted = false)
+        val restarted = BlinkOnboardingState(settings)
 
         assertEquals(BlinkOnboardingStep.Connect, restarted.step.value.destination(walletConnected = false))
         assertEquals(BlinkOnboardingStep.Features, restarted.step.value.destination(walletConnected = true))
@@ -28,9 +28,9 @@ class BlinkOnboardingStateTest {
     @Test
     fun unfinishedStageResumesAfterRestartAndReconnection() {
         val settings = MapSettings()
-        BlinkOnboardingState(settings, welcomeCompleted = true).moveTo(BlinkOnboardingStep.AutoPay)
+        BlinkOnboardingState(settings).moveTo(BlinkOnboardingStep.AutoPay)
 
-        val restarted = BlinkOnboardingState(settings, welcomeCompleted = true)
+        val restarted = BlinkOnboardingState(settings)
 
         assertEquals(BlinkOnboardingStep.AutoPay, restarted.step.value.destination(walletConnected = true))
         assertEquals(BlinkOnboardingStep.Connect, restarted.step.value.destination(walletConnected = false))
@@ -41,9 +41,9 @@ class BlinkOnboardingStateTest {
     @Test
     fun completionSurvivesWalletRemovalAndAllowsOnlyConnectedAppEntry() {
         val settings = MapSettings()
-        BlinkOnboardingState(settings, welcomeCompleted = true).moveTo(BlinkOnboardingStep.Complete)
+        BlinkOnboardingState(settings).moveTo(BlinkOnboardingStep.Complete)
 
-        val restarted = BlinkOnboardingState(settings, welcomeCompleted = true)
+        val restarted = BlinkOnboardingState(settings)
 
         assertEquals(BlinkOnboardingStep.Connect, restarted.step.value.destination(walletConnected = false))
         assertFalse(restarted.canEnterApp(walletConnected = false))
@@ -52,15 +52,13 @@ class BlinkOnboardingStateTest {
     }
 
     @Test
-    fun welcomeIsOnlyNeededUntilFirstConnectionSetupBegins() {
-        assertEquals(
-            BlinkOnboardingStep.Welcome,
-            BlinkOnboardingState(MapSettings(), welcomeCompleted = false).step.value
-        )
-        assertEquals(
-            BlinkOnboardingStep.Connect,
-            BlinkOnboardingState(MapSettings(), welcomeCompleted = true).step.value
-        )
+    fun freshProviderSetupStartsAtConnection() {
+        val state = BlinkOnboardingState(MapSettings())
+
+        assertEquals(BlinkOnboardingStep.Connect, state.step.value)
+        assertEquals(BlinkOnboardingStep.Connect, state.step.value.destination(walletConnected = false))
+        assertEquals(BlinkOnboardingStep.Features, state.step.value.destination(walletConnected = true))
+        assertFalse(state.canEnterApp(walletConnected = true))
     }
 
     @Test

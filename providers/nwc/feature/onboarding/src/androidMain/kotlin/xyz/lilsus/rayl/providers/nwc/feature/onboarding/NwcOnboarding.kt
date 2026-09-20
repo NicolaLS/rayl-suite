@@ -33,13 +33,9 @@ import xyz.lilsus.raylsuite.feature.onboarding.AutoPaySettingsScreen
 import xyz.lilsus.raylsuite.feature.onboarding.FeaturesScreen
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingFeaturePage
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingViewModel
-import xyz.lilsus.raylsuite.feature.onboarding.WelcomeScreen
 
 @Serializable
 sealed interface NwcOnboardingDestination {
-    @Serializable
-    data object Welcome : NwcOnboardingDestination
-
     @Serializable
     data object Features : NwcOnboardingDestination
 
@@ -71,19 +67,6 @@ fun NavGraphBuilder.nwcOnboarding(
     connectionOnly: Boolean = false,
     onWalletConnected: () -> Unit
 ) {
-    composable<NwcOnboardingDestination.Welcome> {
-        WelcomeScreen(
-            title = stringResource(
-                R.string.onboarding_welcome_title,
-                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
-            ),
-            subtitle = stringResource(R.string.onboarding_welcome_subtitle_line1),
-            description = stringResource(R.string.onboarding_welcome_subtitle_line2),
-            onGetStarted = {
-                navController.navigate(NwcOnboardingDestination.Features)
-            }
-        )
-    }
     composable<NwcOnboardingDestination.Features> {
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
         val cameraPermission = rememberCameraPermissionState()
@@ -97,7 +80,7 @@ fun NavGraphBuilder.nwcOnboarding(
                 navController.navigate(NwcOnboardingDestination.AutoPay)
             },
             onRequestCameraPermission = cameraPermission::request,
-            onBack = navController::navigateUp
+            onBack = null
         )
     }
     composable<NwcOnboardingDestination.AutoPay> {
@@ -374,7 +357,6 @@ private fun onboardingFeaturePages(): List<OnboardingFeaturePage> = listOf(
 )
 
 private enum class OnboardingStep(val index: Int) {
-    Welcome(0),
     Features(1),
     AutoPay(2),
     Agreement(3),

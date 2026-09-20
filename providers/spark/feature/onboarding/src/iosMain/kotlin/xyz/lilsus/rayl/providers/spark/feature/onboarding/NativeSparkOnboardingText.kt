@@ -6,9 +6,6 @@ import xyz.lilsus.raylsuite.core.ui.resources.nativeString
 data class NativeSparkOnboardingPage(val title: String, val subtitle: String, val body: String)
 
 data class NativeSparkOnboardingText(
-    val welcomeTitle: String,
-    val welcomeSubtitle: String,
-    val welcomeDescription: String,
     val featurePages: List<NativeSparkOnboardingPage>,
     val autoPayBody: String,
     val agreementBody: String,
@@ -19,22 +16,6 @@ data class NativeSparkOnboardingText(
 
 suspend fun nativeSparkOnboardingText(appName: String): NativeSparkOnboardingText =
     NativeSparkOnboardingText(
-        welcomeTitle = nativeString(
-            NativeStringResource(table = "SparkOnboarding", key = "spark_onboarding_welcome_title"),
-            appName
-        ),
-        welcomeSubtitle = nativeString(
-            NativeStringResource(
-                table = "SparkOnboarding",
-                key = "spark_onboarding_welcome_subtitle_line1"
-            )
-        ),
-        welcomeDescription = nativeString(
-            NativeStringResource(
-                table = "SparkOnboarding",
-                key = "spark_onboarding_welcome_subtitle_line2"
-            )
-        ),
         featurePages =
             listOf(
                 NativeSparkOnboardingPage(

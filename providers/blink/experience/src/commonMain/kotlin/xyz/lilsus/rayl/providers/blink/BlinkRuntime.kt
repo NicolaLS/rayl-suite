@@ -112,7 +112,7 @@ internal class BlinkRuntime(
     }
     val onboardingViewModel by onboardingViewModelDelegate
 
-    val onboardingState = BlinkOnboardingState(appSettings, configuration.welcomeCompleted)
+    val onboardingState = BlinkOnboardingState(appSettings)
     val canConnect: Boolean get() = !closed && !mutableRemovalPending.value && !mutableRemoved.value
 
     init {

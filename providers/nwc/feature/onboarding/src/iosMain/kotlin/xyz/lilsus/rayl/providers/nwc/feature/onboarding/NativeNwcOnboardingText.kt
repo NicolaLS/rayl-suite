@@ -6,9 +6,6 @@ import xyz.lilsus.raylsuite.core.ui.resources.nativeString
 data class NativeNwcOnboardingPage(val title: String, val subtitle: String, val body: String)
 
 data class NativeNwcOnboardingText(
-    val welcomeTitle: String,
-    val welcomeSubtitle: String,
-    val welcomeDescription: String,
     val featurePages: List<NativeNwcOnboardingPage>,
     val autoPayBody: String,
     val agreementBody: String,
@@ -19,22 +16,6 @@ data class NativeNwcOnboardingText(
 
 suspend fun nativeNwcOnboardingText(appName: String): NativeNwcOnboardingText =
     NativeNwcOnboardingText(
-        welcomeTitle = nativeString(
-            NativeStringResource(table = "NwcOnboarding", key = "onboarding_welcome_title"),
-            appName
-        ),
-        welcomeSubtitle = nativeString(
-            NativeStringResource(
-                table = "NwcOnboarding",
-                key = "onboarding_welcome_subtitle_line1"
-            )
-        ),
-        welcomeDescription = nativeString(
-            NativeStringResource(
-                table = "NwcOnboarding",
-                key = "onboarding_welcome_subtitle_line2"
-            )
-        ),
         featurePages =
             listOf(
                 NativeNwcOnboardingPage(
