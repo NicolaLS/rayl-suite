@@ -61,6 +61,16 @@ android {
             manifestPlaceholders["mainActivityName"] = "xyz.lilsus.rayl.E2eMainActivity"
             signingConfig = signingConfigs.getByName("debug")
         }
+        create("benchmark") {
+            initWith(getByName("release"))
+            buildConfigField("String", "BREEZ_API_KEY", "".asBuildConfigString())
+            applicationIdSuffix = ".benchmark"
+            isMinifyEnabled = false
+            isShrinkResources = false
+            matchingFallbacks += listOf("release")
+            manifestPlaceholders["appLabel"] = "Rayl Benchmark"
+            signingConfig = signingConfigs.getByName("debug")
+        }
     }
 
     buildFeatures {
@@ -88,4 +98,5 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.core.ktx)
+    "benchmarkImplementation"(project(":core:camera"))
 }

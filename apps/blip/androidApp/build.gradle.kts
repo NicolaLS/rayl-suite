@@ -27,15 +27,6 @@ android {
             manifestPlaceholders["mainActivityName"] = "xyz.lilsus.blip.E2eMainActivity"
             signingConfig = signingConfigs.getByName("debug")
         }
-        create("benchmark") {
-            initWith(getByName("release"))
-            applicationIdSuffix = ".benchmark"
-            isMinifyEnabled = false
-            isShrinkResources = false
-            matchingFallbacks += listOf("release")
-            manifestPlaceholders["appLabel"] = "Blip Benchmark"
-            signingConfig = signingConfigs.getByName("debug")
-        }
     }
 
     packaging {
@@ -52,5 +43,4 @@ dependencies {
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.core)
     implementation(libs.androidx.core.ktx)
-    "benchmarkImplementation"(project(":core:camera"))
 }

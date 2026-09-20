@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "xyz.lilsus.blip.benchmark"
+    namespace = "xyz.lilsus.rayl.benchmark"
     compileSdk = 37
 
     defaultConfig {
@@ -13,11 +13,14 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    targetProjectPath = ":blip:androidApp"
+    targetProjectPath = ":rayl:androidApp"
+    // The runner must stay alive while Macrobenchmark stops and restarts Rayl.
+    experimentalProperties["android.experimental.self-instrumenting"] = true
 
     buildTypes {
         create("benchmark") {
             matchingFallbacks += listOf("benchmark")
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
 }

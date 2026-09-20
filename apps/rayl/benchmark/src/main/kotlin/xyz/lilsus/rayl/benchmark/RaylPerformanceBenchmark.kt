@@ -1,4 +1,4 @@
-package xyz.lilsus.blip.benchmark
+package xyz.lilsus.rayl.benchmark
 
 import android.Manifest
 import android.content.ComponentName
@@ -12,23 +12,19 @@ import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.LargeTest
 import androidx.test.platform.app.InstrumentationRegistry
-import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @LargeTest
 @RunWith(AndroidJUnit4::class)
-class BlipPerformanceBenchmark {
+class RaylPerformanceBenchmark {
     @get:Rule
     val benchmarkRule = MacrobenchmarkRule()
 
-    @Before
-    fun grantCameraPermission() {
+    private fun grantCameraPermission() {
         val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
-        automation.executeShellCommand(
-            "pm grant $TARGET_PACKAGE ${Manifest.permission.CAMERA}"
-        ).close()
+        automation.grantRuntimePermission(TARGET_PACKAGE, Manifest.permission.CAMERA)
     }
 
     @Test
@@ -60,7 +56,11 @@ class BlipPerformanceBenchmark {
         compilationMode = CompilationMode.Partial(),
         startupMode = StartupMode.COLD,
         iterations = ITERATIONS,
-        setupBlock = { pressHome() }
+        setupBlock = {
+            // Compilation setup can reinstall the app and revoke an earlier permission grant.
+            grantCameraPermission()
+            pressHome()
+        }
     ) {
         startActivityAndWait(
             Intent().setComponent(
@@ -71,8 +71,8 @@ class BlipPerformanceBenchmark {
     }
 
     private companion object {
-        const val TARGET_PACKAGE = "xyz.lilsus.blip.benchmark"
-        const val CAMERA_BENCHMARK_ACTIVITY = "xyz.lilsus.blip.CameraBenchmarkActivity"
+        const val TARGET_PACKAGE = "com.nicolasusca.rayl.benchmark"
+        const val CAMERA_BENCHMARK_ACTIVITY = "xyz.lilsus.rayl.CameraBenchmarkActivity"
         const val ITERATIONS = 5
         const val CAMERA_SETTLE_MILLIS = 3_000L
     }

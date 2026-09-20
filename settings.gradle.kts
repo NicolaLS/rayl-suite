@@ -56,10 +56,10 @@ fun includeApp(name: String, modules: List<String>) {
         }
 }
 
-includeApp("blip", listOf("benchmark"))
+includeApp("blip", emptyList())
 includeApp("flint", emptyList())
 includeApp("lasr", emptyList())
-includeApp("rayl", emptyList())
+includeApp("rayl", listOf("benchmark"))
 
 fun includeProvider(name: String, modules: List<String>) {
     modules.forEach { module ->

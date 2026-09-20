@@ -12,9 +12,7 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - 'blip-v*'
-      - 'flint-v*'
-      - 'lasr-v*'
+      - 'rayl-v*'
   pull_request:
     types: [labeled]
 
@@ -25,7 +23,7 @@ concurrency:
 jobs:
   benchmark:
     if: github.event_name != 'pull_request' || github.event.label.name == 'performance'
-    name: Blip startup and camera
+    name: Rayl startup and camera
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -45,9 +43,9 @@ jobs:
         uses: actions/cache/restore@v5
         with:
           path: performance-baseline/latest.json
-          key: android-performance-api35-${{ github.run_id }}
+          key: rayl-android-performance-api35-${{ github.run_id }}
           restore-keys: |
-            android-performance-api35-
+            rayl-android-performance-api35-
 
       - name: Run benchmarks
         uses: reactivecircus/android-emulator-runner@v2
@@ -66,7 +64,7 @@ jobs:
       - name: Summarize benchmark
         run: |
           scripts/summarize-android-benchmarks \
-            apps/blip/benchmark/build/outputs/connected_android_test_additional_output \
+            apps/rayl/benchmark/build/outputs/connected_android_test_additional_output \
             --baseline performance-baseline/latest.json \
             --save-current performance-baseline/latest.json \
             | tee performance-summary.md
@@ -76,11 +74,11 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: blip-android-performance-${{ github.run_id }}
+          name: rayl-android-performance-${{ github.run_id }}
           if-no-files-found: warn
           retention-days: 30
           path: |
-            apps/blip/benchmark/build/outputs/connected_android_test_additional_output/**
+            apps/rayl/benchmark/build/outputs/connected_android_test_additional_output/**
             performance-summary.md
 
       - name: Save scheduled or release baseline
@@ -92,4 +90,4 @@ jobs:
         uses: actions/cache/save@v5
         with:
           path: performance-baseline/latest.json
-          key: android-performance-api35-${{ github.run_id }}
+          key: rayl-android-performance-api35-${{ github.run_id }}

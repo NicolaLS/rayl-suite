@@ -1,4 +1,4 @@
-package xyz.lilsus.blip
+package xyz.lilsus.rayl
 
 import android.os.Bundle
 import androidx.activity.compose.setContent
