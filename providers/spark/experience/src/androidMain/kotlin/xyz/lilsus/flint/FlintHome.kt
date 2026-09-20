@@ -19,6 +19,7 @@ import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationEventHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import xyz.lilsus.flint.application.wallet.WalletAccessState
+import xyz.lilsus.flint.experience.R
 import xyz.lilsus.flint.feature.onboarding.FlintOnboardingDestination
 import xyz.lilsus.flint.feature.onboarding.flintOnboarding
 import xyz.lilsus.flint.feature.payment.rememberPaymentFlowState
@@ -26,7 +27,6 @@ import xyz.lilsus.flint.feature.payment.rememberPaymentMessages
 import xyz.lilsus.flint.feature.walletconnection.WalletAction
 import xyz.lilsus.flint.feature.walletconnection.WalletRemovalConfirmation
 import xyz.lilsus.flint.feature.walletconnection.WalletViewModel
-import xyz.lilsus.flint.shared.R
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.feature.appshell.AppTab
 import xyz.lilsus.raylsuite.feature.appshell.AppTabScaffold
@@ -108,7 +108,7 @@ internal fun FlintTabContent(
             PaymentScanScreen(
                 state = flowState,
                 messageEvents = messages,
-                appTitle = stringResource(R.string.app_name),
+                appTitle = runtime.configuration.appName,
                 savePrompt = hubState.savePrompt,
                 onIntent = coordinator::dispatch,
                 onHubIntent = runtime.paymentHub::dispatch,
@@ -188,7 +188,7 @@ private fun FlintSettingsTab(
                 bitcoinPriceProvider = runtime.bitcoinPriceProvider,
                 currencyPreferences = runtime.currencyPreferences,
                 paymentPreferences = runtime.paymentPreferences,
-                legalLinks = FLINT_LEGAL_LINKS,
+                legalLinks = runtime.configuration.legalLinks,
                 modifier = Modifier,
                 performanceDiagnostics = performanceDiagnostics,
                 leadingEntries =

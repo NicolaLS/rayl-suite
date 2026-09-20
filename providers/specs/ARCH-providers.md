@@ -20,7 +20,8 @@ Spark defines wallet and payment interfaces in
 access and `PaymentEngine` controls preparation and submission. Its payment
 feature consumes `PaymentEngine`; [`integration/wallet`](../spark/integration/wallet)
 provides platform credential/storage implementations and the Breez Spark adapter.
-Flint composes these parts in its app runtime.
+Spark's [`experience`](../spark/experience) assembles these parts and their platform
+presentations; Flint supplies product configuration and platform entry points.
 
 ## Shared services
 

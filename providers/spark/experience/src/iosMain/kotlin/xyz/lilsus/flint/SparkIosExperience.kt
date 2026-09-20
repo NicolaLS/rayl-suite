@@ -11,8 +11,6 @@ import xyz.lilsus.flint.feature.payment.toNativePaymentScreenState
 import xyz.lilsus.flint.feature.payment.toNativeRecentItem
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.ui.platform.createHapticFeedbackManager
-import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
-import xyz.lilsus.raylsuite.core.ui.resources.nativeString
 import xyz.lilsus.raylsuite.feature.appshell.AppTab
 import xyz.lilsus.raylsuite.feature.appshell.appTabTitles
 import xyz.lilsus.raylsuite.feature.appshell.nativeColorSchemeValue
@@ -24,15 +22,19 @@ import xyz.lilsus.raylsuite.feature.settings.NativeSettingsController
 import xyz.lilsus.raylsuite.feature.settings.nativeSettingsAppVersionName
 
 /**
- * The Kotlin side of Flint's native iOS shell. Swift owns the `TabView`; this owns the app scope
+ * The Kotlin side of Spark's native iOS shell. Swift owns the `TabView`; this owns the app scope
  * so every tab's view controller shares one runtime.
  */
-class FlintIosApp(host: FlintAppHost) {
+class SparkIosExperience(
+    host: FlintAppHost,
+    private val configuration: SparkExperienceConfiguration
+) {
     private val observerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val runtime =
         FlintRuntime(
             host = host,
+            configuration = configuration,
             appSettings = createAppSettings(),
             haptics = createHapticFeedbackManager()
         )
@@ -44,7 +46,7 @@ class FlintIosApp(host: FlintAppHost) {
             currencyPreferences = runtime.currencyPreferences,
             paymentPreferences = runtime.paymentPreferences,
             bitcoinPriceProvider = runtime.bitcoinPriceProvider,
-            legalLinks = FLINT_LEGAL_LINKS,
+            legalLinks = configuration.legalLinks,
             appVersionName = nativeSettingsAppVersionName()
         )
 
@@ -161,9 +163,7 @@ class FlintIosApp(host: FlintAppHost) {
             ) { payment, hubState, _ ->
                 controller.update(
                     payment = payment.toNativePaymentScreenState(),
-                    appTitle = nativeString(
-                        NativeStringResource(table = "FlintApp", key = "app_name")
-                    ),
+                    appTitle = configuration.appName,
                     savePrompt = hubState.savePrompt
                 )
             }.collect {}

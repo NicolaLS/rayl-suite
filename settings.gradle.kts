@@ -96,6 +96,7 @@ includeProvider(
 includeProvider(
     "spark",
     listOf(
+        "experience",
         "application",
         "feature:onboarding",
         "feature:payment",

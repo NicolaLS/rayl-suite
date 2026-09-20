@@ -19,7 +19,7 @@ private let flintAppHost = IOSWalletPlatformKt.createIOSAppHost(
 #endif
 
 /// The single shared Kotlin shell instance, driven by the native tab bar in `ContentView`.
-let flintIosApp = FlintIosApp(host: flintAppHost)
+let flintIosApp = FlintApplication.shared.createExperience(host: flintAppHost)
 
 @main
 struct iOSApp: App {

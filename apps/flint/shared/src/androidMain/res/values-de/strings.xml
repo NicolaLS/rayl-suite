@@ -1,5 +1,3 @@
 <resources>
     <string name="app_name">Flint</string>
-    <string name="settings_wallet_title">Spark-Wallet</string>
-    <string name="settings_wallet_subtitle">Wiederherstellungsphrase sicher auf diesem Gerät gespeichert</string>
 </resources>

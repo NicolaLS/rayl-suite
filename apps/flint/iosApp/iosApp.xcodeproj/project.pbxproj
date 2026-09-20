@@ -22,6 +22,7 @@
 		D2000000000000000000000C /* FlintPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000000C /* FlintPayment.xcstrings */; };
 		D2000000000000000000000D /* FlintWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000000D /* FlintWalletConnection.xcstrings */; };
 		D2000000000000000000000E /* FlintApp.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000000E /* FlintApp.xcstrings */; };
+		D2000000000000000000000F /* SparkExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000000F /* SparkExperience.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,6 +41,7 @@
 		C2000000000000000000000C /* FlintPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintPayment.xcstrings; path = ../../../providers/spark/feature/payment/src/iosMain/resources/FlintPayment.xcstrings; sourceTree = "<group>"; };
 		C2000000000000000000000D /* FlintWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintWalletConnection.xcstrings; path = ../../../providers/spark/feature/wallet-connection/src/iosMain/resources/FlintWalletConnection.xcstrings; sourceTree = "<group>"; };
 		C2000000000000000000000E /* FlintApp.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintApp.xcstrings; path = ../shared/src/iosMain/resources/FlintApp.xcstrings; sourceTree = "<group>"; };
+		C2000000000000000000000F /* SparkExperience.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkExperience.xcstrings; path = ../../../providers/spark/experience/src/iosMain/resources/SparkExperience.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -102,6 +104,12 @@
 			path = ../../../feature/wallet-management/src/iosMain/swift;
 			sourceTree = "<group>";
 		};
+		F23E00000000000000000007 /* Spark Experience Swift */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = "Spark Experience Swift";
+			path = ../../../providers/spark/experience/src/iosMain/swift;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -133,12 +141,14 @@
 				C2000000000000000000000C /* FlintPayment.xcstrings */,
 				C2000000000000000000000D /* FlintWalletConnection.xcstrings */,
 				C2000000000000000000000E /* FlintApp.xcstrings */,
+				C2000000000000000000000F /* SparkExperience.xcstrings */,
 				F23E00000000000000000001 /* App Shell Swift */,
 				F23E00000000000000000002 /* Settings Swift */,
 				F23E00000000000000000003 /* Payment UI Swift */,
 				F23E00000000000000000004 /* Payment Hub Swift */,
 				F23E00000000000000000005 /* Onboarding Swift */,
 				F23E00000000000000000006 /* Wallet Management Swift */,
+				F23E00000000000000000007 /* Spark Experience Swift */,
 				10547F63D981DF7A37B0159C /* Configuration */,
 				57A9F0E1B32B9C0C32E3D02F /* iosApp */,
 				44EB8F64DE2CA358E1D0BAC9 /* Products */,
@@ -177,6 +187,7 @@
 				F23E00000000000000000004 /* Payment Hub Swift */,
 				F23E00000000000000000005 /* Onboarding Swift */,
 				F23E00000000000000000006 /* Wallet Management Swift */,
+				F23E00000000000000000007 /* Spark Experience Swift */,
 			);
 			name = iosApp;
 			packageProductDependencies = (
@@ -244,6 +255,7 @@
 				D2000000000000000000000C /* FlintPayment.xcstrings in Resources */,
 				D2000000000000000000000D /* FlintWalletConnection.xcstrings in Resources */,
 				D2000000000000000000000E /* FlintApp.xcstrings in Resources */,
+				D2000000000000000000000F /* SparkExperience.xcstrings in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

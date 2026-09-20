@@ -1,0 +1,4 @@
+<resources>
+    <string name="settings_wallet_title">Billetera Spark</string>
+    <string name="settings_wallet_subtitle">Frase de recuperación guardada de forma segura en este dispositivo</string>
+</resources>

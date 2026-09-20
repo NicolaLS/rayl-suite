@@ -20,11 +20,12 @@ import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
 import xyz.lilsus.raylsuite.integration.exchangerate.CoinGeckoBitcoinPriceProvider
 
 /**
- * Flint's app-scoped objects, held outside composition so both the Compose host and the native
+ * Spark experience objects, held outside composition so both the Compose host and the native
  * iOS shell can share one instance.
  */
 internal class FlintRuntime(
     host: FlintAppHost,
+    val configuration: SparkExperienceConfiguration,
     appSettings: Settings,
     haptics: HapticFeedbackManager
 ) {
