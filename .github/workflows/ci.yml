@@ -34,19 +34,15 @@ jobs:
       - name: Set up and validate Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Check formatting and module boundaries
+      - name: Check formatting, module boundaries, and localizations
         run: |
-          ./gradlew ktlintCheck verifyModuleDependencies
+          ./gradlew ktlintCheck verifyModuleDependencies verifyNativeLocalizations
           ./gradlew -p build-logic ktlintCheck
 
   android:
-    name: ${{ matrix.app }} Android
+    name: Rayl Android
     runs-on: ubuntu-24.04
     timeout-minutes: 35
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [blip, flint, lasr, rayl]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -61,4 +57,4 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Assemble Debug
-        run: ./gradlew :${{ matrix.app }}:androidApp:assembleDebug
+        run: ./gradlew :rayl:androidApp:assembleDebug

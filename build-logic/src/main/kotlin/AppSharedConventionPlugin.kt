@@ -6,7 +6,7 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.NativeBuildType
 
-/** Shared target and framework configuration for each app's KMP composition root. */
+/** Target and framework configuration for Rayl's KMP composition root. */
 class AppSharedConventionPlugin : Plugin<Project> {
     override fun apply(target: Project) {
         with(target) {

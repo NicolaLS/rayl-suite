@@ -11,5 +11,4 @@ la moneda, el idioma y el tema. La experiencia de Blink también importa contact
 automáticamente y permite elegir la billetera de fondos.
 
 Rayl usa una billetera a la vez. Esta versión no ofrece compras de servicios.
-Blip, Lasr y Flint siguen disponibles como alternativas
-especializadas. El propietario debe revisar este borrador antes de publicarlo.
+El propietario debe revisar este borrador antes de publicarlo.

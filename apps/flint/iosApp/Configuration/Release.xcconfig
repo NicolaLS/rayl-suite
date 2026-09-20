@@ -1,6 +1,0 @@
-#include "Base.xcconfig"
-#include? "Local.xcconfig"
-
-PRODUCT_NAME = Flint
-PRODUCT_BUNDLE_IDENTIFIER = xyz.lilsus.flint
-SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) FLINT_PRODUCTION

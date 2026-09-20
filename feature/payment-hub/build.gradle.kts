@@ -36,7 +36,7 @@ kotlin {
     }
 }
 
-// Rayl and Blip 1.0 ship the local Hub only. External URL overrides cannot enable it.
+// Rayl 1.0 ships the local Hub only. External URL overrides cannot enable it.
 val hubBackendUrl = providers.provider { "" }
 val hubConfigurationDirectory = layout.buildDirectory.dir("generated/hubConfiguration/kotlin")
 val generateHubConfiguration = tasks.register("generateHubConfiguration") {

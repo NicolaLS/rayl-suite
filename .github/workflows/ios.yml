@@ -18,13 +18,9 @@ concurrency:
 
 jobs:
   build:
-    name: ${{ matrix.app }} iOS
+    name: Rayl iOS
     runs-on: macos-26
     timeout-minutes: 60
-    strategy:
-      fail-fast: false
-      matrix:
-        app: [blip, flint, lasr, rayl]
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -46,5 +42,13 @@ jobs:
       - name: Set up and validate Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Link simulator Debug framework
-        run: ./gradlew :${{ matrix.app }}:shared:linkDebugFrameworkIosSimulatorArm64
+      - name: Build Rayl for the iOS simulator
+        run: |
+          xcodebuild \
+            -project apps/rayl/iosApp/iosApp.xcodeproj \
+            -scheme iosApp \
+            -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/rayl-ios" \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO \
+            build

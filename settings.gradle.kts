@@ -56,9 +56,6 @@ fun includeApp(name: String, modules: List<String>) {
         }
 }
 
-includeApp("blip", emptyList())
-includeApp("flint", emptyList())
-includeApp("lasr", emptyList())
 includeApp("rayl", listOf("benchmark"))
 
 fun includeProvider(name: String, modules: List<String>) {

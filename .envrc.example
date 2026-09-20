@@ -1,5 +1,5 @@
 # Copy this file to .envrc.local and load secrets from your preferred secret
-# manager. The suite's Android App Bundles use the upload signing identity.
+# manager. Rayl's Android App Bundle uses the upload signing identity.
 #
 # Upload key: signs the App Bundle uploaded to Google Play.
 export RAYL_UPLOAD_STORE_FILE="/absolute/path/to/rayl-suite-upload.jks"
@@ -9,10 +9,9 @@ export RAYL_UPLOAD_KEY_ALIAS="rayl-suite-upload"
 export RAYL_UPLOAD_STORE_PASSWORD="$(pass show rayl-suite/android-upload | sed -n '1p')"
 export RAYL_UPLOAD_KEY_PASSWORD="$RAYL_UPLOAD_STORE_PASSWORD"
 
-# Rayl and Flint production builds also require Breez Spark API keys. Load them from the
+# Rayl production builds also require a Breez Spark API key. Load it from the
 # secret manager; never commit the value or place it in local.properties files
 # that could be shared.
-export FLINT_BREEZ_API_KEY="$(pass show rayl-suite/flint-breez-api-key | sed -n '1p')"
 export RAYL_BREEZ_API_KEY="$(pass show rayl-suite/rayl-breez-api-key | sed -n '1p')"
 
 # Key passwords default to the matching store password when unset. Each

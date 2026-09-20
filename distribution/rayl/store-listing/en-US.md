@@ -11,5 +11,4 @@ currency display, language, and theme. The Blink experience also includes
 automatic contact import and funding-wallet selection.
 
 Rayl connects to one wallet at a time. Service purchases are not available in this
-version. Blip, Lasr, and Flint remain purpose-built
-alternatives. This prerelease listing requires owner review before publication.
+version. This prerelease listing requires owner review before publication.

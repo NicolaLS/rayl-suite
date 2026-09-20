@@ -1,31 +1,23 @@
-> **Default app: Rayl.** Use your Blink, NWC, or Spark wallet. Blip, Lasr, and Flint
-> remain purpose-built alternatives. All four apps are prerelease. See
-> [Rayl architecture and behavior](docs/rayl-app.md) for scope and provider ownership.
+# Rayl
 
-# Rayl Suite
+Rayl is a Kotlin Multiplatform Lightning app for Android and iOS. Connect a Blink
+account with an API key, a compatible wallet through Nostr Wallet Connect, or a
+Spark wallet with its recovery phrase. Rayl uses one provider experience at a
+time and is the repository's only distributed app. It is prerelease.
 
-Rayl Suite contains four independent Kotlin Multiplatform Lightning clients and
-the provider-neutral modules they share:
-
-- **Rayl** is the unified app; setup offers Blink, Nostr Wallet Connect, and Spark.
-- **Blip** connects to one Blink wallet with an API key.
-- **Flint** opens one Spark wallet from its recovery phrase.
-- **Lasr** connects to one wallet through Nostr Wallet Connect.
-
-Blip, Flint, and Lasr retain their single-provider focus. All products are
-prerelease; no migration or cross-app data transfer is implemented.
+See [Rayl architecture](specs/ARCH-rayl-suite.md) for application composition and
+[provider ownership](providers/specs/ARCH-providers.md) for the independent wallet
+implementations.
 
 ## Project layout
 
-- `apps/rayl`: unified Rayl composition and wallet selection
-- `apps/blip`: Blip product composition
-- `apps/flint`: Flint product composition
-- `apps/lasr`: Lasr product composition
+- `apps/rayl`: Rayl composition, platform entry points, and wallet selection
 - `providers/blink`, `providers/nwc`, `providers/spark`: independent provider implementations
 - `core/*`: provider-neutral models, platform services, and UI primitives
 - `feature/*`: reusable provider-neutral user stories
 - `integration/*`: shared external-service adapters
-- `distribution/*`: app-specific store copy, legal/reviewer material, and icons
+- `distribution/rayl`: Rayl store copy and artwork
+- `distribution/*`: release guidance and encryption assessment
 
 ## Build
 
@@ -35,26 +27,27 @@ For upload-key setup and Google Play releases, see [Distribution](distribution/R
 
 ```shell
 ./gradlew :rayl:androidApp:assembleDebug
-./gradlew :blip:androidApp:assembleDebug
-./gradlew :flint:androidApp:assembleDebug
-./gradlew :lasr:androidApp:assembleDebug
-./gradlew :blip:androidApp:assembleE2e
-./gradlew :flint:androidApp:assembleE2e
-./gradlew :lasr:androidApp:assembleE2e
+./gradlew :rayl:androidApp:assembleE2e
 ./gradlew check
 ```
 
-For iOS, open the chosen app’s `iosApp.xcodeproj`, or validate a Kotlin Debug
-simulator framework directly:
+Run startup and camera benchmarks on a connected Android 10+ device with the
+separate benchmark app. Use a stable physical device for comparable results:
 
 ```shell
-./gradlew :rayl:shared:linkDebugFrameworkIosSimulatorArm64
-./gradlew :blip:shared:linkDebugFrameworkIosSimulatorArm64
-./gradlew :flint:shared:linkDebugFrameworkIosSimulatorArm64
-./gradlew :lasr:shared:linkDebugFrameworkIosSimulatorArm64
+./gradlew perfCheck
 ```
 
-See [E2E build guidance](docs/e2e.md),
-[performance diagnostics](docs/performance-monitoring.md),
-[Rayl architecture and behavior](docs/rayl-app.md), and
-[the native app shell](docs/native-shell.md).
+On macOS, open `apps/rayl/iosApp/iosApp.xcodeproj`, or build the complete Kotlin
+and Swift app for the iOS simulator as in [iOS CI](.github/workflows/ios.yml):
+
+```shell
+xcodebuild \
+  -project apps/rayl/iosApp/iosApp.xcodeproj \
+  -scheme iosApp \
+  -configuration Debug \
+  -destination 'generic/platform=iOS Simulator' \
+  -derivedDataPath "${TMPDIR:-/tmp}/rayl-ios" \
+  ARCHS=arm64 ONLY_ACTIVE_ARCH=YES CODE_SIGNING_ALLOWED=NO \
+  build
+```

@@ -11,5 +11,4 @@ Währungsanzeige, Sprache und Design an. Mit Blink sind außerdem automatischer
 Kontaktimport und die Auswahl der Zahlungs-Wallet verfügbar.
 
 Rayl verwendet jeweils eine Wallet. Dienstleistungskäufe sind in dieser Version
-nicht verfügbar. Blip, Lasr und Flint bleiben spezialisierte
-Alternativen. Dieser Vorabtext muss vor Veröffentlichung vom Inhaber geprüft werden.
+nicht verfügbar. Dieser Vorabtext muss vor Veröffentlichung vom Inhaber geprüft werden.

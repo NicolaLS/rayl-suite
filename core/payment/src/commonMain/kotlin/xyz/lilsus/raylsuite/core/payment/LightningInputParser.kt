@@ -12,7 +12,7 @@ import xyz.lilsus.raylsuite.core.model.LightningAddress
 /**
  * Suite-level composition of provider-neutral payment-input parsers.
  *
- * [additionalInstantParsers] are placed immediately after raw BOLT11, so an app such as Flint
+ * [additionalInstantParsers] are placed immediately after raw BOLT11, so a provider such as Spark
  * can add its native Spark parser without changing shared priorities. List order is the only
  * priority mechanism; there is no mutable or numeric parser registry.
  */

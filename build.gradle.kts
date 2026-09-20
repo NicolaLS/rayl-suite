@@ -20,7 +20,7 @@ plugins {
 }
 
 val ktlintCliVersion = libs.versions.ktlintCli
-val appProjectNames = setOf("blip", "flint", "lasr", "rayl")
+val appProjectNames = setOf("rayl")
 val nativeLocalizationLocales = listOf("en", "de", "es")
 val androidOnlyLocalizationModules = setOf("feature/theme-settings")
 val appleOnlyLocalizationModules = emptySet<String>()
@@ -211,13 +211,6 @@ fun String.appOwner(): String? = removePrefix(":")
 fun String.providerOwner(): String? =
     takeIf { it.startsWith(":providers:") }?.removePrefix(":providers:")?.substringBefore(":")
 
-val allowedAppProviders = mapOf(
-    "blip" to setOf("blink"),
-    "lasr" to setOf("nwc"),
-    "flint" to setOf("spark"),
-    "rayl" to setOf("blink", "nwc", "spark")
-)
-
 val verifyModuleDependencies = tasks.register("verifyModuleDependencies") {
     group = "verification"
     description = "Enforces app, provider, and provider-neutral project ownership."
@@ -252,17 +245,8 @@ val verifyModuleDependencies = tasks.register("verifyModuleDependencies") {
                                     sourceProvider != targetProvider ->
                                     "${source.path} -> $targetPath (cross-provider dependency)"
 
-                                targetProvider != null && sourceOwner != null &&
-                                    targetProvider !in allowedAppProviders.getValue(sourceOwner) ->
-                                    "${source.path} -> $targetPath (provider is not included in this product)"
-
                                 sourceOwner == null && targetOwner != null ->
                                     "${source.path} -> $targetPath (root module depends on an app)"
-
-                                sourceOwner != null &&
-                                    targetOwner != null &&
-                                    sourceOwner != targetOwner ->
-                                    "${source.path} -> $targetPath (cross-app dependency)"
 
                                 else -> null
                             }

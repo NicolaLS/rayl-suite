@@ -1,21 +1,20 @@
-# Rayl and Blip iOS encryption assessment
+# iOS encryption assessment
 
-Assessment revision: **2026-09-13 / MOB-72** (original assessment: MOB-59).
+Historical assessment revision: **2026-09-13 / MOB-72** (original assessment: MOB-59).
 
-**Rayl scope update:** Rayl now integrates Spark through the Breez SDK alongside
-Blink and NWC. The prior Rayl assessment below does not cover this added provider
-and native SDK, and requires reassessment before release. Its recorded conclusions
-and binary evidence are retained for the previously assessed scope; this update
-does not establish a new encryption classification or change the plist declaration.
-Blip's provider scope is unchanged.
+**Current release scope:** Rayl is the only distributed app and integrates Spark
+through the Breez SDK alongside Blink and NWC. The historical assessment below
+does not cover Spark or its native SDK. Rayl requires reassessment before release.
+This documentation update does not establish a new encryption classification or
+change the plist declaration.
 
-This maintained record explains the App Store Connect answers and the matching
-`Info.plist` declarations for Rayl and Blip 1.0. It covers app code, linked iOS
-libraries, and the available binary evidence. Android, Flint, and Lasr are outside
-this assessment. The same declaration and maintenance contract are carried on
-`main`; changes to its product or dependency scope require reassessment.
+The answers, source inventory, and binary evidence below are retained for the
+previously assessed Rayl and Blip 1.0 scope. References to Blip describe that
+historical evidence, not a current product or build target. Android and the former
+Flint and Lasr products were outside that assessment. Current release work and
+maintenance instructions at the end of this document apply to Rayl.
 
-## Answers for the assessed distribution scope
+## Historical answers for the assessed distribution scope
 
 **Both apps contain standard/published cryptography beyond Apple's operating
 system. France is deferred for both apps' initial distribution.** This is an
@@ -68,7 +67,7 @@ questionnaire requests documentation inconsistent with this reading, resolve it
 through [Apple export-compliance support][apple-support] and update this record;
 do not change factual answers to bypass the request.
 
-## Assessed source and dependency graph
+## Historical source and dependency graph
 
 Historical source baselines inspected before adding these declarations (commit IDs remain valid after branch retirement):
 
@@ -124,8 +123,9 @@ either of these two app projects at these baselines.
 Relevant entry points are [the version catalog](../gradle/libs.versions.toml),
 [shared payment dependencies](../core/payment/build.gradle.kts),
 [Blink integration](../providers/blink/integration/blink/build.gradle.kts),
-[Rayl framework exports](../apps/rayl/shared/build.gradle.kts), and
-[Blip framework exports](../apps/blip/shared/build.gradle.kts).
+[Rayl framework exports](../apps/rayl/shared/build.gradle.kts). The assessed Blip
+framework exports remain in the historical source baseline listed above; that
+app's build target has been removed.
 
 ### Common iOS behavior and ACINQ
 
@@ -148,7 +148,7 @@ to a source JAR. Their links identify exact upstream commits.
 confidentiality][bis-confidentiality]. That distinction describes Blink's invoice
 validation use, but it does not justify describing the whole Blip binary as
 signature-only: retained ECDH and configuration-dependent cipher code are recorded
-below. The current Apple answer therefore does not depend on that narrower claim.
+below. The recorded Apple answer therefore does not depend on that narrower claim.
 
 ### Rayl's NWC implementation
 
@@ -180,7 +180,7 @@ historical file blobs matched exactly to the cached sources; different commits
 do not collectively establish one reproducible publication commit. No complete
 source-commit match was established for the cached `NwcClient.kt`.
 
-## Binary evidence and its limits
+## Historical binary evidence and its limits
 
 The following existing local archives were inspected without rebuilding or
 changing them. They have app version `1.0.0`, build `1`. Their executable SHA-256
@@ -200,7 +200,7 @@ Matching UUIDs were checked before reading dSYM symbols.
 - Blip's matching dSYM includes `_secp256k1_ecdh` and
   `Secp256k1Native#ecdh`. No ChaCha20/Poly1305 symbols were found in that older
   archive. Absence of symbol-name matches alone is not a proof of absence of all
-  cryptographic code, and this archive predates the current release branch.
+  cryptographic code, and this archive predates the assessed release branch.
 - An existing Blip simulator Debug framework contains ACINQ ChaCha20/Poly1305 and
   ECDH symbols. This establishes configuration-dependent compiled capability;
   it is **not** evidence that those ciphers survived the older Release app link.
@@ -210,7 +210,7 @@ Matching UUIDs were checked before reading dSYM symbols.
 
 None of these observations proves which archive was uploaded to Apple, or the
 exact Git commit and complete resolved dependency set used to create an archive.
-The record therefore separates current source/graph evidence, cached artifact
+The record therefore separates assessed source/graph evidence, cached artifact
 identity, and observed binary capabilities. It does not certify a newly built
 release candidate. Both archived plists lacked the encryption keys; changing the
 source plists affects subsequent builds only.
@@ -245,17 +245,20 @@ nip04         7024fd69e4de1366906a2940f9bdb84684d80f9adbf7df6be61efc111ac50d80
 nip44         6e251432a6ba4d41b95839349dccbf9c68999bc2faedc7438caabfe7ff128473
 ```
 
-## Deferred work and release conditions
+## Rayl release conditions
 
-- [ ] **France — both apps:** before enabling the French storefront, complete the
+- [ ] **Spark/Breez scope:** reassess the current source, dependency graph, and
+  release candidate, including the Spark SDK and native libraries. The historical
+  answer table above does not cover the current app.
+- [ ] **France:** before enabling the French storefront, complete the
   applicable ANSSI declaration and Apple document review, or obtain a specific
   exemption determination for the actual product. Then update this record and
-  the plists; if Apple requires non-exempt documentation, use `true` and only the
+  Rayl plist; if Apple requires non-exempt documentation, use `true` and only the
   real `ITSEncryptionExportComplianceCode` Apple supplies. Do not invent a code.
   [ANSSI's procedure][anssi-procedure] describes the formalities. The financial
   exclusion in [French decree 2007-663, Annex 1, category 3][france-decree] has
   conditions about financial-only purpose, general-public use, and inaccessible
-  cryptographic capability. This assessment does not assume that either app
+  cryptographic capability. This assessment does not assume that Rayl
   satisfies those conditions merely because it is a wallet.
 - [ ] **US classification/reporting:** establish and retain the applicable EAR
   classification/authorization or exclusion before distribution. No CCATS,
@@ -267,9 +270,9 @@ nip44         6e251432a6ba4d41b95839349dccbf9c68999bc2faedc7438caabfe7ff128473
   exports). Excluding France settles neither US classification nor reporting.
 - [ ] **Exact next candidate:** associate each archive with its source commit,
   resolved artifact hashes, executable/dSYM UUID, effective plist, and selected
-  territories. Verify the current Blip release candidate rather than treating
-  the August archive as current. Check the actual App Store Connect response for
-  standard cryptography / no France against the documented inference above.
+  territories. Verify the current Rayl release candidate rather than treating
+  the historical archives as current. Check the actual App Store Connect response
+  against the reassessed scope and conclusions.
 
 ## Maintenance contract
 
@@ -279,18 +282,18 @@ SNAPSHOT bytes, SPM/CocoaPods/native libraries, framework exports, HTTP engines,
 credential/storage implementation, algorithms/protocols, or the features that
 can invoke them. Territory changes also require reassessment.
 
-In the same change:
+When reassessing Rayl:
 
 1. Update the dependency/algorithm inventory and exact source/artifact evidence
    here. State each implementation's purpose and whether Apple supplies it.
    A library's name or open-source license does not establish exemption.
 2. Review the current Apple and relevant government sources and update the
    answer table, reasoning, scope, and assessment revision.
-3. Update each affected app's `Info.plist` declaration. If the Boolean remains
+3. Update Rayl's `Info.plist` declaration. If the Boolean remains
    correct, refresh its assessment revision comment to record the review.
    Keep a real Apple code only when the revised determination requires it.
-4. Apply the change to `main` and each affected 1.0 branch using the repository's
-   normal cherry-pick policy; update the related MOB issue.
+4. Apply the change to `main` and each affected Rayl 1.0 branch using the
+   repository's normal cherry-pick policy; update the related MOB issue.
 5. Validate the plist XML and inspect the processed plist of the next candidate.
    Source plist edits cannot retroactively change an uploaded build.
 
@@ -299,8 +302,7 @@ Release build is necessary to obtain the graph:
 
 ```sh
 ./gradlew :rayl:shared:dependencies --configuration iosArm64CompileKlibraries --console=plain
-./gradlew :blip:shared:dependencies --configuration iosArm64CompileKlibraries --console=plain
-plutil -lint apps/rayl/iosApp/iosApp/Info.plist apps/blip/iosApp/iosApp/Info.plist
+plutil -lint apps/rayl/iosApp/iosApp/Info.plist
 ```
 
 For an existing archive, use `shasum -a 256` on the app executable,
