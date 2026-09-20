@@ -3,6 +3,7 @@ package xyz.lilsus.flint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -41,7 +42,8 @@ class FlintNativeWalletSettingsController internal constructor(
     walletAccess: WalletAccess,
     private val networkLabel: String,
     languageChanges: Flow<*>,
-    private val isSubmitting: StateFlow<Boolean>
+    private val isSubmitting: StateFlow<Boolean>,
+    private val appName: String
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val wallet = WalletViewModel(walletAccess)
@@ -59,6 +61,12 @@ class FlintNativeWalletSettingsController internal constructor(
         return { job.cancel() }
     }
 
+    fun clear() {
+        scope.cancel()
+        wallet.dispose()
+        snapshot.value = null
+    }
+
     fun removeWallet() {
         if (!isSubmitting.value) wallet.dispatch(WalletAction.ConfirmRemoval)
     }
@@ -66,7 +74,7 @@ class FlintNativeWalletSettingsController internal constructor(
     private suspend fun publishSnapshot() {
         val state = wallet.state.value
         val management = nativeWalletManagementText()
-        val connection = nativeFlintWalletConnectionText()
+        val connection = nativeFlintWalletConnectionText(appName)
         val title =
             nativeString(
                 NativeStringResource(table = "SparkExperience", key = "settings_wallet_title")

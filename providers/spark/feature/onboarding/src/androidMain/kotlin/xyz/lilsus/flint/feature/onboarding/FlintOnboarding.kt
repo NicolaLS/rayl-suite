@@ -59,11 +59,15 @@ fun NavGraphBuilder.flintOnboarding(
     navController: NavController,
     onboardingViewModel: OnboardingViewModel,
     walletViewModel: WalletViewModel,
+    welcomeCompleted: Boolean = false,
     onWalletConnected: () -> Unit
 ) {
     composable<FlintOnboardingDestination.Welcome> {
         WelcomeScreen(
-            title = stringResource(R.string.onboarding_welcome_title),
+            title = stringResource(
+                R.string.onboarding_welcome_title,
+                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+            ),
             subtitle = stringResource(R.string.onboarding_welcome_subtitle_line1),
             description = stringResource(R.string.onboarding_welcome_subtitle_line2),
             onGetStarted = { navController.navigate(FlintOnboardingDestination.Features) }
@@ -80,14 +84,17 @@ fun NavGraphBuilder.flintOnboarding(
             onPageChanged = onboardingViewModel::setFeaturesPage,
             onContinue = { navController.navigate(FlintOnboardingDestination.AutoPay) },
             onRequestCameraPermission = cameraPermission::request,
-            onBack = navController::navigateUp
+            onBack = if (welcomeCompleted) null else ({ navController.navigateUp() })
         )
     }
     composable<FlintOnboardingDestination.AutoPay> {
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
         val formatter = rememberAmountFormatter()
         AutoPaySettingsScreen(
-            body = stringResource(R.string.onboarding_autopay_body),
+            body = stringResource(
+                R.string.onboarding_autopay_body,
+                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+            ),
             confirmationMode = state.confirmationMode,
             thresholdSats = state.thresholdSats,
             currencyEquivalent = state.thresholdCurrencyEquivalent?.let(formatter::format),
@@ -104,7 +111,10 @@ fun NavGraphBuilder.flintOnboarding(
     composable<FlintOnboardingDestination.Agreement> {
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
         AgreementScreen(
-            body = stringResource(R.string.onboarding_agreement_body),
+            body = stringResource(
+                R.string.onboarding_agreement_body,
+                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+            ),
             hasAgreed = state.hasAgreed,
             stepIndex = OnboardingStep.Agreement.index,
             totalSteps = ONBOARDING_STEP_COUNT,
@@ -118,12 +128,25 @@ fun NavGraphBuilder.flintOnboarding(
     composable<FlintOnboardingDestination.WalletInstructions> {
         WalletInstructionsScreen(
             title = stringResource(R.string.onboarding_add_wallet_title),
-            introduction = stringResource(R.string.onboarding_add_wallet_intro),
+            introduction = stringResource(
+                R.string.onboarding_add_wallet_intro,
+                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+            ),
             steps =
                 listOf(
                     AnnotatedString(stringResource(R.string.onboarding_add_wallet_step1)),
-                    AnnotatedString(stringResource(R.string.onboarding_add_wallet_step2)),
-                    AnnotatedString(stringResource(R.string.onboarding_add_wallet_step3))
+                    AnnotatedString(
+                        stringResource(
+                            R.string.onboarding_add_wallet_step2,
+                            xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+                        )
+                    ),
+                    AnnotatedString(
+                        stringResource(
+                            R.string.onboarding_add_wallet_step3,
+                            xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+                        )
+                    )
                 ),
             stepIndex = OnboardingStep.Wallet.index,
             totalSteps = ONBOARDING_STEP_COUNT,
@@ -160,7 +183,12 @@ fun NavGraphBuilder.flintOnboarding(
                 WalletAccessState.Connected -> onWalletConnected()
 
                 WalletAccessState.NoWallet -> {
-                    navController.navigate(FlintOnboardingDestination.Welcome) {
+                    val destination = if (welcomeCompleted) {
+                        FlintOnboardingDestination.Features
+                    } else {
+                        FlintOnboardingDestination.Welcome
+                    }
+                    navController.navigate(destination) {
                         popUpTo(navController.graph.id) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -205,17 +233,29 @@ private fun onboardingFeaturePages(): List<OnboardingFeaturePage> = listOf(
     OnboardingFeaturePage(
         title = stringResource(R.string.onboarding_features_page1_title),
         subtitle = stringResource(R.string.onboarding_features_page1_subtitle),
-        body = stringResource(R.string.onboarding_features_page1_body)
+        body = stringResource(
+            R.string.onboarding_features_page1_body,
+            xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+        )
     ),
     OnboardingFeaturePage(
         title = stringResource(R.string.onboarding_features_page2_title),
         subtitle = stringResource(R.string.onboarding_features_page2_subtitle),
-        body = stringResource(R.string.onboarding_features_page2_body)
+        body = stringResource(
+            R.string.onboarding_features_page2_body,
+            xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+        )
     ),
     OnboardingFeaturePage(
         title = stringResource(R.string.onboarding_features_page3_title),
-        subtitle = stringResource(R.string.onboarding_features_page3_subtitle),
-        body = stringResource(R.string.onboarding_features_page3_body)
+        subtitle = stringResource(
+            R.string.onboarding_features_page3_subtitle,
+            xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+        ),
+        body = stringResource(
+            R.string.onboarding_features_page3_body,
+            xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+        )
     )
 )
 

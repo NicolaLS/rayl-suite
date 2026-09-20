@@ -2,12 +2,17 @@ package xyz.lilsus.flint
 
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import xyz.lilsus.flint.application.wallet.WalletAccessState
 import xyz.lilsus.flint.feature.payment.PaymentCoordinator
 import xyz.lilsus.flint.feature.payment.PaymentUiState
+import xyz.lilsus.flint.feature.walletconnection.WalletViewModel
 import xyz.lilsus.raylsuite.core.ui.platform.HapticFeedbackManager
 import xyz.lilsus.raylsuite.feature.appshell.AppTabState
 import xyz.lilsus.raylsuite.feature.currencysettings.DefaultCurrencyPreferences
@@ -24,15 +29,22 @@ import xyz.lilsus.raylsuite.integration.exchangerate.CoinGeckoBitcoinPriceProvid
  * iOS shell can share one instance.
  */
 internal class FlintRuntime(
-    host: FlintAppHost,
+    private val host: FlintAppHost,
     val configuration: SparkExperienceConfiguration,
     appSettings: Settings,
     haptics: HapticFeedbackManager
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var closed = false
+    private val mutableCloseFailed = MutableStateFlow(false)
+    val closeFailed = mutableCloseFailed.asStateFlow()
 
     val networkLabel = host.bootstrapConfig.environment.networkLabel
     val walletAccess = host.walletAccess
+    val walletViewModel = WalletViewModel(walletAccess)
+    val removed = walletAccess.removed
+    val canCancelSetup: Boolean
+        get() = !closed && !removed.value && walletAccess.state.value == WalletAccessState.NoWallet
 
     val themePreferences = DefaultThemePreferences(appSettings)
     val currencyPreferences = DefaultCurrencyPreferences(appSettings)
@@ -63,6 +75,9 @@ internal class FlintRuntime(
 
     init {
         scope.launch {
+            SparkDeepLinks.events.collect { host.offerPaymentLink(it) }
+        }
+        scope.launch {
             // A payment always presents on the Scan tab, wherever it was started from.
             paymentCoordinator.uiState.collect { state ->
                 if (state != PaymentUiState.Active) tabState.requestScan()
@@ -74,10 +89,39 @@ internal class FlintRuntime(
         paymentCoordinator.resetSession()
     }
 
-    fun clear() {
+    private fun clearObservers() {
+        if (closed) return
+        closed = true
+        scope.cancel()
+        walletViewModel.dispose()
         paymentCoordinator.clear()
         onboardingViewModel.clear()
         languageRepository.close()
-        scope.cancel()
+        bitcoinPriceProvider.close()
+        host.paymentLinks.clear()
+        SparkDeepLinks.clear()
+    }
+
+    suspend fun close() {
+        clearObservers()
+        mutableCloseFailed.value = false
+        try {
+            walletAccess.close()
+        } catch (error: Exception) {
+            mutableCloseFailed.value = true
+            throw error
+        }
+    }
+
+    /** Best-effort platform teardown; callers that need to handle failure await [close]. */
+    fun clear() {
+        clearObservers()
+        // Composition teardown cannot suspend. Wallet removal already performs its SDK cleanup;
+        // cancelling setup awaits close() before leaving.
+        CoroutineScope(
+            SupervisorJob() + Dispatchers.Main
+        ).launch(start = CoroutineStart.UNDISPATCHED) {
+            runCatching { close() }
+        }
     }
 }

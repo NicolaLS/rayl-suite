@@ -6,19 +6,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "FLINT / 01"
+            "value": "%1$@ / 01"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "FLINT / 01"
+            "value": "%1$@ / 01"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "FLINT / 01"
+            "value": "%1$@ / 01"
           }
         }
       }
@@ -270,19 +270,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Importing a recovery phrase gives Flint spending authority. Keep your primary wallet installed for recovery and full wallet management."
+            "value": "Importing a recovery phrase gives %1$@ spending authority. Keep your primary wallet installed for recovery and full wallet management."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Durch den Import einer Wiederherstellungsphrase erhält Flint Ausgabeberechtigung. Behalte deine primäre Wallet für Wiederherstellung und vollständige Verwaltung installiert."
+            "value": "Durch den Import einer Wiederherstellungsphrase erhält %1$@ Ausgabeberechtigung. Behalte deine primäre Wallet für Wiederherstellung und vollständige Verwaltung installiert."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Importar una frase de recuperación otorga a Flint autorización para gastar. Conserva tu billetera principal instalada para recuperar y administrar la billetera por completo."
+            "value": "Importar una frase de recuperación otorga a %1$@ autorización para gastar. Conserva tu billetera principal instalada para recuperar y administrar la billetera por completo."
           }
         }
       }
@@ -446,19 +446,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint still has the recovery phrase securely stored. Check your internet connection and retry, or remove the wallet from Flint."
+            "value": "%1$@ still has the recovery phrase securely stored. Check your internet connection and retry, or remove the wallet from %1$@."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint hat die Wiederherstellungsphrase weiterhin sicher gespeichert. Prüfe deine Internetverbindung und versuche es erneut oder entferne die Wallet aus Flint."
+            "value": "%1$@ hat die Wiederherstellungsphrase weiterhin sicher gespeichert. Prüfe deine Internetverbindung und versuche es erneut oder entferne die Wallet aus %1$@."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint todavía tiene guardada la frase de recuperación de forma segura. Revisa tu conexión a internet y vuelve a intentarlo, o quita la billetera de Flint."
+            "value": "%1$@ todavía tiene guardada la frase de recuperación de forma segura. Revisa tu conexión a internet y vuelve a intentarlo, o quita la billetera de %1$@."
           }
         }
       }
@@ -534,19 +534,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Remove this wallet from Flint?"
+            "value": "Remove this wallet from %1$@?"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Diese Wallet aus Flint entfernen?"
+            "value": "Diese Wallet aus %1$@ entfernen?"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "¿Quitar esta billetera de Flint?"
+            "value": "¿Quitar esta billetera de %1$@?"
           }
         }
       }
@@ -556,19 +556,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "REMOVE WALLET FROM FLINT"
+            "value": "REMOVE WALLET FROM %1$@"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "WALLET AUS FLINT ENTFERNEN"
+            "value": "WALLET AUS %1$@ ENTFERNEN"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "QUITAR BILLETERA DE FLINT"
+            "value": "QUITAR BILLETERA DE %1$@"
           }
         }
       }

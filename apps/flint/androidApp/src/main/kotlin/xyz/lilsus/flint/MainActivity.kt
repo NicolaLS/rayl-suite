@@ -18,9 +18,11 @@ class MainActivity : AppCompatActivity() {
 
         orientationPolicy.apply()
 
+        val configuration = androidFlintConfiguration()
         setContent {
             App(
-                host = (application as FlintApplication).appHost
+                environment = configuration.environment,
+                breezApiKey = configuration.breezApiKey
             )
         }
         deliverPaymentLink(intent)
@@ -41,7 +43,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun deliverPaymentLink(intent: Intent?) {
         if (intent?.action == Intent.ACTION_VIEW) {
-            intent.dataString?.let((application as FlintApplication).appHost::offerPaymentLink)
+            intent.dataString?.let(SparkDeepLinks::emit)
         }
     }
 }

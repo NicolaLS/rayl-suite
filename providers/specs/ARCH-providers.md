@@ -22,6 +22,12 @@ feature consumes `PaymentEngine`; [`integration/wallet`](../spark/integration/wa
 provides platform credential/storage implementations and the Breez Spark adapter.
 Spark's [`experience`](../spark/experience) assembles these parts and their platform
 presentations; Flint supplies product configuration and platform entry points.
+The experience owns its wallet session lifetime. Disposal stops operations and
+releases SDK resources while preserving credentials. The suspending `close()` API
+reports cleanup failures and permits retry; non-suspending platform teardown is
+best effort.
+Successful wallet removal is reported separately from an initially empty wallet,
+so hosts return to provider selection only after removal has completed.
 
 ## Shared services
 

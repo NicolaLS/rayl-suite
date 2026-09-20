@@ -21,11 +21,13 @@ class WalletRemovalTest {
         val access = newAccess(backgroundScope, vault, directories)
 
         assertEquals(RemoveWalletResult.RESET_REQUIRED, access.removeWallet())
+        assertFalse(access.removed.value)
         assertTrue(directories.pending)
         assertEquals(0, directories.finishAttempts)
 
         access.retryConnection()
         assertEquals(WalletAccessState.ResetRequired, access.state.value)
+        assertFalse(access.removed.value)
         assertTrue(directories.pending)
         assertEquals(2, directories.deleteAttempts)
         assertEquals(0, directories.finishAttempts)
@@ -36,6 +38,7 @@ class WalletRemovalTest {
         runCurrent()
 
         assertEquals(WalletAccessState.NoWallet, restarted.state.value)
+        assertTrue(restarted.removed.value)
         assertFalse(directories.pending)
         assertEquals(3, directories.deleteAttempts)
         assertEquals(3, vault.deleteAttempts)
@@ -51,6 +54,7 @@ class WalletRemovalTest {
         assertEquals(RemoveWalletResult.RESET_REQUIRED, access.removeWallet())
         access.retryConnection()
         assertEquals(WalletAccessState.ResetRequired, access.state.value)
+        assertFalse(access.removed.value)
         assertFalse(directories.pending)
         assertEquals(0, vault.deleteAttempts)
         assertEquals(0, directories.deleteAttempts)
@@ -60,6 +64,7 @@ class WalletRemovalTest {
         access.retryConnection()
 
         assertEquals(WalletAccessState.NoWallet, access.state.value)
+        assertTrue(access.removed.value)
         assertFalse(directories.pending)
         assertEquals(1, vault.deleteAttempts)
         assertEquals(1, directories.deleteAttempts)

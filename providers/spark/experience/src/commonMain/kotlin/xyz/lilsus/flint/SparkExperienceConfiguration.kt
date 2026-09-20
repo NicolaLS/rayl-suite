@@ -6,5 +6,6 @@ import xyz.lilsus.raylsuite.feature.settings.SettingsLegalLinks
 data class SparkExperienceConfiguration(
     val appName: String,
     val preferencesName: String,
-    val legalLinks: SettingsLegalLinks
+    val legalLinks: SettingsLegalLinks,
+    val welcomeCompleted: Boolean = false
 )

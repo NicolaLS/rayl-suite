@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import xyz.lilsus.raylsuite.core.camera.CameraAuthorizationState
 import xyz.lilsus.raylsuite.core.camera.createNativeQrScannerController
@@ -165,9 +166,13 @@ class NativePaymentScanController(
     }
 
     fun clear() {
+        screenActive = false
         scannerRestartJob?.cancel()
         resolvingContentJob?.cancel()
         scanner.stop()
+        scannerStarted = false
+        input = null
+        snapshot.value = null
         scope.cancel()
     }
 
@@ -193,6 +198,8 @@ class NativePaymentScanController(
     }
 
     private fun reconcileScanner() {
+        // A pending permission callback can arrive after the experience has been disposed.
+        if (!scope.isActive) return
         val current = input
         val shouldRun =
             screenActive &&

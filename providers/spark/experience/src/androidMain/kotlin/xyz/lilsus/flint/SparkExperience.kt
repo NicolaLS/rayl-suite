@@ -3,29 +3,39 @@ package xyz.lilsus.flint
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.rememberNavController
+import kotlin.random.Random
+import kotlinx.coroutines.CancellationException
 import xyz.lilsus.flint.application.wallet.WalletAccessState
+import xyz.lilsus.flint.experience.R
 import xyz.lilsus.flint.feature.onboarding.FlintOnboardingDestination
 import xyz.lilsus.flint.feature.onboarding.flintOnboarding
 import xyz.lilsus.flint.feature.walletconnection.WalletConnectionScreen
-import xyz.lilsus.flint.feature.walletconnection.WalletViewModel
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
+import xyz.lilsus.raylsuite.core.ui.platform.LocalProductName
 import xyz.lilsus.raylsuite.core.ui.platform.rememberHapticFeedbackManager
 import xyz.lilsus.raylsuite.core.ui.platform.rememberRetainedInstance
 import xyz.lilsus.raylsuite.core.ui.theme.RaylSuiteTheme
@@ -33,34 +43,61 @@ import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 
 @Composable
 fun SparkExperience(
-    host: FlintAppHost,
     configuration: SparkExperienceConfiguration,
-    performanceDiagnostics: PerformanceDiagnostics? = null
+    environment: FlintEnvironment,
+    breezApiKey: String? = null,
+    performanceDiagnostics: PerformanceDiagnostics? = null,
+    onRemoved: (() -> Unit)? = null,
+    onChooseWallet: (() -> Unit)? = null,
+    onConnectionChanged: (Boolean) -> Unit = {}
 ) {
     val appSettings = rememberAppSettings(configuration.preferencesName)
     val haptics = rememberHapticFeedbackManager()
+    val context = LocalContext.current.applicationContext
+    val runtimeKey = rememberSaveable { "spark-" + Random.nextLong() }
     val runtime =
         rememberRetainedInstance(
-            key = FLINT_RUNTIME_KEY,
+            key = runtimeKey,
             factory = {
                 FlintRuntime(
-                    host = host,
+                    host = createAndroidAppHost(context, environment, breezApiKey),
                     configuration = configuration,
                     appSettings = appSettings,
                     haptics = haptics
                 )
             },
-            onDispose = FlintRuntime::clear
+            onDispose = FlintRuntime::clear,
+            releaseOnLeave = true
         )
     val themePreference by
         runtime.themePreferences.preference.collectAsStateWithLifecycle(
             initialValue = ThemePreference.System
         )
-    val walletViewModel = viewModel { WalletViewModel(runtime.walletAccess) }
+    val walletViewModel = runtime.walletViewModel
     val walletState by walletViewModel.state.collectAsStateWithLifecycle()
     var navigationReady by remember { mutableStateOf(!walletState.access.isInitialising()) }
 
-    LaunchedEffect(walletState.access) {
+    var exitAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var exitAttempt by remember { mutableStateOf(0) }
+    val closeFailed by runtime.closeFailed.collectAsStateWithLifecycle()
+    LaunchedEffect(runtime) {
+        runtime.removed.collect { removed ->
+            if (removed) onRemoved?.invoke()
+        }
+    }
+    LaunchedEffect(runtime, exitAction, exitAttempt) {
+        val action = exitAction ?: return@LaunchedEffect
+        try {
+            runtime.close()
+            action()
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: Exception) {
+            // closeFailed drives the retry screen; the disposed experience stays inactive.
+        }
+    }
+    LaunchedEffect(runtime, walletState.access) {
+        onConnectionChanged(walletState.access == WalletAccessState.Connected)
         if (!walletState.access.isInitialising()) navigationReady = true
         if (
             walletState.access == WalletAccessState.NoWallet ||
@@ -69,53 +106,89 @@ fun SparkExperience(
             runtime.resetPaymentSession()
         }
     }
-    RaylSuiteTheme(themePreference = themePreference) {
-        if (!navigationReady) {
-            InitialWalletLoading(configuration.appName)
-        } else if (walletState.access == WalletAccessState.Removing ||
-            walletState.access == WalletAccessState.ResetRequired
-        ) {
-            WalletConnectionScreen(
-                state = walletState,
-                onBack = null,
-                dispatch = walletViewModel::dispatch
-            )
-        } else {
-            val navController = rememberNavController()
-            val startDestination =
-                remember {
-                    when (walletState.access) {
-                        WalletAccessState.Connected -> FlintDestination.Home
-                        WalletAccessState.NoWallet -> FlintOnboardingDestination.Welcome
-                        else -> FlintOnboardingDestination.WalletRecovery
+    CompositionLocalProvider(LocalProductName provides configuration.appName) {
+        RaylSuiteTheme(themePreference = themePreference) {
+            if (exitAction != null) {
+                Column(modifier = Modifier.safeDrawingPadding().padding(24.dp)) {
+                    if (closeFailed) {
+                        Text(stringResource(R.string.session_close_failed))
+                        TextButton(onClick = { exitAttempt += 1 }) {
+                            Text(stringResource(R.string.session_close_retry))
+                        }
+                    } else {
+                        CircularProgressIndicator()
                     }
                 }
-            NavHost(
-                navController = navController,
-                startDestination = startDestination
+            } else if (!navigationReady) {
+                InitialWalletLoading(configuration.appName)
+            } else if (walletState.access == WalletAccessState.Removing ||
+                walletState.access == WalletAccessState.ResetRequired
             ) {
-                flintOnboarding(
-                    navController = navController,
-                    onboardingViewModel = runtime.onboardingViewModel,
-                    walletViewModel = walletViewModel,
-                    onWalletConnected = {
-                        navController.navigate(FlintDestination.Home) {
-                            popUpTo(navController.graph.id) { inclusive = true }
-                            launchSingleTop = true
+                WalletConnectionScreen(
+                    state = walletState,
+                    onBack = null,
+                    dispatch = walletViewModel::dispatch
+                )
+            } else {
+                Column {
+                    if (onChooseWallet != null && runtime.canCancelSetup) {
+                        TextButton(
+                            onClick = { if (runtime.canCancelSetup) exitAction = onChooseWallet },
+                            modifier = Modifier.safeDrawingPadding()
+                        ) {
+                            Text(stringResource(R.string.choose_another_wallet))
                         }
                     }
-                )
-                flintHome(
-                    runtime = runtime,
-                    walletViewModel = walletViewModel,
-                    performanceDiagnostics = performanceDiagnostics,
-                    onWalletRemoved = {
-                        navController.navigate(FlintOnboardingDestination.Welcome) {
-                            popUpTo(navController.graph.id) { inclusive = true }
-                            launchSingleTop = true
+                    val navController = rememberNavController()
+                    val startDestination =
+                        remember {
+                            when (walletState.access) {
+                                WalletAccessState.Connected -> FlintDestination.Home
+
+                                WalletAccessState.NoWallet -> if (configuration.welcomeCompleted) {
+                                    FlintOnboardingDestination.Features
+                                } else {
+                                    FlintOnboardingDestination.Welcome
+                                }
+
+                                else -> FlintOnboardingDestination.WalletRecovery
+                            }
                         }
+                    NavHost(
+                        navController = navController,
+                        startDestination = startDestination
+                    ) {
+                        flintOnboarding(
+                            navController = navController,
+                            onboardingViewModel = runtime.onboardingViewModel,
+                            walletViewModel = walletViewModel,
+                            welcomeCompleted = configuration.welcomeCompleted,
+                            onWalletConnected = {
+                                navController.navigate(FlintDestination.Home) {
+                                    popUpTo(navController.graph.id) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        )
+                        flintHome(
+                            runtime = runtime,
+                            walletViewModel = walletViewModel,
+                            performanceDiagnostics = performanceDiagnostics,
+                            onWalletRemoved = {
+                                navController.navigate(
+                                    if (configuration.welcomeCompleted) {
+                                        FlintOnboardingDestination.Features
+                                    } else {
+                                        FlintOnboardingDestination.Welcome
+                                    }
+                                ) {
+                                    popUpTo(navController.graph.id) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        )
                     }
-                )
+                }
             }
         }
     }
@@ -140,5 +213,3 @@ private fun InitialWalletLoading(appName: String) {
 
 internal fun WalletAccessState.isInitialising(): Boolean =
     this == WalletAccessState.Loading || this == WalletAccessState.Connecting
-
-private const val FLINT_RUNTIME_KEY = "flint-runtime"

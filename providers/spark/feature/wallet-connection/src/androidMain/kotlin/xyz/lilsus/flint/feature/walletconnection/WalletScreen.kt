@@ -116,7 +116,10 @@ private fun ImportContent(state: WalletUiState, dispatch: (WalletAction) -> Unit
             style = MaterialTheme.typography.headlineSmall
         )
         Text(
-            text = stringResource(R.string.wallet_import_body),
+            text = stringResource(
+                R.string.wallet_import_body,
+                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+            ),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -208,7 +211,10 @@ private fun RecoveryContent(
             textAlign = TextAlign.Center
         )
         Text(
-            text = stringResource(body),
+            text = stringResource(
+                body,
+                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+            ),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             textAlign = TextAlign.Center
@@ -223,7 +229,12 @@ private fun RecoveryContent(
             onClick = { dispatch(WalletAction.RequestRemoval) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.wallet_reset_action))
+            Text(
+                stringResource(
+                    R.string.wallet_reset_action,
+                    xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current.uppercase()
+                )
+            )
         }
     }
 }
@@ -232,7 +243,14 @@ private fun RecoveryContent(
 fun WalletRemovalConfirmation(dispatch: (WalletAction) -> Unit, canRemove: Boolean = true) {
     AlertDialog(
         onDismissRequest = { dispatch(WalletAction.CancelRemoval) },
-        title = { Text(stringResource(R.string.wallet_remove_title)) },
+        title = {
+            Text(
+                stringResource(
+                    R.string.wallet_remove_title,
+                    xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+                )
+            )
+        },
         text = { Text(stringResource(R.string.wallet_remove_body)) },
         confirmButton = {
             TextButton(

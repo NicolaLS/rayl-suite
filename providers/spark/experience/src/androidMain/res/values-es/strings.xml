@@ -1,4 +1,7 @@
 <resources>
     <string name="settings_wallet_title">Billetera Spark</string>
     <string name="settings_wallet_subtitle">Frase de recuperación guardada de forma segura en este dispositivo</string>
+    <string name="choose_another_wallet">Elegir otra billetera</string>
+    <string name="session_close_failed">No se pudo cerrar la sesión de la billetera. Reintenta antes de elegir otra billetera.</string>
+    <string name="session_close_retry">Reintentar</string>
 </resources>

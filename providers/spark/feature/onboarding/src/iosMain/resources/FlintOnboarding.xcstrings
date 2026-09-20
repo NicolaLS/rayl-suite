@@ -6,19 +6,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Have the recovery phrase for the wallet you want Flint to use ready."
+            "value": "Have the recovery phrase for the wallet you want %1$@ to use ready."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Halte die Wiederherstellungsphrase der Wallet bereit, die Flint verwenden soll."
+            "value": "Halte die Wiederherstellungsphrase der Wallet bereit, die %1$@ verwenden soll."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ten lista la frase de recuperación de la billetera que quieres usar con Flint."
+            "value": "Ten lista la frase de recuperación de la billetera que quieres usar con %1$@."
           }
         }
       }
@@ -50,19 +50,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enter the complete 12, 15, 18, 21, or 24-word phrase in Flint."
+            "value": "Enter the complete 12, 15, 18, 21, or 24-word phrase in %1$@."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gib die vollständige Phrase mit 12, 15, 18, 21 oder 24 Wörtern in Flint ein."
+            "value": "Gib die vollständige Phrase mit 12, 15, 18, 21 oder 24 Wörtern in %1$@ ein."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ingresa en Flint la frase completa de 12, 15, 18, 21 o 24 palabras."
+            "value": "Ingresa en %1$@ la frase completa de 12, 15, 18, 21 o 24 palabras."
           }
         }
       }
@@ -72,19 +72,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint opens that Spark wallet and protects the phrase with this device’s secure storage."
+            "value": "%1$@ opens that Spark wallet and protects the phrase with this device’s secure storage."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint öffnet diese Spark-Wallet und schützt die Phrase im sicheren Speicher dieses Geräts."
+            "value": "%1$@ öffnet diese Spark-Wallet und schützt die Phrase im sicheren Speicher dieses Geräts."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint abre esa billetera Spark y protege la frase con el almacenamiento seguro de este dispositivo."
+            "value": "%1$@ abre esa billetera Spark y protege la frase con el almacenamiento seguro de este dispositivo."
           }
         }
       }
@@ -116,19 +116,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Using Flint is at your own risk. This app can spend from the Spark wallet derived from your recovery phrase. You are fully responsible for the phrase, funds, and payments made.\n\nWe strongly recommend using a wallet with a small spending balance."
+            "value": "Using %1$@ is at your own risk. This app can spend from the Spark wallet derived from your recovery phrase. You are fully responsible for the phrase, funds, and payments made.\n\nWe strongly recommend using a wallet with a small spending balance."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Nutzung von Flint erfolgt auf eigenes Risiko. Diese App kann Guthaben aus der Spark-Wallet ausgeben, die aus deiner Wiederherstellungsphrase abgeleitet wird. Du bist vollständig für die Phrase, das Guthaben und alle Zahlungen verantwortlich.\n\nWir empfehlen dringend eine Wallet mit einem kleinen Ausgabeguthaben."
+            "value": "Die Nutzung von %1$@ erfolgt auf eigenes Risiko. Diese App kann Guthaben aus der Spark-Wallet ausgeben, die aus deiner Wiederherstellungsphrase abgeleitet wird. Du bist vollständig für die Phrase, das Guthaben und alle Zahlungen verantwortlich.\n\nWir empfehlen dringend eine Wallet mit einem kleinen Ausgabeguthaben."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Usas Flint bajo tu propio riesgo. Esta aplicación puede gastar desde la billetera Spark derivada de tu frase de recuperación. Eres totalmente responsable de la frase, los fondos y los pagos realizados.\n\nRecomendamos usar una billetera con un saldo pequeño para gastos."
+            "value": "Usas %1$@ bajo tu propio riesgo. Esta aplicación puede gastar desde la billetera Spark derivada de tu frase de recuperación. Eres totalmente responsable de la frase, los fondos y los pagos realizados.\n\nRecomendamos usar una billetera con un saldo pequeño para gastos."
           }
         }
       }
@@ -138,19 +138,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Choose when Flint should ask for confirmation before paying."
+            "value": "Choose when %1$@ should ask for confirmation before paying."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wähle, wann Flint vor einer Zahlung um Bestätigung bitten soll."
+            "value": "Wähle, wann %1$@ vor einer Zahlung um Bestätigung bitten soll."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Elige cuándo Flint debe pedir confirmación antes de pagar."
+            "value": "Elige cuándo %1$@ debe pedir confirmación antes de pagar."
           }
         }
       }
@@ -160,19 +160,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint scans in the background so checkout stays smooth. Aim at the code, wait a beat, and you’re ready."
+            "value": "%1$@ scans in the background so checkout stays smooth. Aim at the code, wait a beat, and you’re ready."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint scannt im Hintergrund, damit das Bezahlen reibungslos bleibt. Richte es auf den Code, warte kurz und schon kann es losgehen."
+            "value": "%1$@ scannt im Hintergrund, damit das Bezahlen reibungslos bleibt. Richte es auf den Code, warte kurz und schon kann es losgehen."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint escanea en segundo plano para que el pago sea fluido. Apunta al código, espera un instante y listo."
+            "value": "%1$@ escanea en segundo plano para que el pago sea fluido. Apunta al código, espera un instante y listo."
           }
         }
       }
@@ -226,19 +226,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Set a limit you’re comfortable with. For anything above it, Flint asks before paying."
+            "value": "Set a limit you’re comfortable with. For anything above it, %1$@ asks before paying."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Lege ein Limit fest, mit dem du dich wohlfühlst. Bei höheren Beträgen fragt Flint vor der Zahlung nach."
+            "value": "Lege ein Limit fest, mit dem du dich wohlfühlst. Bei höheren Beträgen fragt %1$@ vor der Zahlung nach."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Define un límite con el que te sientas cómodo. Para cualquier monto superior, Flint pedirá confirmación."
+            "value": "Define un límite con el que te sientas cómodo. Para cualquier monto superior, %1$@ pedirá confirmación."
           }
         }
       }
@@ -292,19 +292,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The recovery phrase stays protected on this device while Flint focuses on fast in-person payments."
+            "value": "The recovery phrase stays protected on this device while %1$@ focuses on fast in-person payments."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Wiederherstellungsphrase bleibt auf diesem Gerät geschützt, während Flint sich auf schnelle Zahlungen vor Ort konzentriert."
+            "value": "Die Wiederherstellungsphrase bleibt auf diesem Gerät geschützt, während %1$@ sich auf schnelle Zahlungen vor Ort konzentriert."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La frase de recuperación permanece protegida en este dispositivo mientras Flint se concentra en pagos presenciales rápidos."
+            "value": "La frase de recuperación permanece protegida en este dispositivo mientras %1$@ se concentra en pagos presenciales rápidos."
           }
         }
       }
@@ -314,19 +314,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint opens the wallet derived from your phrase."
+            "value": "%1$@ opens the wallet derived from your phrase."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint öffnet die aus deiner Phrase abgeleitete Wallet."
+            "value": "%1$@ öffnet die aus deiner Phrase abgeleitete Wallet."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Flint abre la billetera derivada de tu frase."
+            "value": "%1$@ abre la billetera derivada de tu frase."
           }
         }
       }
@@ -402,19 +402,19 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Welcome to Flint"
+            "value": "Welcome to %1$@"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Willkommen bei Flint"
+            "value": "Willkommen bei %1$@"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Te damos la bienvenida a Flint"
+            "value": "Te damos la bienvenida a %1$@"
           }
         }
       }

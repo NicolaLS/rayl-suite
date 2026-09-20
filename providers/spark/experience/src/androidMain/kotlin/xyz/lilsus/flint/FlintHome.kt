@@ -238,6 +238,7 @@ private fun FlintSettingsTab(
                     navController = navController,
                     onboardingViewModel = runtime.onboardingViewModel,
                     walletViewModel = walletViewModel,
+                    welcomeCompleted = runtime.configuration.welcomeCompleted,
                     onWalletConnected = { destination = FlintSettingsDestination.Root }
                 )
             }

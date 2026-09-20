@@ -17,101 +17,127 @@ data class NativeFlintOnboardingText(
     val instructionSteps: List<String>
 )
 
-suspend fun nativeFlintOnboardingText(): NativeFlintOnboardingText = NativeFlintOnboardingText(
-    welcomeTitle = nativeString(
-        NativeStringResource(table = "FlintOnboarding", key = "onboarding_welcome_title")
-    ),
-    welcomeSubtitle = nativeString(
-        NativeStringResource(table = "FlintOnboarding", key = "onboarding_welcome_subtitle_line1")
-    ),
-    welcomeDescription = nativeString(
-        NativeStringResource(table = "FlintOnboarding", key = "onboarding_welcome_subtitle_line2")
-    ),
-    featurePages =
-        listOf(
-            NativeFlintOnboardingPage(
-                title = nativeString(
-                    NativeStringResource(
-                        table = "FlintOnboarding",
-                        key = "onboarding_features_page1_title"
-                    )
-                ),
-                subtitle = nativeString(
-                    NativeStringResource(
-                        table = "FlintOnboarding",
-                        key = "onboarding_features_page1_subtitle"
-                    )
-                ),
-                body = nativeString(
-                    NativeStringResource(
-                        table = "FlintOnboarding",
-                        key = "onboarding_features_page1_body"
-                    )
-                )
-            ),
-            NativeFlintOnboardingPage(
-                title = nativeString(
-                    NativeStringResource(
-                        table = "FlintOnboarding",
-                        key = "onboarding_features_page2_title"
-                    )
-                ),
-                subtitle = nativeString(
-                    NativeStringResource(
-                        table = "FlintOnboarding",
-                        key = "onboarding_features_page2_subtitle"
-                    )
-                ),
-                body = nativeString(
-                    NativeStringResource(
-                        table = "FlintOnboarding",
-                        key = "onboarding_features_page2_body"
-                    )
-                )
-            ),
-            NativeFlintOnboardingPage(
-                title = nativeString(
-                    NativeStringResource(
-                        table = "FlintOnboarding",
-                        key = "onboarding_features_page3_title"
-                    )
-                ),
-                subtitle = nativeString(
-                    NativeStringResource(
-                        table = "FlintOnboarding",
-                        key = "onboarding_features_page3_subtitle"
-                    )
-                ),
-                body = nativeString(
-                    NativeStringResource(
-                        table = "FlintOnboarding",
-                        key = "onboarding_features_page3_body"
-                    )
-                )
+suspend fun nativeFlintOnboardingText(appName: String): NativeFlintOnboardingText =
+    NativeFlintOnboardingText(
+        welcomeTitle = nativeString(
+            NativeStringResource(table = "FlintOnboarding", key = "onboarding_welcome_title"),
+            appName
+        ),
+        welcomeSubtitle = nativeString(
+            NativeStringResource(
+                table = "FlintOnboarding",
+                key = "onboarding_welcome_subtitle_line1"
             )
         ),
-    autoPayBody = nativeString(
-        NativeStringResource(table = "FlintOnboarding", key = "onboarding_autopay_body")
-    ),
-    agreementBody = nativeString(
-        NativeStringResource(table = "FlintOnboarding", key = "onboarding_agreement_body")
-    ),
-    instructionsTitle = nativeString(
-        NativeStringResource(table = "FlintOnboarding", key = "onboarding_add_wallet_title")
-    ),
-    instructionsIntro = nativeString(
-        NativeStringResource(table = "FlintOnboarding", key = "onboarding_add_wallet_intro")
-    ),
-    instructionSteps =
-        listOf(
-            nativeString(
-                NativeStringResource(table = "FlintOnboarding", key = "onboarding_add_wallet_step1")
-            ),
-            nativeString(
-                NativeStringResource(table = "FlintOnboarding", key = "onboarding_add_wallet_step2")
-            ),
-            nativeString(
-                NativeStringResource(table = "FlintOnboarding", key = "onboarding_add_wallet_step3")
+        welcomeDescription = nativeString(
+            NativeStringResource(
+                table = "FlintOnboarding",
+                key = "onboarding_welcome_subtitle_line2"
             )
-        )
-)
+        ),
+        featurePages =
+            listOf(
+                NativeFlintOnboardingPage(
+                    title = nativeString(
+                        NativeStringResource(
+                            table = "FlintOnboarding",
+                            key = "onboarding_features_page1_title"
+                        )
+                    ),
+                    subtitle = nativeString(
+                        NativeStringResource(
+                            table = "FlintOnboarding",
+                            key = "onboarding_features_page1_subtitle"
+                        )
+                    ),
+                    body = nativeString(
+                        NativeStringResource(
+                            table = "FlintOnboarding",
+                            key = "onboarding_features_page1_body"
+                        ),
+                        appName
+                    )
+                ),
+                NativeFlintOnboardingPage(
+                    title = nativeString(
+                        NativeStringResource(
+                            table = "FlintOnboarding",
+                            key = "onboarding_features_page2_title"
+                        )
+                    ),
+                    subtitle = nativeString(
+                        NativeStringResource(
+                            table = "FlintOnboarding",
+                            key = "onboarding_features_page2_subtitle"
+                        )
+                    ),
+                    body = nativeString(
+                        NativeStringResource(
+                            table = "FlintOnboarding",
+                            key = "onboarding_features_page2_body"
+                        ),
+                        appName
+                    )
+                ),
+                NativeFlintOnboardingPage(
+                    title = nativeString(
+                        NativeStringResource(
+                            table = "FlintOnboarding",
+                            key = "onboarding_features_page3_title"
+                        )
+                    ),
+                    subtitle = nativeString(
+                        NativeStringResource(
+                            table = "FlintOnboarding",
+                            key = "onboarding_features_page3_subtitle"
+                        ),
+                        appName
+                    ),
+                    body = nativeString(
+                        NativeStringResource(
+                            table = "FlintOnboarding",
+                            key = "onboarding_features_page3_body"
+                        ),
+                        appName
+                    )
+                )
+            ),
+        autoPayBody = nativeString(
+            NativeStringResource(table = "FlintOnboarding", key = "onboarding_autopay_body"),
+            appName
+        ),
+        agreementBody = nativeString(
+            NativeStringResource(table = "FlintOnboarding", key = "onboarding_agreement_body"),
+            appName
+        ),
+        instructionsTitle = nativeString(
+            NativeStringResource(table = "FlintOnboarding", key = "onboarding_add_wallet_title")
+        ),
+        instructionsIntro = nativeString(
+            NativeStringResource(table = "FlintOnboarding", key = "onboarding_add_wallet_intro"),
+            appName
+        ),
+        instructionSteps =
+            listOf(
+                nativeString(
+                    NativeStringResource(
+                        table = "FlintOnboarding",
+                        key = "onboarding_add_wallet_step1"
+                    )
+                ),
+                nativeString(
+                    NativeStringResource(
+                        table = "FlintOnboarding",
+                        key = "onboarding_add_wallet_step2"
+                    ),
+                    appName
+                ),
+                nativeString(
+                    NativeStringResource(
+                        table = "FlintOnboarding",
+                        key = "onboarding_add_wallet_step3"
+                    ),
+                    appName
+                )
+            )
+    )

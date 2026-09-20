@@ -35,13 +35,14 @@ data class NativeFlintWalletConnectionText(
     val errorReset: String
 )
 
-suspend fun nativeFlintWalletConnectionText(): NativeFlintWalletConnectionText =
+suspend fun nativeFlintWalletConnectionText(appName: String): NativeFlintWalletConnectionText =
     NativeFlintWalletConnectionText(
         importTitle = nativeString(
             NativeStringResource(table = "FlintWalletConnection", key = "wallet_import_title")
         ),
         importBody = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_import_body")
+            NativeStringResource(table = "FlintWalletConnection", key = "wallet_import_body"),
+            appName
         ),
         phraseLabel = nativeString(
             NativeStringResource(table = "FlintWalletConnection", key = "wallet_phrase_label")
@@ -56,7 +57,8 @@ suspend fun nativeFlintWalletConnectionText(): NativeFlintWalletConnectionText =
             NativeStringResource(table = "FlintWalletConnection", key = "wallet_import_action")
         ),
         removeTitle = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_remove_title")
+            NativeStringResource(table = "FlintWalletConnection", key = "wallet_remove_title"),
+            appName
         ),
         removeBody = nativeString(
             NativeStringResource(table = "FlintWalletConnection", key = "wallet_remove_body")
@@ -71,7 +73,8 @@ suspend fun nativeFlintWalletConnectionText(): NativeFlintWalletConnectionText =
             NativeStringResource(table = "FlintWalletConnection", key = "wallet_retry")
         ),
         resetAction = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_reset_action")
+            NativeStringResource(table = "FlintWalletConnection", key = "wallet_reset_action"),
+            appName.uppercase()
         ),
         loading = nativeString(
             NativeStringResource(table = "FlintWalletConnection", key = "wallet_progress_loading")
@@ -92,7 +95,8 @@ suspend fun nativeFlintWalletConnectionText(): NativeFlintWalletConnectionText =
             NativeStringResource(table = "FlintWalletConnection", key = "wallet_reconnect_title")
         ),
         reconnectBody = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_reconnect_body")
+            NativeStringResource(table = "FlintWalletConnection", key = "wallet_reconnect_body"),
+            appName
         ),
         resetTitle = nativeString(
             NativeStringResource(table = "FlintWalletConnection", key = "wallet_reset_title")

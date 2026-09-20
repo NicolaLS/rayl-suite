@@ -3,6 +3,7 @@ package xyz.lilsus.flint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import xyz.lilsus.flint.application.wallet.WalletAccessState
@@ -30,6 +31,7 @@ class SparkIosExperience(
     private val configuration: SparkExperienceConfiguration
 ) {
     private val observerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var closed = false
 
     private val runtime =
         FlintRuntime(
@@ -39,7 +41,7 @@ class SparkIosExperience(
             haptics = createHapticFeedbackManager()
         )
 
-    private val nativeSettingsController =
+    private val nativeSettingsControllerDelegate = lazy {
         NativeSettingsController(
             themePreferences = runtime.themePreferences,
             languageRepository = runtime.languageRepository,
@@ -48,40 +50,105 @@ class SparkIosExperience(
             bitcoinPriceProvider = runtime.bitcoinPriceProvider,
             legalLinks = configuration.legalLinks,
             appVersionName = nativeSettingsAppVersionName()
-        )
+        ).also { if (closed) it.clear() }
+    }
+    private val nativeSettingsController by nativeSettingsControllerDelegate
 
-    private val nativeScanController by lazy(::createNativeScanController)
+    private val nativeScanControllerDelegate = lazy {
+        createNativeScanController().also { if (closed) it.clear() }
+    }
+    private val nativeScanController by nativeScanControllerDelegate
 
-    private val nativeRecentController by lazy(::createNativeRecentController)
+    private val nativeRecentControllerDelegate = lazy {
+        createNativeRecentController().also { if (closed) it.clear() }
+    }
+    private val nativeRecentController by nativeRecentControllerDelegate
 
-    private val nativeHubController by lazy {
+    private val nativeHubControllerDelegate = lazy {
         NativePaymentHubController(
             repository = runtime.paymentHubRepository,
             host = runtime.paymentHub,
             languageChanges = runtime.languageRepository.preference,
             currencyCodes = runtime.currencyPreferences.code
-        )
+        ).also { if (closed) it.clear() }
     }
+    private val nativeHubController by nativeHubControllerDelegate
 
-    private val nativeOnboardingController by lazy {
+    private val nativeOnboardingControllerDelegate = lazy {
         FlintNativeOnboardingController(
             onboarding = runtime.onboardingViewModel,
             walletAccess = runtime.walletAccess,
-            languageChanges = runtime.languageRepository.preference
-        )
+            languageChanges = runtime.languageRepository.preference,
+            appName = configuration.appName,
+            welcomeCompleted = configuration.welcomeCompleted
+        ).also { if (closed) it.clear() }
     }
+    private val nativeOnboardingController by nativeOnboardingControllerDelegate
 
-    private val nativeWalletSettingsController by lazy {
+    private val nativeWalletSettingsControllerDelegate = lazy {
         FlintNativeWalletSettingsController(
             walletAccess = runtime.walletAccess,
             networkLabel = runtime.networkLabel,
             languageChanges = runtime.languageRepository.preference,
-            isSubmitting = runtime.paymentCoordinator.isSubmitting
-        )
+            isSubmitting = runtime.paymentCoordinator.isSubmitting,
+            appName = configuration.appName
+        ).also { if (closed) it.clear() }
+    }
+    private val nativeWalletSettingsController by nativeWalletSettingsControllerDelegate
+
+    fun isConnected(): Boolean =
+        !closed && runtime.walletAccess.state.value == WalletAccessState.Connected
+
+    fun canCancelSetup(): Boolean = runtime.canCancelSetup
+
+    fun observeConnected(onChange: (Boolean) -> Unit): () -> Unit {
+        val job = observerScope.launch {
+            runtime.walletAccess.state.collect { onChange(isConnected()) }
+        }
+        return { job.cancel() }
+    }
+
+    fun observeCanCancelSetup(onChange: (Boolean) -> Unit): () -> Unit {
+        val job = observerScope.launch {
+            combine(runtime.walletAccess.state, runtime.removed) { _, _ -> runtime.canCancelSetup }
+                .collect(onChange)
+        }
+        return { job.cancel() }
+    }
+
+    fun observeRemoved(onChange: (Boolean) -> Unit): () -> Unit {
+        val job = observerScope.launch { runtime.removed.collect(onChange) }
+        return { job.cancel() }
+    }
+
+    /** Terminal disposal preserves credentials and can be retried if SDK cleanup fails. */
+    @Throws(Exception::class)
+    suspend fun close() {
+        clearControllers()
+        runtime.close()
+    }
+
+    fun clear() {
+        clearControllers()
+        runtime.clear()
+    }
+
+    private fun clearControllers() {
+        if (closed) return
+        closed = true
+        observerScope.cancel()
+        if (nativeSettingsControllerDelegate.isInitialized()) nativeSettingsController.clear()
+        if (nativeScanControllerDelegate.isInitialized()) nativeScanController.clear()
+        if (nativeRecentControllerDelegate.isInitialized()) nativeRecentController.clear()
+        if (nativeHubControllerDelegate.isInitialized()) nativeHubController.clear()
+        if (nativeOnboardingControllerDelegate.isInitialized()) nativeOnboardingController.clear()
+        if (nativeWalletSettingsControllerDelegate.isInitialized()) {
+            nativeWalletSettingsController.clear()
+        }
     }
 
     /** One of `loading`, `onboarding`, or `tabs`. */
-    fun stage(): String = runtime.walletAccess.state.value.toStage()
+    fun stage(): String = if (closed) "loading" else runtime.walletAccess.state.value.toStage()
 
     fun observeStage(onChange: (String) -> Unit): () -> Unit {
         val job =
@@ -131,7 +198,7 @@ class SparkIosExperience(
     }
 
     fun selectTab(tab: String) {
-        if (!runtime.paymentCoordinator.isSubmitting.value) {
+        if (!closed && !runtime.paymentCoordinator.isSubmitting.value) {
             runtime.tabState.select(AppTab.fromStoredValue(tab))
         }
     }

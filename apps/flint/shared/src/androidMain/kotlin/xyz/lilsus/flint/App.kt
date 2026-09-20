@@ -4,9 +4,14 @@ import androidx.compose.runtime.Composable
 import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 
 @Composable
-fun App(host: FlintAppHost, performanceDiagnostics: PerformanceDiagnostics? = null) {
+fun App(
+    environment: FlintEnvironment,
+    breezApiKey: String? = null,
+    performanceDiagnostics: PerformanceDiagnostics? = null
+) {
     SparkExperience(
-        host = host,
+        environment = environment,
+        breezApiKey = breezApiKey,
         configuration = FLINT_EXPERIENCE,
         performanceDiagnostics = performanceDiagnostics
     )

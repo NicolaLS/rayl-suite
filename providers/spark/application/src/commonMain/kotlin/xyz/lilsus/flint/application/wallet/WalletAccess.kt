@@ -5,12 +5,21 @@ import xyz.lilsus.flint.application.payment.PaymentEngine
 
 interface WalletAccess {
     val state: StateFlow<WalletAccessState>
+
+    /** Successful removal, including cleanup resumed after restart; initial absence is not removal. */
+    val removed: StateFlow<Boolean>
     val payments: PaymentEngine
 
     fun start()
     suspend fun importWallet(mnemonic: String): ImportWalletResult
     suspend fun retryConnection()
     suspend fun removeWallet(): RemoveWalletResult
+
+    /**
+     * Permanently stops this instance without deleting credentials or wallet data. Cleanup failures
+     * propagate and can be retried by calling close again; subsequent wallet operations are cancelled.
+     */
+    suspend fun close()
 }
 
 sealed interface WalletAccessState {

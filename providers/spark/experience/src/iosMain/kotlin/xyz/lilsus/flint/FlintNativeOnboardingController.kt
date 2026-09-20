@@ -3,6 +3,7 @@ package xyz.lilsus.flint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -83,14 +84,18 @@ data class FlintNativeOnboardingSnapshot(
 class FlintNativeOnboardingController internal constructor(
     private val onboarding: OnboardingViewModel,
     walletAccess: WalletAccess,
-    languageChanges: Flow<*>
+    languageChanges: Flow<*>,
+    private val appName: String,
+    private val welcomeCompleted: Boolean
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var closed = false
     private val wallet = WalletViewModel(walletAccess)
     private val snapshot = MutableStateFlow<FlintNativeOnboardingSnapshot?>(null)
     private var resolvingInitialWallet = walletAccess.state.value.isInitialising()
+    private val firstStep = if (welcomeCompleted) STEP_FEATURES else STEP_WELCOME
     private var currentStep =
-        if (walletAccess.state.value == WalletAccessState.NoWallet) STEP_WELCOME else STEP_WALLET
+        if (walletAccess.state.value == WalletAccessState.NoWallet) firstStep else STEP_WALLET
     private var resetRequested = false
 
     init {
@@ -105,15 +110,24 @@ class FlintNativeOnboardingController internal constructor(
         return { job.cancel() }
     }
 
+    fun clear() {
+        closed = true
+        scope.cancel()
+        wallet.dispose()
+        snapshot.value = null
+    }
+
     fun continueWelcome() = moveTo(STEP_FEATURES)
 
     fun setFeaturePage(page: Int) {
+        if (closed) return
         onboarding.setFeaturesPage(page)
     }
 
     fun continueFeatures() = moveTo(STEP_AUTO_PAY)
 
     fun setConfirmationMode(value: String) {
+        if (closed) return
         onboarding.setConfirmationMode(
             if (value == CONFIRMATION_ALWAYS) {
                 PaymentConfirmationMode.Always
@@ -124,6 +138,7 @@ class FlintNativeOnboardingController internal constructor(
     }
 
     fun setThresholdIndex(index: Int) {
+        if (closed) return
         PaymentPreferences.THRESHOLD_STEPS.getOrNull(index)?.let(onboarding::setThreshold)
     }
 
@@ -132,6 +147,7 @@ class FlintNativeOnboardingController internal constructor(
     }
 
     fun setAgreement(agreed: Boolean) {
+        if (closed) return
         onboarding.setAgreement(agreed)
     }
 
@@ -168,7 +184,7 @@ class FlintNativeOnboardingController internal constructor(
 
     fun back() {
         when (effectiveStep(wallet.state.value.access)) {
-            STEP_FEATURES -> moveTo(STEP_WELCOME)
+            STEP_FEATURES -> if (!welcomeCompleted) moveTo(STEP_WELCOME)
 
             STEP_AUTO_PAY -> moveTo(STEP_FEATURES)
 
@@ -185,6 +201,7 @@ class FlintNativeOnboardingController internal constructor(
     }
 
     private fun moveTo(step: String) {
+        if (closed) return
         currentStep = step
         scope.launch { publishSnapshot() }
     }
@@ -195,18 +212,18 @@ class FlintNativeOnboardingController internal constructor(
         if (resolvingInitialWallet && !walletState.access.isInitialising()) {
             resolvingInitialWallet = false
             currentStep =
-                if (walletState.access == WalletAccessState.NoWallet) STEP_WELCOME else STEP_WALLET
+                if (walletState.access == WalletAccessState.NoWallet) firstStep else STEP_WALLET
         }
         if (resetRequested && walletState.access == WalletAccessState.NoWallet) {
             resetRequested = false
-            currentStep = STEP_WELCOME
+            currentStep = firstStep
             onboarding.setFeaturesPage(0)
             onboarding.setAgreement(false)
         }
 
         val common = nativeOnboardingText()
-        val flint = nativeFlintOnboardingText()
-        val walletText = nativeFlintWalletConnectionText()
+        val flint = nativeFlintOnboardingText(appName)
+        val walletText = nativeFlintWalletConnectionText(appName)
         val step = effectiveStep(walletState.access)
         val formatter = currentAmountFormatter()
         val sats = formatter.format(DisplayAmount(state.thresholdSats, DisplayCurrency.Satoshi))
@@ -222,7 +239,7 @@ class FlintNativeOnboardingController internal constructor(
                 step = step,
                 stepIndex = stepIndex(step),
                 stepCount = ONBOARDING_STEP_COUNT,
-                canGoBack = step != STEP_WELCOME && !isRecovery(walletState.access),
+                canGoBack = step != firstStep && !isRecovery(walletState.access),
                 backTitle = common.back,
                 welcomeTitle = flint.welcomeTitle,
                 welcomeSubtitle = flint.welcomeSubtitle,

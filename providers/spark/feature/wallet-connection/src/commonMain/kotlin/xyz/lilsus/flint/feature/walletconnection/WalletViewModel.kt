@@ -2,6 +2,7 @@ package xyz.lilsus.flint.feature.walletconnection
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -53,6 +54,11 @@ class WalletViewModel(private val walletAccess: WalletAccess) : ViewModel() {
     }
 
     override fun onCleared() {
+        dispose()
+    }
+
+    fun dispose() {
+        viewModelScope.cancel()
         mutableState.value = mutableState.value.copy(recoveryPhrase = "")
     }
 
