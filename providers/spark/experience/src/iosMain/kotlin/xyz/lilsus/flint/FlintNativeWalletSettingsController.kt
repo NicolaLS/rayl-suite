@@ -77,11 +77,14 @@ class FlintNativeWalletSettingsController internal constructor(
         val connection = nativeFlintWalletConnectionText(appName)
         val title =
             nativeString(
-                NativeStringResource(table = "SparkExperience", key = "settings_wallet_title")
+                NativeStringResource(table = "SparkExperience", key = "spark_settings_wallet_title")
             )
         val subtitle =
             nativeString(
-                NativeStringResource(table = "SparkExperience", key = "settings_wallet_subtitle")
+                NativeStringResource(
+                    table = "SparkExperience",
+                    key = "spark_settings_wallet_subtitle"
+                )
             )
         val connected = state.access == WalletAccessState.Connected
 

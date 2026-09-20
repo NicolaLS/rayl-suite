@@ -215,7 +215,7 @@ val allowedAppProviders = mapOf(
     "blip" to setOf("blink"),
     "lasr" to setOf("nwc"),
     "flint" to setOf("spark"),
-    "rayl" to setOf("blink", "nwc")
+    "rayl" to setOf("blink", "nwc", "spark")
 )
 
 val verifyModuleDependencies = tasks.register("verifyModuleDependencies") {

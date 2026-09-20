@@ -9,6 +9,8 @@
     <string name="blink_body">Verbinde dein Blink-Konto mit einem API-Schlüssel.</string>
     <string name="nwc_title">Nostr Wallet Connect</string>
     <string name="nwc_body">Verbinde eine kompatible Wallet über ihren NWC-Verbindungslink.</string>
+    <string name="spark_title">Spark</string>
+    <string name="spark_body">Importiere deine Spark-Wallet mit ihrer Wiederherstellungsphrase.</string>
     <string name="choose_another">Andere Wallet wählen</string>
     <string name="connection_exists">Entferne zuerst deine aktuelle Wallet in den Einstellungen, bevor du eine andere verbindest.</string>
     <string name="connect_to_pay">Verbinde deine Wallet und öffne danach die Zahlungsanfrage erneut.</string>

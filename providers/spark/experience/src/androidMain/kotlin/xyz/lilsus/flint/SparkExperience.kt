@@ -2,9 +2,14 @@ package xyz.lilsus.flint
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -111,9 +116,9 @@ fun SparkExperience(
             if (exitAction != null) {
                 Column(modifier = Modifier.safeDrawingPadding().padding(24.dp)) {
                     if (closeFailed) {
-                        Text(stringResource(R.string.session_close_failed))
+                        Text(stringResource(R.string.spark_session_close_failed))
                         TextButton(onClick = { exitAttempt += 1 }) {
-                            Text(stringResource(R.string.session_close_retry))
+                            Text(stringResource(R.string.spark_session_close_retry))
                         }
                     } else {
                         CircularProgressIndicator()
@@ -130,13 +135,22 @@ fun SparkExperience(
                     dispatch = walletViewModel::dispatch
                 )
             } else {
-                Column {
-                    if (onChooseWallet != null && runtime.canCancelSetup) {
+                val canChooseWallet = onChooseWallet != null && runtime.canCancelSetup
+                val cancellationInsets = if (canChooseWallet) {
+                    Modifier.windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Top + WindowInsetsSides.Horizontal
+                        )
+                    )
+                } else {
+                    Modifier
+                }
+                Column(modifier = cancellationInsets) {
+                    if (canChooseWallet) {
                         TextButton(
-                            onClick = { if (runtime.canCancelSetup) exitAction = onChooseWallet },
-                            modifier = Modifier.safeDrawingPadding()
+                            onClick = { if (runtime.canCancelSetup) exitAction = onChooseWallet }
                         ) {
-                            Text(stringResource(R.string.choose_another_wallet))
+                            Text(stringResource(R.string.spark_choose_another_wallet))
                         }
                     }
                     val navController = rememberNavController()

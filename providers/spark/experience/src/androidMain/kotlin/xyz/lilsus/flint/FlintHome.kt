@@ -195,8 +195,8 @@ private fun FlintSettingsTab(
                     listOf(
                         SettingsEntry(
                             id = "wallet",
-                            title = stringResource(R.string.settings_wallet_title),
-                            subtitle = stringResource(R.string.settings_wallet_subtitle),
+                            title = stringResource(R.string.spark_settings_wallet_title),
+                            subtitle = stringResource(R.string.spark_settings_wallet_subtitle),
                             icon = Icons.Filled.AccountBalanceWallet,
                             onClick = { destination = FlintSettingsDestination.WalletManagement }
                         )
@@ -209,10 +209,10 @@ private fun FlintSettingsTab(
                     if (walletState.access == WalletAccessState.Connected) {
                         ManagedWallet(
                             id = "spark",
-                            title = stringResource(R.string.settings_wallet_title),
+                            title = stringResource(R.string.spark_settings_wallet_title),
                             details =
                                 listOf(
-                                    stringResource(R.string.settings_wallet_subtitle),
+                                    stringResource(R.string.spark_settings_wallet_subtitle),
                                     runtime.networkLabel
                                 )
                         )

@@ -47,11 +47,11 @@ fun BlipOnboarding(
     when (step) {
         BlinkOnboardingStep.Welcome -> WelcomeScreen(
             title = stringResource(
-                R.string.onboarding_welcome_title,
+                R.string.blink_onboarding_welcome_title,
                 xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
             ),
-            subtitle = stringResource(R.string.onboarding_welcome_subtitle_line1),
-            description = stringResource(R.string.onboarding_welcome_subtitle_line2),
+            subtitle = stringResource(R.string.blink_onboarding_welcome_subtitle_line1),
+            description = stringResource(R.string.blink_onboarding_welcome_subtitle_line2),
             onGetStarted = { onStepChanged(BlinkOnboardingStep.Connect) }
         )
 
@@ -76,7 +76,7 @@ fun BlipOnboarding(
             val formatter = rememberAmountFormatter()
             AutoPaySettingsScreen(
                 body = stringResource(
-                    R.string.onboarding_autopay_body,
+                    R.string.blink_onboarding_autopay_body,
                     xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
                 ),
                 confirmationMode = state.confirmationMode,
@@ -93,7 +93,7 @@ fun BlipOnboarding(
 
         BlinkOnboardingStep.Agreement -> AgreementScreen(
             body = stringResource(
-                R.string.onboarding_agreement_body,
+                R.string.blink_onboarding_agreement_body,
                 xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
             ),
             hasAgreed = state.hasAgreed,
@@ -178,29 +178,29 @@ private fun AddWalletDestination(
 @Composable
 private fun onboardingFeaturePages(): List<OnboardingFeaturePage> = listOf(
     OnboardingFeaturePage(
-        title = stringResource(R.string.onboarding_features_page1_title),
-        subtitle = stringResource(R.string.onboarding_features_page1_subtitle),
+        title = stringResource(R.string.blink_onboarding_features_page1_title),
+        subtitle = stringResource(R.string.blink_onboarding_features_page1_subtitle),
         body = stringResource(
-            R.string.onboarding_features_page1_body,
+            R.string.blink_onboarding_features_page1_body,
             xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
         )
     ),
     OnboardingFeaturePage(
-        title = stringResource(R.string.onboarding_features_page2_title),
-        subtitle = stringResource(R.string.onboarding_features_page2_subtitle),
+        title = stringResource(R.string.blink_onboarding_features_page2_title),
+        subtitle = stringResource(R.string.blink_onboarding_features_page2_subtitle),
         body = stringResource(
-            R.string.onboarding_features_page2_body,
+            R.string.blink_onboarding_features_page2_body,
             xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
         )
     ),
     OnboardingFeaturePage(
-        title = stringResource(R.string.onboarding_features_page3_title),
+        title = stringResource(R.string.blink_onboarding_features_page3_title),
         subtitle = stringResource(
-            R.string.onboarding_features_page3_subtitle,
+            R.string.blink_onboarding_features_page3_subtitle,
             xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
         ),
         body = stringResource(
-            R.string.onboarding_features_page3_body,
+            R.string.blink_onboarding_features_page3_body,
             xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
         )
     )

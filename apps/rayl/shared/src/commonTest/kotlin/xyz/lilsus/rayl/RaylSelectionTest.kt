@@ -10,16 +10,21 @@ import kotlin.test.assertTrue
 class RaylSelectionTest {
     @Test
     fun anotherConnectionCannotReplaceTheSelectedExperience() {
-        val settings = MapSettings()
-        val selection = RaylSelection(settings)
-        selection.choose(RaylWallet.Blink)
-        assertFailsWith<IllegalStateException> { selection.choose(RaylWallet.Blink) }
-        assertEquals(RaylWallet.Blink, RaylSelection(settings).wallet.value)
-        selection.clear()
-        assertNull(RaylSelection(settings).wallet.value)
-        selection.choose(RaylWallet.Blink)
-        assertEquals(RaylWallet.Blink, RaylSelection(settings).wallet.value)
-        assertTrue(selection.welcomeCompleted.value)
+        RaylWallet.entries.forEach { current ->
+            RaylWallet.entries.forEach { next ->
+                val settings = MapSettings()
+                val selection = RaylSelection(settings)
+                selection.choose(current)
+                assertFailsWith<IllegalStateException> { selection.choose(next) }
+                assertEquals(current, RaylSelection(settings).wallet.value)
+
+                selection.clear()
+                assertNull(RaylSelection(settings).wallet.value)
+                selection.choose(next)
+                assertEquals(next, RaylSelection(settings).wallet.value)
+                assertTrue(selection.welcomeCompleted.value)
+            }
+        }
     }
 
     @Test

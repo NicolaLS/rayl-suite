@@ -4,7 +4,8 @@
 
 Use [`.envrc.example`](../.envrc.example) as the template for the upload-key
 environment variables. Load the values into your shell before invoking Gradle;
-keep passwords in your secret manager. Flint also needs `FLINT_BREEZ_API_KEY`.
+keep passwords in your secret manager. Rayl also needs `RAYL_BREEZ_API_KEY`, and
+Flint needs `FLINT_BREEZ_API_KEY`, for their production Spark integration.
 
 Build the chosen app's Google Play bundle from the repository root:
 
@@ -33,7 +34,10 @@ and terms live under [`docs/legal`](../docs/legal).
 
 [`encryption.md`](encryption.md) records the Rayl and Blip iOS encryption
 assessment, dependency evidence, and matching `Info.plist` declarations. The
-current assessment excludes France from initial distribution; enabling France
+recorded assessment excludes France from initial distribution; enabling France
 requires resolving the documented declaration or exemption work first. Update
 the assessment and both affected plist declarations when dependencies,
 cryptographic behavior, or distribution territories change.
+
+Rayl's Spark/Breez integration is outside that assessed dependency scope and
+requires reassessment before release.

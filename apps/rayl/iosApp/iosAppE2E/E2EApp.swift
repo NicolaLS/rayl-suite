@@ -3,6 +3,10 @@ import Shared
 
 @main
 struct E2EApp: App {
+    init() {
+        configureRaylSpark()
+    }
+
     var body: some Scene {
         WindowGroup {
             ContentView()

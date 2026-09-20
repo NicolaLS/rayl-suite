@@ -1,7 +1,7 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "wallet_brand": {
+    "spark_wallet_brand": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23,7 +23,7 @@
         }
       }
     },
-    "wallet_cancel": {
+    "spark_wallet_cancel": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -45,7 +45,7 @@
         }
       }
     },
-    "wallet_credential_corrupt": {
+    "spark_wallet_credential_corrupt": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -67,7 +67,7 @@
         }
       }
     },
-    "wallet_credential_invalidated": {
+    "spark_wallet_credential_invalidated": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -89,7 +89,7 @@
         }
       }
     },
-    "wallet_credential_title": {
+    "spark_wallet_credential_title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -111,7 +111,7 @@
         }
       }
     },
-    "wallet_credential_unavailable": {
+    "spark_wallet_credential_unavailable": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -133,7 +133,7 @@
         }
       }
     },
-    "wallet_error_already_configured": {
+    "spark_wallet_error_already_configured": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -155,7 +155,7 @@
         }
       }
     },
-    "wallet_error_connection": {
+    "spark_wallet_error_connection": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -177,7 +177,7 @@
         }
       }
     },
-    "wallet_error_invalid_mnemonic": {
+    "spark_wallet_error_invalid_mnemonic": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -199,7 +199,7 @@
         }
       }
     },
-    "wallet_error_reset": {
+    "spark_wallet_error_reset": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -221,7 +221,7 @@
         }
       }
     },
-    "wallet_error_storage": {
+    "spark_wallet_error_storage": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -243,7 +243,7 @@
         }
       }
     },
-    "wallet_import_action": {
+    "spark_wallet_import_action": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -265,7 +265,7 @@
         }
       }
     },
-    "wallet_import_body": {
+    "spark_wallet_import_body": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -287,7 +287,7 @@
         }
       }
     },
-    "wallet_import_title": {
+    "spark_wallet_import_title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -309,7 +309,7 @@
         }
       }
     },
-    "wallet_phrase_hint": {
+    "spark_wallet_phrase_hint": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -331,7 +331,7 @@
         }
       }
     },
-    "wallet_phrase_label": {
+    "spark_wallet_phrase_label": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -353,7 +353,7 @@
         }
       }
     },
-    "wallet_progress_connecting": {
+    "spark_wallet_progress_connecting": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -375,7 +375,7 @@
         }
       }
     },
-    "wallet_progress_loading": {
+    "spark_wallet_progress_loading": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -397,7 +397,7 @@
         }
       }
     },
-    "wallet_progress_removing": {
+    "spark_wallet_progress_removing": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -419,7 +419,7 @@
         }
       }
     },
-    "wallet_progress_working": {
+    "spark_wallet_progress_working": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -441,7 +441,7 @@
         }
       }
     },
-    "wallet_reconnect_body": {
+    "spark_wallet_reconnect_body": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -463,7 +463,7 @@
         }
       }
     },
-    "wallet_reconnect_title": {
+    "spark_wallet_reconnect_title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -485,7 +485,7 @@
         }
       }
     },
-    "wallet_remove_body": {
+    "spark_wallet_remove_body": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -507,7 +507,7 @@
         }
       }
     },
-    "wallet_remove_confirm": {
+    "spark_wallet_remove_confirm": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -529,7 +529,7 @@
         }
       }
     },
-    "wallet_remove_title": {
+    "spark_wallet_remove_title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -551,7 +551,7 @@
         }
       }
     },
-    "wallet_reset_action": {
+    "spark_wallet_reset_action": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -573,7 +573,7 @@
         }
       }
     },
-    "wallet_reset_body": {
+    "spark_wallet_reset_body": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -595,7 +595,7 @@
         }
       }
     },
-    "wallet_reset_title": {
+    "spark_wallet_reset_title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -617,7 +617,7 @@
         }
       }
     },
-    "wallet_retry": {
+    "spark_wallet_retry": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -639,7 +639,7 @@
         }
       }
     },
-    "wallet_storage_note": {
+    "spark_wallet_storage_note": {
       "localizations": {
         "en": {
           "stringUnit": {

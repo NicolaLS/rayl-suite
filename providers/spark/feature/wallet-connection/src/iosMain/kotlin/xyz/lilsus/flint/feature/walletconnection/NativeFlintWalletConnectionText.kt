@@ -38,109 +38,148 @@ data class NativeFlintWalletConnectionText(
 suspend fun nativeFlintWalletConnectionText(appName: String): NativeFlintWalletConnectionText =
     NativeFlintWalletConnectionText(
         importTitle = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_import_title")
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_import_title")
         ),
         importBody = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_import_body"),
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_import_body"),
             appName
         ),
         phraseLabel = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_phrase_label")
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_phrase_label")
         ),
         phraseHint = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_phrase_hint")
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_phrase_hint")
         ),
         storageNote = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_storage_note")
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_storage_note")
         ),
         importAction = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_import_action")
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_import_action"
+            )
         ),
         removeTitle = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_remove_title"),
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_remove_title"
+            ),
             appName
         ),
         removeBody = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_remove_body")
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_remove_body")
         ),
         removeConfirm = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_remove_confirm")
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_remove_confirm"
+            )
         ),
         cancel = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_cancel")
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_cancel")
         ),
         retry = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_retry")
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_retry")
         ),
         resetAction = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_reset_action"),
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_reset_action"
+            ),
             appName.uppercase()
         ),
         loading = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_progress_loading")
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_progress_loading"
+            )
         ),
         connecting = nativeString(
             NativeStringResource(
                 table = "FlintWalletConnection",
-                key = "wallet_progress_connecting"
+                key = "spark_wallet_progress_connecting"
             )
         ),
         removing = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_progress_removing")
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_progress_removing"
+            )
         ),
         working = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_progress_working")
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_progress_working"
+            )
         ),
         reconnectTitle = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_reconnect_title")
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_reconnect_title"
+            )
         ),
         reconnectBody = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_reconnect_body"),
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_reconnect_body"
+            ),
             appName
         ),
         resetTitle = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_reset_title")
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_reset_title")
         ),
         resetBody = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_reset_body")
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_reset_body")
         ),
         credentialTitle = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_credential_title")
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_credential_title"
+            )
         ),
         credentialUnavailable = nativeString(
             NativeStringResource(
                 table = "FlintWalletConnection",
-                key = "wallet_credential_unavailable"
+                key = "spark_wallet_credential_unavailable"
             )
         ),
         credentialInvalidated = nativeString(
             NativeStringResource(
                 table = "FlintWalletConnection",
-                key = "wallet_credential_invalidated"
+                key = "spark_wallet_credential_invalidated"
             )
         ),
         credentialCorrupt = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_credential_corrupt")
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_credential_corrupt"
+            )
         ),
         errorAlreadyConfigured = nativeString(
             NativeStringResource(
                 table = "FlintWalletConnection",
-                key = "wallet_error_already_configured"
+                key = "spark_wallet_error_already_configured"
             )
         ),
         errorInvalidMnemonic = nativeString(
             NativeStringResource(
                 table = "FlintWalletConnection",
-                key = "wallet_error_invalid_mnemonic"
+                key = "spark_wallet_error_invalid_mnemonic"
             )
         ),
         errorConnection = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_error_connection")
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_error_connection"
+            )
         ),
         errorStorage = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_error_storage")
+            NativeStringResource(
+                table = "FlintWalletConnection",
+                key = "spark_wallet_error_storage"
+            )
         ),
         errorReset = nativeString(
-            NativeStringResource(table = "FlintWalletConnection", key = "wallet_error_reset")
+            NativeStringResource(table = "FlintWalletConnection", key = "spark_wallet_error_reset")
         )
     )

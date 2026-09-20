@@ -1,10 +1,10 @@
 <resources>
-    <string name="transaction_status_success">Paid</string>
-    <string name="transaction_status_failure">Failed</string>
-    <string name="transaction_fee">Fee %1$s</string>
-    <string name="error_missing_wallet_connection">Connect a wallet to continue.</string>
-    <string name="error_payment_rejected_generic">Payment was rejected.</string>
-    <string name="error_payment_rejected_message">Payment was rejected: %1$s</string>
-    <string name="error_relay_connection_failed">Could not connect to wallet. Try again.</string>
-    <string name="error_payment_unconfirmed">Unable to confirm this payment. Verify its status before paying again.</string>
+    <string name="spark_transaction_status_success">Paid</string>
+    <string name="spark_transaction_status_failure">Failed</string>
+    <string name="spark_transaction_fee">Fee %1$s</string>
+    <string name="spark_error_missing_wallet_connection">Connect a wallet to continue.</string>
+    <string name="spark_error_payment_rejected_generic">Payment was rejected.</string>
+    <string name="spark_error_payment_rejected_message">Payment was rejected: %1$s</string>
+    <string name="spark_error_relay_connection_failed">Could not connect to wallet. Try again.</string>
+    <string name="spark_error_payment_unconfirmed">Unable to confirm this payment. Verify its status before paying again.</string>
 </resources>

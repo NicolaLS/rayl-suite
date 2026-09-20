@@ -45,7 +45,7 @@ internal fun SessionTransactionItem.toPaymentSessionTransaction(
         supportingText =
             when (status) {
                 TransactionStatus.Succeeded -> fee?.let {
-                    stringResource(R.string.transaction_fee, formatter.format(it))
+                    stringResource(R.string.spark_transaction_fee, formatter.format(it))
                 }
 
                 TransactionStatus.Failed ->
@@ -63,13 +63,13 @@ private fun LoadingKind.toPresentation(): PaymentLoadingKind = when (this) {
 private fun TransactionStatus.presentation(): StatusPresentation = when (this) {
     TransactionStatus.Succeeded ->
         StatusPresentation(
-            stringResource(R.string.transaction_status_success),
+            stringResource(R.string.spark_transaction_status_success),
             PaymentStatusTone.Success
         )
 
     TransactionStatus.Failed ->
         StatusPresentation(
-            stringResource(R.string.transaction_status_failure),
+            stringResource(R.string.spark_transaction_status_failure),
             PaymentStatusTone.Failure
         )
 }

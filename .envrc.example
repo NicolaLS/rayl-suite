@@ -9,10 +9,11 @@ export RAYL_UPLOAD_KEY_ALIAS="rayl-suite-upload"
 export RAYL_UPLOAD_STORE_PASSWORD="$(pass show rayl-suite/android-upload | sed -n '1p')"
 export RAYL_UPLOAD_KEY_PASSWORD="$RAYL_UPLOAD_STORE_PASSWORD"
 
-# Flint production builds also require a Breez Spark API key. Load it from the
+# Rayl and Flint production builds also require Breez Spark API keys. Load them from the
 # secret manager; never commit the value or place it in local.properties files
 # that could be shared.
 export FLINT_BREEZ_API_KEY="$(pass show rayl-suite/flint-breez-api-key | sed -n '1p')"
+export RAYL_BREEZ_API_KEY="$(pass show rayl-suite/rayl-breez-api-key | sed -n '1p')"
 
 # Key passwords default to the matching store password when unset. Each
 # password may instead be read from a file via the *_PASSWORD_FILE variables,

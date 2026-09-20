@@ -7,13 +7,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -32,8 +32,6 @@ fun OnboardingScaffold(
     onBack: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
-    val systemBarsPadding = WindowInsets.systemBars.asPaddingValues()
-
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -42,7 +40,7 @@ fun OnboardingScaffold(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .padding(systemBarsPadding)
+                    .windowInsetsPadding(WindowInsets.systemBars)
                     .padding(horizontal = 24.dp, vertical = 16.dp)
         ) {
             Row(

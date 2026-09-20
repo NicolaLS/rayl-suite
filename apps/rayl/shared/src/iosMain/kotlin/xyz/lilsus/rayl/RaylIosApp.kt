@@ -1,5 +1,6 @@
 package xyz.lilsus.rayl
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -9,6 +10,11 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import xyz.lilsus.blip.BlinkIosExperience
 import xyz.lilsus.blip.BlipDeepLinks
+import xyz.lilsus.flint.FlintAppHost
+import xyz.lilsus.flint.FlintEnvironment
+import xyz.lilsus.flint.SparkDeepLinks
+import xyz.lilsus.flint.SparkIosExperience
+import xyz.lilsus.flint.createIOSAppHost
 import xyz.lilsus.lasr.LasrDeepLinks
 import xyz.lilsus.lasr.NwcIosExperience
 import xyz.lilsus.raylsuite.core.model.ThemePreference
@@ -23,9 +29,12 @@ class RaylSnapshot(
     val wallets: List<String>,
     val blinkExperience: BlinkIosExperience?,
     val nwcExperience: NwcIosExperience?,
+    val sparkExperience: SparkIosExperience?,
     val welcomeCompleted: Boolean,
     val connected: Boolean,
     val canCancelSetup: Boolean,
+    val closingSpark: Boolean,
+    val sparkCloseFailed: Boolean,
     val colorScheme: String,
     val text: Map<String, String>,
     val message: String?
@@ -34,6 +43,8 @@ class RaylSnapshot(
 private data class RaylExperienceState(
     val connected: Boolean = false,
     val canCancelSetup: Boolean = false,
+    val closingSpark: Boolean = false,
+    val sparkCloseFailed: Boolean = false,
     val colorScheme: String = "system"
 )
 
@@ -46,6 +57,8 @@ object RaylIosApp {
     private val messageKey = MutableStateFlow<String?>(null)
     private var blink: BlinkIosExperience? = null
     private var nwc: NwcIosExperience? = null
+    private var spark: SparkIosExperience? = null
+    private var sparkHostFactory: (() -> FlintAppHost)? = null
     private var cancellations = emptyList<() -> Unit>()
 
     init {
@@ -55,6 +68,7 @@ object RaylIosApp {
                 val hasConnection = when (selected) {
                     RaylWallet.Blink -> blinkExperience()?.isConnected() == true
                     RaylWallet.Nwc -> nwcExperience()?.isConnected() == true
+                    RaylWallet.Spark -> sparkExperience()?.isConnected() == true
                     null -> false
                 }
                 if (uri.substringBefore(':').equals("nostr+walletconnect", true)) {
@@ -72,11 +86,17 @@ object RaylIosApp {
                     when (selected) {
                         RaylWallet.Blink -> BlipDeepLinks.emit(uri)
                         RaylWallet.Nwc -> LasrDeepLinks.emit(uri)
+                        RaylWallet.Spark -> SparkDeepLinks.emit(uri)
                         null -> Unit
                     }
                 }
             }
         }
+    }
+
+    fun configureSpark(environment: FlintEnvironment, breezApiKey: String?) {
+        check(spark == null) { "Configure Spark before mounting its experience" }
+        sparkHostFactory = { createIOSAppHost(environment, breezApiKey) }
     }
 
     fun observe(onChange: (RaylSnapshot) -> Unit): () -> Unit {
@@ -105,17 +125,25 @@ object RaylIosApp {
                         "blink_body",
                         "nwc_title",
                         "nwc_body",
+                        "spark_title",
+                        "spark_body",
                         "choose_another",
                         "close"
                     )
-                val text = keys.associateWith { nativeString(NativeStringResource("RaylApp", it)) }
+                val text =
+                    keys.associateWith { nativeString(NativeStringResource("RaylApp", it)) } +
+                        listOf("session_close_failed", "session_close_retry").associateWith {
+                            nativeString(NativeStringResource("SparkExperience", "spark_$it"))
+                        }
                 // SwiftUI may render this snapshot after removal has cleared the live selection.
                 // Keep its experience with it; rendering must never resolve a different session.
                 val blinkExperience = if (wallet == RaylWallet.Blink) blinkExperience() else null
                 val nwcExperience = if (wallet == RaylWallet.Nwc) nwcExperience() else null
+                val sparkExperience = if (wallet == RaylWallet.Spark) sparkExperience() else null
                 val mountedWallet = when {
                     blinkExperience != null -> "blink"
                     nwcExperience != null -> "nwc"
+                    sparkExperience != null -> "spark"
                     else -> null
                 }
                 val wallets = RaylWallet.entries.map { it.name.lowercase() }
@@ -124,9 +152,13 @@ object RaylIosApp {
                     wallets,
                     blinkExperience,
                     nwcExperience,
+                    sparkExperience,
                     welcome,
                     mountedWallet != null && experience.connected,
-                    mountedWallet != null && experience.canCancelSetup,
+                    mountedWallet != null && experience.canCancelSetup &&
+                        !experience.closingSpark && !experience.sparkCloseFailed,
+                    experience.closingSpark,
+                    experience.sparkCloseFailed,
                     if (mountedWallet == null) {
                         // The provider owns preference writes; reload after it unmounts.
                         when (DefaultThemePreferences(appSettings).current()) {
@@ -156,6 +188,7 @@ object RaylIosApp {
         val selected = when (wallet) {
             "blink" -> RaylWallet.Blink
             "nwc" -> RaylWallet.Nwc
+            "spark" -> RaylWallet.Spark
             else -> return
         }
         selection.choose(selected)
@@ -218,14 +251,76 @@ object RaylIosApp {
         }
     }
 
+    private fun sparkExperience(): SparkIosExperience? {
+        if (selection.wallet.value != RaylWallet.Spark) return null
+        return spark ?: SparkIosExperience(
+            host = checkNotNull(sparkHostFactory) { "Configure Spark before observing Rayl" }(),
+            configuration = RAYL_SPARK
+        ).also { experience ->
+            spark = experience
+            cancellations =
+                listOf(
+                    experience.observeConnected { connected ->
+                        if (spark === experience) {
+                            experienceState.update { it.copy(connected = connected) }
+                        }
+                    },
+                    experience.observeCanCancelSetup { canCancel ->
+                        if (spark === experience) {
+                            experienceState.update { it.copy(canCancelSetup = canCancel) }
+                        }
+                    },
+                    experience.observeTheme { colorScheme ->
+                        if (spark === experience) {
+                            experienceState.update { it.copy(colorScheme = colorScheme) }
+                        }
+                    },
+                    experience.observeRemoved {
+                        if (it) scope.launch { if (spark === experience) leave() }
+                    }
+                )
+        }
+    }
+
     fun cancelSetup() {
         val canCancel = when (selection.wallet.value) {
             RaylWallet.Blink -> blink?.canCancelSetup() == true
             RaylWallet.Nwc -> nwc?.canCancelSetup() == true
+            RaylWallet.Spark -> spark?.canCancelSetup() == true
             null -> false
         }
         if (!canCancel) return
-        leave()
+        val sparkExperience = spark
+        if (sparkExperience != null) {
+            closeSparkSetup(sparkExperience)
+        } else {
+            leave()
+        }
+    }
+
+    fun retrySparkClose() {
+        if (experienceState.value.sparkCloseFailed) spark?.let(::closeSparkSetup)
+    }
+
+    private fun closeSparkSetup(experience: SparkIosExperience) {
+        if (experienceState.value.closingSpark) return
+        experienceState.update {
+            it.copy(canCancelSetup = false, closingSpark = true, sparkCloseFailed = false)
+        }
+        scope.launch {
+            try {
+                experience.close()
+                if (spark === experience) leave()
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                if (spark === experience) {
+                    experienceState.update {
+                        it.copy(closingSpark = false, sparkCloseFailed = true)
+                    }
+                }
+            }
+        }
     }
 
     private fun leave() {
@@ -233,13 +328,23 @@ object RaylIosApp {
         cancellations = emptyList()
         blink?.clear()
         nwc?.clear()
+        spark?.clear()
         blink = null
         nwc = null
-        experienceState.update { it.copy(connected = false, canCancelSetup = false) }
+        spark = null
+        experienceState.update {
+            it.copy(
+                connected = false,
+                canCancelSetup = false,
+                closingSpark = false,
+                sparkCloseFailed = false
+            )
+        }
         messageKey.value = null
         RaylDeepLinks.clear()
         BlipDeepLinks.clear()
         LasrDeepLinks.clear()
+        SparkDeepLinks.clear()
         selection.clear()
     }
 }

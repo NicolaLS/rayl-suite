@@ -65,11 +65,11 @@ fun NavGraphBuilder.flintOnboarding(
     composable<FlintOnboardingDestination.Welcome> {
         WelcomeScreen(
             title = stringResource(
-                R.string.onboarding_welcome_title,
+                R.string.spark_onboarding_welcome_title,
                 xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
             ),
-            subtitle = stringResource(R.string.onboarding_welcome_subtitle_line1),
-            description = stringResource(R.string.onboarding_welcome_subtitle_line2),
+            subtitle = stringResource(R.string.spark_onboarding_welcome_subtitle_line1),
+            description = stringResource(R.string.spark_onboarding_welcome_subtitle_line2),
             onGetStarted = { navController.navigate(FlintOnboardingDestination.Features) }
         )
     }
@@ -92,7 +92,7 @@ fun NavGraphBuilder.flintOnboarding(
         val formatter = rememberAmountFormatter()
         AutoPaySettingsScreen(
             body = stringResource(
-                R.string.onboarding_autopay_body,
+                R.string.spark_onboarding_autopay_body,
                 xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
             ),
             confirmationMode = state.confirmationMode,
@@ -112,7 +112,7 @@ fun NavGraphBuilder.flintOnboarding(
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
         AgreementScreen(
             body = stringResource(
-                R.string.onboarding_agreement_body,
+                R.string.spark_onboarding_agreement_body,
                 xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
             ),
             hasAgreed = state.hasAgreed,
@@ -127,23 +127,23 @@ fun NavGraphBuilder.flintOnboarding(
     }
     composable<FlintOnboardingDestination.WalletInstructions> {
         WalletInstructionsScreen(
-            title = stringResource(R.string.onboarding_add_wallet_title),
+            title = stringResource(R.string.spark_onboarding_add_wallet_title),
             introduction = stringResource(
-                R.string.onboarding_add_wallet_intro,
+                R.string.spark_onboarding_add_wallet_intro,
                 xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
             ),
             steps =
                 listOf(
-                    AnnotatedString(stringResource(R.string.onboarding_add_wallet_step1)),
+                    AnnotatedString(stringResource(R.string.spark_onboarding_add_wallet_step1)),
                     AnnotatedString(
                         stringResource(
-                            R.string.onboarding_add_wallet_step2,
+                            R.string.spark_onboarding_add_wallet_step2,
                             xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
                         )
                     ),
                     AnnotatedString(
                         stringResource(
-                            R.string.onboarding_add_wallet_step3,
+                            R.string.spark_onboarding_add_wallet_step3,
                             xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
                         )
                     )
@@ -231,29 +231,29 @@ private fun OnboardingWalletDestination(
 @Composable
 private fun onboardingFeaturePages(): List<OnboardingFeaturePage> = listOf(
     OnboardingFeaturePage(
-        title = stringResource(R.string.onboarding_features_page1_title),
-        subtitle = stringResource(R.string.onboarding_features_page1_subtitle),
+        title = stringResource(R.string.spark_onboarding_features_page1_title),
+        subtitle = stringResource(R.string.spark_onboarding_features_page1_subtitle),
         body = stringResource(
-            R.string.onboarding_features_page1_body,
+            R.string.spark_onboarding_features_page1_body,
             xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
         )
     ),
     OnboardingFeaturePage(
-        title = stringResource(R.string.onboarding_features_page2_title),
-        subtitle = stringResource(R.string.onboarding_features_page2_subtitle),
+        title = stringResource(R.string.spark_onboarding_features_page2_title),
+        subtitle = stringResource(R.string.spark_onboarding_features_page2_subtitle),
         body = stringResource(
-            R.string.onboarding_features_page2_body,
+            R.string.spark_onboarding_features_page2_body,
             xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
         )
     ),
     OnboardingFeaturePage(
-        title = stringResource(R.string.onboarding_features_page3_title),
+        title = stringResource(R.string.spark_onboarding_features_page3_title),
         subtitle = stringResource(
-            R.string.onboarding_features_page3_subtitle,
+            R.string.spark_onboarding_features_page3_subtitle,
             xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
         ),
         body = stringResource(
-            R.string.onboarding_features_page3_body,
+            R.string.spark_onboarding_features_page3_body,
             xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
         )
     )

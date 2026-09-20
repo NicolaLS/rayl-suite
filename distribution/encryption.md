@@ -2,13 +2,20 @@
 
 Assessment revision: **2026-09-13 / MOB-72** (original assessment: MOB-59).
 
+**Rayl scope update:** Rayl now integrates Spark through the Breez SDK alongside
+Blink and NWC. The prior Rayl assessment below does not cover this added provider
+and native SDK, and requires reassessment before release. Its recorded conclusions
+and binary evidence are retained for the previously assessed scope; this update
+does not establish a new encryption classification or change the plist declaration.
+Blip's provider scope is unchanged.
+
 This maintained record explains the App Store Connect answers and the matching
 `Info.plist` declarations for Rayl and Blip 1.0. It covers app code, linked iOS
 libraries, and the available binary evidence. Android, Flint, and Lasr are outside
 this assessment. The same declaration and maintenance contract are carried on
 `main`; changes to its product or dependency scope require reassessment.
 
-## Current answer and required distribution scope
+## Answers for the assessed distribution scope
 
 **Both apps contain standard/published cryptography beyond Apple's operating
 system. France is deferred for both apps' initial distribution.** This is an
@@ -145,8 +152,7 @@ below. The current Apple answer therefore does not depend on that narrower claim
 
 ### Rayl's NWC implementation
 
-Rayl offers Blink and NWC. Its shared framework exports
-`providers:nwc:experience`, which depends on
+Rayl's shared framework exports `providers:nwc:experience`, which depends on
 [`providers:nwc:integration:nwc`](../providers/nwc/integration/nwc/build.gradle.kts).
 The cached NWC client registers both NIP-04 and NIP-44.
 

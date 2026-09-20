@@ -9,7 +9,7 @@ behavior lives in `providers/`.
 | Blip | Blink |
 | Lasr | Nostr Wallet Connect (NWC) |
 | Flint | Spark through the Breez SDK |
-| Rayl | Blink and NWC experiences |
+| Rayl | Blink, NWC, and Spark experiences |
 
 Rayl offers every integrated provider during setup, with no release availability
 gates. [RaylSelection](../apps/rayl/shared/src/commonMain/kotlin/xyz/lilsus/rayl/RaylSelection.kt)

@@ -22,11 +22,27 @@ struct ContentView: View {
                             Spacer()
                         }.padding()
                     }
-                    if let experience = snapshot.blinkExperience {
+                    if snapshot.closingSpark || snapshot.sparkCloseFailed {
+                        VStack(spacing: 16) {
+                            if snapshot.sparkCloseFailed {
+                                Text(snapshot.text["session_close_failed"] ?? "")
+                                Button(snapshot.text["session_close_retry"] ?? "") {
+                                    RaylIosApp.shared.retrySparkClose()
+                                }
+                            } else {
+                                ProgressView()
+                            }
+                        }
+                        .padding(24)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if let experience = snapshot.blinkExperience {
                         BlinkExperienceView(experience: experience)
                             .id(ObjectIdentifier(experience))
                     } else if let experience = snapshot.nwcExperience {
                         NwcExperienceView(experience: experience)
+                            .id(ObjectIdentifier(experience))
+                    } else if let experience = snapshot.sparkExperience {
+                        SparkExperienceView(experience: experience)
                             .id(ObjectIdentifier(experience))
                     } else {
                         selection(snapshot)

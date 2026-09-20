@@ -9,11 +9,11 @@ import xyz.lilsus.raylsuite.feature.paymentui.lnurlPaymentErrorText
 import xyz.lilsus.raylsuite.feature.paymentui.unexpectedPaymentErrorText
 
 internal enum class FlintPaymentTextKey(override val key: String) : LocalizedTextKey {
-    ErrorMissingWalletConnection("error_missing_wallet_connection"),
-    ErrorPaymentRejectedGeneric("error_payment_rejected_generic"),
-    ErrorPaymentRejectedMessage("error_payment_rejected_message"),
-    ErrorPaymentUnconfirmed("error_payment_unconfirmed"),
-    ErrorRelayConnectionFailed("error_relay_connection_failed");
+    ErrorMissingWalletConnection("spark_error_missing_wallet_connection"),
+    ErrorPaymentRejectedGeneric("spark_error_payment_rejected_generic"),
+    ErrorPaymentRejectedMessage("spark_error_payment_rejected_message"),
+    ErrorPaymentUnconfirmed("spark_error_payment_unconfirmed"),
+    ErrorRelayConnectionFailed("spark_error_relay_connection_failed");
 
     override val table: String = "FlintPayment"
 }

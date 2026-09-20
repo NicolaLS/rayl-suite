@@ -1,7 +1,7 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "settings_wallet_subtitle": {
+    "spark_settings_wallet_subtitle": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23,7 +23,7 @@
         }
       }
     },
-    "settings_wallet_title": {
+    "spark_settings_wallet_title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -45,7 +45,7 @@
         }
       }
     },
-    "choose_another_wallet": {
+    "spark_choose_another_wallet": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -67,7 +67,7 @@
         }
       }
     },
-    "session_close_failed": {
+    "spark_session_close_failed": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -89,7 +89,7 @@
         }
       }
     },
-    "session_close_retry": {
+    "spark_session_close_retry": {
       "localizations": {
         "en": {
           "stringUnit": {

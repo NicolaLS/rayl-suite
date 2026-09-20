@@ -277,6 +277,50 @@
         }
       }
     },
+    "spark_body" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importiere deine Spark-Wallet mit ihrer Wiederherstellungsphrase."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import your Spark wallet with its recovery phrase."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importa tu billetera Spark con su frase de recuperación."
+          }
+        }
+      }
+    },
+    "spark_title" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spark"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spark"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spark"
+          }
+        }
+      }
+    },
     "welcome_body" : {
       "extractionState" : "stale",
       "localizations" : {

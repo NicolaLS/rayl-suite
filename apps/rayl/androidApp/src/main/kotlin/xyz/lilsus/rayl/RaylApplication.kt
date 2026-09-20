@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.camera.camera2.Camera2Config
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.CameraXConfig
+import xyz.lilsus.flint.FlintEnvironment
 import xyz.lilsus.raylsuite.core.network.initializeNetworkConnectivity
 
 class RaylApplication :
@@ -20,3 +21,8 @@ class RaylApplication :
         initializeNetworkConnectivity(this)
     }
 }
+
+internal data class AndroidRaylConfiguration(
+    val environment: FlintEnvironment,
+    val breezApiKey: String? = null
+)

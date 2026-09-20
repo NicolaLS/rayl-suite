@@ -1,7 +1,7 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "error_missing_wallet_connection": {
+    "spark_error_missing_wallet_connection": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23,7 +23,7 @@
         }
       }
     },
-    "error_payment_rejected_generic": {
+    "spark_error_payment_rejected_generic": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -45,7 +45,7 @@
         }
       }
     },
-    "error_payment_rejected_message": {
+    "spark_error_payment_rejected_message": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -67,7 +67,7 @@
         }
       }
     },
-    "error_payment_unconfirmed": {
+    "spark_error_payment_unconfirmed": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -89,7 +89,7 @@
         }
       }
     },
-    "error_relay_connection_failed": {
+    "spark_error_relay_connection_failed": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -111,7 +111,7 @@
         }
       }
     },
-    "transaction_fee": {
+    "spark_transaction_fee": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -133,7 +133,7 @@
         }
       }
     },
-    "transaction_status_failure": {
+    "spark_transaction_status_failure": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -155,7 +155,7 @@
         }
       }
     },
-    "transaction_status_success": {
+    "spark_transaction_status_success": {
       "localizations": {
         "en": {
           "stringUnit": {

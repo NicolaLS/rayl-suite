@@ -47,7 +47,7 @@ fun WalletConnectionScreen(
         modifier = modifier,
         topBar = {
             CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.wallet_import_title)) },
+                title = { Text(stringResource(R.string.spark_wallet_import_title)) },
                 navigationIcon = {
                     onBack?.let { BackIconButton(onClick = it) }
                 }
@@ -81,14 +81,14 @@ fun WalletConnectionContent(
             WalletAccessState.NoWallet -> ImportContent(state, dispatch)
 
             WalletAccessState.ReconnectRequired -> RecoveryContent(
-                title = R.string.wallet_reconnect_title,
-                body = R.string.wallet_reconnect_body,
+                title = R.string.spark_wallet_reconnect_title,
+                body = R.string.spark_wallet_reconnect_body,
                 dispatch = dispatch
             )
 
             WalletAccessState.ResetRequired -> RecoveryContent(
-                title = R.string.wallet_reset_title,
-                body = R.string.wallet_reset_body,
+                title = R.string.spark_wallet_reset_title,
+                body = R.string.spark_wallet_reset_body,
                 dispatch = dispatch
             )
 
@@ -112,12 +112,12 @@ private fun ImportContent(state: WalletUiState, dispatch: (WalletAction) -> Unit
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = stringResource(R.string.wallet_import_title),
+            text = stringResource(R.string.spark_wallet_import_title),
             style = MaterialTheme.typography.headlineSmall
         )
         Text(
             text = stringResource(
-                R.string.wallet_import_body,
+                R.string.spark_wallet_import_body,
                 xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
             ),
             style = MaterialTheme.typography.bodyLarge,
@@ -126,8 +126,8 @@ private fun ImportContent(state: WalletUiState, dispatch: (WalletAction) -> Unit
         OutlinedTextField(
             value = state.recoveryPhrase,
             onValueChange = { dispatch(WalletAction.RecoveryPhraseChanged(it)) },
-            label = { Text(stringResource(R.string.wallet_phrase_label)) },
-            placeholder = { Text(stringResource(R.string.wallet_phrase_hint)) },
+            label = { Text(stringResource(R.string.spark_wallet_phrase_label)) },
+            placeholder = { Text(stringResource(R.string.spark_wallet_phrase_hint)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions =
                 KeyboardOptions(
@@ -139,7 +139,7 @@ private fun ImportContent(state: WalletUiState, dispatch: (WalletAction) -> Unit
             modifier = Modifier.fillMaxWidth()
         )
         Text(
-            text = stringResource(R.string.wallet_storage_note),
+            text = stringResource(R.string.spark_wallet_storage_note),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -155,7 +155,7 @@ private fun ImportContent(state: WalletUiState, dispatch: (WalletAction) -> Unit
             onClick = { dispatch(WalletAction.Import) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.wallet_import_action))
+            Text(stringResource(R.string.spark_wallet_import_action))
         }
     }
 }
@@ -164,10 +164,10 @@ private fun ImportContent(state: WalletUiState, dispatch: (WalletAction) -> Unit
 private fun ProgressContent(state: WalletAccessState) {
     val resource =
         when (state) {
-            WalletAccessState.Loading -> R.string.wallet_progress_loading
-            WalletAccessState.Connecting -> R.string.wallet_progress_connecting
-            WalletAccessState.Removing -> R.string.wallet_progress_removing
-            else -> R.string.wallet_progress_working
+            WalletAccessState.Loading -> R.string.spark_wallet_progress_loading
+            WalletAccessState.Connecting -> R.string.spark_wallet_progress_connecting
+            WalletAccessState.Removing -> R.string.spark_wallet_progress_removing
+            else -> R.string.spark_wallet_progress_working
         }
     CircularProgressIndicator()
     Text(
@@ -185,11 +185,11 @@ private fun CredentialProblemContent(
 ) {
     val body =
         when (kind) {
-            CredentialProblemKind.UNAVAILABLE -> R.string.wallet_credential_unavailable
-            CredentialProblemKind.INVALIDATED -> R.string.wallet_credential_invalidated
-            CredentialProblemKind.CORRUPT -> R.string.wallet_credential_corrupt
+            CredentialProblemKind.UNAVAILABLE -> R.string.spark_wallet_credential_unavailable
+            CredentialProblemKind.INVALIDATED -> R.string.spark_wallet_credential_invalidated
+            CredentialProblemKind.CORRUPT -> R.string.spark_wallet_credential_corrupt
         }
-    RecoveryContent(R.string.wallet_credential_title, body, dispatch)
+    RecoveryContent(R.string.spark_wallet_credential_title, body, dispatch)
 }
 
 @Composable
@@ -223,7 +223,7 @@ private fun RecoveryContent(
             onClick = { dispatch(WalletAction.Retry) },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.wallet_retry))
+            Text(stringResource(R.string.spark_wallet_retry))
         }
         OutlinedButton(
             onClick = { dispatch(WalletAction.RequestRemoval) },
@@ -231,7 +231,7 @@ private fun RecoveryContent(
         ) {
             Text(
                 stringResource(
-                    R.string.wallet_reset_action,
+                    R.string.spark_wallet_reset_action,
                     xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current.uppercase()
                 )
             )
@@ -246,12 +246,12 @@ fun WalletRemovalConfirmation(dispatch: (WalletAction) -> Unit, canRemove: Boole
         title = {
             Text(
                 stringResource(
-                    R.string.wallet_remove_title,
+                    R.string.spark_wallet_remove_title,
                     xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
                 )
             )
         },
-        text = { Text(stringResource(R.string.wallet_remove_body)) },
+        text = { Text(stringResource(R.string.spark_wallet_remove_body)) },
         confirmButton = {
             TextButton(
                 enabled = canRemove,
@@ -260,12 +260,12 @@ fun WalletRemovalConfirmation(dispatch: (WalletAction) -> Unit, canRemove: Boole
                 ),
                 onClick = { dispatch(WalletAction.ConfirmRemoval) }
             ) {
-                Text(stringResource(R.string.wallet_remove_confirm))
+                Text(stringResource(R.string.spark_wallet_remove_confirm))
             }
         },
         dismissButton = {
             TextButton(onClick = { dispatch(WalletAction.CancelRemoval) }) {
-                Text(stringResource(R.string.wallet_cancel))
+                Text(stringResource(R.string.spark_wallet_cancel))
             }
         }
     )
@@ -273,9 +273,9 @@ fun WalletRemovalConfirmation(dispatch: (WalletAction) -> Unit, canRemove: Boole
 
 @StringRes
 private fun WalletMessage.resource(): Int = when (this) {
-    WalletMessage.ALREADY_CONFIGURED -> R.string.wallet_error_already_configured
-    WalletMessage.INVALID_MNEMONIC -> R.string.wallet_error_invalid_mnemonic
-    WalletMessage.CONNECTION_FAILED -> R.string.wallet_error_connection
-    WalletMessage.CREDENTIAL_STORE_FAILED -> R.string.wallet_error_storage
-    WalletMessage.RESET_REQUIRED -> R.string.wallet_error_reset
+    WalletMessage.ALREADY_CONFIGURED -> R.string.spark_wallet_error_already_configured
+    WalletMessage.INVALID_MNEMONIC -> R.string.spark_wallet_error_invalid_mnemonic
+    WalletMessage.CONNECTION_FAILED -> R.string.spark_wallet_error_connection
+    WalletMessage.CREDENTIAL_STORE_FAILED -> R.string.spark_wallet_error_storage
+    WalletMessage.RESET_REQUIRED -> R.string.spark_wallet_error_reset
 }

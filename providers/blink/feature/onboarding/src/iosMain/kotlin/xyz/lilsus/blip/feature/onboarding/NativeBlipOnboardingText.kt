@@ -29,19 +29,19 @@ data class NativeBlipOnboardingText(
 suspend fun nativeBlipOnboardingText(appName: String): NativeBlipOnboardingText =
     NativeBlipOnboardingText(
         welcomeTitle = nativeString(
-            NativeStringResource(table = "BlipOnboarding", key = "onboarding_welcome_title"),
+            NativeStringResource(table = "BlipOnboarding", key = "blink_onboarding_welcome_title"),
             appName
         ),
         welcomeSubtitle = nativeString(
             NativeStringResource(
                 table = "BlipOnboarding",
-                key = "onboarding_welcome_subtitle_line1"
+                key = "blink_onboarding_welcome_subtitle_line1"
             )
         ),
         welcomeDescription = nativeString(
             NativeStringResource(
                 table = "BlipOnboarding",
-                key = "onboarding_welcome_subtitle_line2"
+                key = "blink_onboarding_welcome_subtitle_line2"
             )
         ),
         features =
@@ -50,19 +50,19 @@ suspend fun nativeBlipOnboardingText(appName: String): NativeBlipOnboardingText 
                     title = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_features_page1_title"
+                            key = "blink_onboarding_features_page1_title"
                         )
                     ),
                     subtitle = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_features_page1_subtitle"
+                            key = "blink_onboarding_features_page1_subtitle"
                         )
                     ),
                     body = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_features_page1_body"
+                            key = "blink_onboarding_features_page1_body"
                         ),
                         appName
                     ),
@@ -72,19 +72,19 @@ suspend fun nativeBlipOnboardingText(appName: String): NativeBlipOnboardingText 
                     title = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_features_page2_title"
+                            key = "blink_onboarding_features_page2_title"
                         )
                     ),
                     subtitle = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_features_page2_subtitle"
+                            key = "blink_onboarding_features_page2_subtitle"
                         )
                     ),
                     body = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_features_page2_body"
+                            key = "blink_onboarding_features_page2_body"
                         ),
                         appName
                     ),
@@ -94,20 +94,20 @@ suspend fun nativeBlipOnboardingText(appName: String): NativeBlipOnboardingText 
                     title = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_features_page3_title"
+                            key = "blink_onboarding_features_page3_title"
                         )
                     ),
                     subtitle = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_features_page3_subtitle"
+                            key = "blink_onboarding_features_page3_subtitle"
                         ),
                         appName
                     ),
                     body = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_features_page3_body"
+                            key = "blink_onboarding_features_page3_body"
                         ),
                         appName
                     ),
@@ -115,18 +115,24 @@ suspend fun nativeBlipOnboardingText(appName: String): NativeBlipOnboardingText 
                 )
             ),
         autoPayBody = nativeString(
-            NativeStringResource(table = "BlipOnboarding", key = "onboarding_autopay_body"),
+            NativeStringResource(table = "BlipOnboarding", key = "blink_onboarding_autopay_body"),
             appName
         ),
         agreementBody = nativeString(
-            NativeStringResource(table = "BlipOnboarding", key = "onboarding_agreement_body"),
+            NativeStringResource(table = "BlipOnboarding", key = "blink_onboarding_agreement_body"),
             appName
         ),
         instructionsTitle = nativeString(
-            NativeStringResource(table = "BlipOnboarding", key = "onboarding_add_wallet_title")
+            NativeStringResource(
+                table = "BlipOnboarding",
+                key = "blink_onboarding_add_wallet_title"
+            )
         ),
         instructionsIntro = nativeString(
-            NativeStringResource(table = "BlipOnboarding", key = "onboarding_add_wallet_intro"),
+            NativeStringResource(
+                table = "BlipOnboarding",
+                key = "blink_onboarding_add_wallet_intro"
+            ),
             appName
         ),
         instructions =
@@ -135,13 +141,13 @@ suspend fun nativeBlipOnboardingText(appName: String): NativeBlipOnboardingText 
                     title = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_add_wallet_step1_title"
+                            key = "blink_onboarding_add_wallet_step1_title"
                         )
                     ),
                     body = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_add_wallet_step1_body"
+                            key = "blink_onboarding_add_wallet_step1_body"
                         )
                     ),
                     imageName = "blink_dashboard_email"
@@ -150,13 +156,13 @@ suspend fun nativeBlipOnboardingText(appName: String): NativeBlipOnboardingText 
                     title = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_add_wallet_step2_title"
+                            key = "blink_onboarding_add_wallet_step2_title"
                         )
                     ),
                     body = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_add_wallet_step2_body"
+                            key = "blink_onboarding_add_wallet_step2_body"
                         )
                     ),
                     imageName = "blink_dashboard_api_keys"
@@ -165,13 +171,13 @@ suspend fun nativeBlipOnboardingText(appName: String): NativeBlipOnboardingText 
                     title = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_add_wallet_step3_title"
+                            key = "blink_onboarding_add_wallet_step3_title"
                         )
                     ),
                     body = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_add_wallet_step3_body"
+                            key = "blink_onboarding_add_wallet_step3_body"
                         )
                     ),
                     imageName = "blink_dashboard_key_settings"
@@ -180,13 +186,13 @@ suspend fun nativeBlipOnboardingText(appName: String): NativeBlipOnboardingText 
                     title = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_add_wallet_step4_title"
+                            key = "blink_onboarding_add_wallet_step4_title"
                         )
                     ),
                     body = nativeString(
                         NativeStringResource(
                             table = "BlipOnboarding",
-                            key = "onboarding_add_wallet_step4_body"
+                            key = "blink_onboarding_add_wallet_step4_body"
                         ),
                         appName
                     ),
@@ -196,28 +202,34 @@ suspend fun nativeBlipOnboardingText(appName: String): NativeBlipOnboardingText 
         previousStep = nativeString(
             NativeStringResource(
                 table = "BlipOnboarding",
-                key = "onboarding_add_wallet_previous_step"
+                key = "blink_onboarding_add_wallet_previous_step"
             )
         ),
         nextStep = nativeString(
-            NativeStringResource(table = "BlipOnboarding", key = "onboarding_add_wallet_next_step")
+            NativeStringResource(
+                table = "BlipOnboarding",
+                key = "blink_onboarding_add_wallet_next_step"
+            )
         ),
         dashboardButton = nativeString(
             NativeStringResource(
                 table = "BlipOnboarding",
-                key = "onboarding_add_wallet_dashboard_button"
+                key = "blink_onboarding_add_wallet_dashboard_button"
             )
         ),
         enterKeyButton = nativeString(
             NativeStringResource(
                 table = "BlipOnboarding",
-                key = "onboarding_add_wallet_enter_key_button"
+                key = "blink_onboarding_add_wallet_enter_key_button"
             )
         )
     )
 
 suspend fun nativeBlipInstructionProgress(step: Int, total: Int): String = nativeString(
-    NativeStringResource(table = "BlipOnboarding", key = "onboarding_add_wallet_step_progress"),
+    NativeStringResource(
+        table = "BlipOnboarding",
+        key = "blink_onboarding_add_wallet_step_progress"
+    ),
     step,
     total
 )

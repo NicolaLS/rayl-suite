@@ -1,0 +1,4 @@
+#include "Config.xcconfig"
+#include? "Local.xcconfig"
+
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) RAYL_PRODUCTION

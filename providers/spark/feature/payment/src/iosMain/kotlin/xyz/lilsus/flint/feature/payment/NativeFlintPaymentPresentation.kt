@@ -45,12 +45,12 @@ suspend fun SessionTransactionItem.toNativeRecentItem(
             when (status) {
                 TransactionStatus.Succeeded -> NativeStringResource(
                     table = "FlintPayment",
-                    key = "transaction_status_success"
+                    key = "spark_transaction_status_success"
                 )
 
                 TransactionStatus.Failed -> NativeStringResource(
                     table = "FlintPayment",
-                    key = "transaction_status_failure"
+                    key = "spark_transaction_status_failure"
                 )
             }
         ),
@@ -60,7 +60,7 @@ suspend fun SessionTransactionItem.toNativeRecentItem(
         when (status) {
             TransactionStatus.Succeeded -> fee?.let {
                 nativeString(
-                    NativeStringResource(table = "FlintPayment", key = "transaction_fee"),
+                    NativeStringResource(table = "FlintPayment", key = "spark_transaction_fee"),
                     formatter.format(it)
                 )
             }

@@ -30,6 +30,9 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import xyz.lilsus.blip.BlinkExperience
 import xyz.lilsus.blip.BlipDeepLinks
+import xyz.lilsus.flint.FlintEnvironment
+import xyz.lilsus.flint.SparkDeepLinks
+import xyz.lilsus.flint.SparkExperience
 import xyz.lilsus.lasr.LasrDeepLinks
 import xyz.lilsus.lasr.NwcExperience
 import xyz.lilsus.rayl.shared.R
@@ -41,7 +44,11 @@ import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
 
 @Composable
-fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
+fun App(
+    sparkEnvironment: FlintEnvironment,
+    breezApiKey: String? = null,
+    performanceDiagnostics: PerformanceDiagnostics? = null
+) {
     val settings = rememberAppSettings(RAYL_PREFERENCES)
     val selection = remember { RaylSelection(settings) }
     val wallet by selection.wallet.collectAsStateWithLifecycle()
@@ -56,6 +63,7 @@ fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
         RaylDeepLinks.clear()
         BlipDeepLinks.clear()
         LasrDeepLinks.clear()
+        SparkDeepLinks.clear()
         message = null
         connected = null
         selection.clear()
@@ -82,6 +90,7 @@ fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
                 when (selected) {
                     RaylWallet.Blink -> BlipDeepLinks.emit(uri)
                     RaylWallet.Nwc -> LasrDeepLinks.emit(uri)
+                    RaylWallet.Spark -> SparkDeepLinks.emit(uri)
                 }
             }
         }
@@ -106,6 +115,18 @@ fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
                     onChooseWallet = leave,
                     onConnectionChanged = {
                         if (selection.wallet.value == RaylWallet.Nwc) connected = it
+                    }
+                )
+
+                RaylWallet.Spark -> SparkExperience(
+                    configuration = RAYL_SPARK,
+                    environment = sparkEnvironment,
+                    breezApiKey = breezApiKey,
+                    performanceDiagnostics = performanceDiagnostics,
+                    onRemoved = leave,
+                    onChooseWallet = leave,
+                    onConnectionChanged = {
+                        if (selection.wallet.value == RaylWallet.Spark) connected = it
                     }
                 )
 
@@ -137,6 +158,8 @@ fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
                                             R.string.blink_body
 
                                     RaylWallet.Nwc -> R.string.nwc_title to R.string.nwc_body
+
+                                    RaylWallet.Spark -> R.string.spark_title to R.string.spark_body
                                 }
                                 WalletChoice(title, body) { selection.choose(provider) }
                             }

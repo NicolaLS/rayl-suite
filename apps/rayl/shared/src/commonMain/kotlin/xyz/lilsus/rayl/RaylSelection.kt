@@ -35,4 +35,4 @@ internal class RaylSelection(private val settings: Settings) {
     }
 }
 
-internal enum class RaylWallet { Blink, Nwc }
+internal enum class RaylWallet { Blink, Nwc, Spark }

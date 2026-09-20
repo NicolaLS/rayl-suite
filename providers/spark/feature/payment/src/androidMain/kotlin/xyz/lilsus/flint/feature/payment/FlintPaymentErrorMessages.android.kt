@@ -19,18 +19,18 @@ fun getFlintPaymentErrorMessageFor(error: PaymentUiError, context: Context): Str
 private fun flintPaymentStringResource(key: LocalizedTextKey): Int = when (key) {
     is FlintPaymentTextKey -> when (key) {
         FlintPaymentTextKey.ErrorMissingWalletConnection ->
-            R.string.error_missing_wallet_connection
+            R.string.spark_error_missing_wallet_connection
 
         FlintPaymentTextKey.ErrorPaymentRejectedGeneric ->
-            R.string.error_payment_rejected_generic
+            R.string.spark_error_payment_rejected_generic
 
         FlintPaymentTextKey.ErrorPaymentRejectedMessage ->
-            R.string.error_payment_rejected_message
+            R.string.spark_error_payment_rejected_message
 
-        FlintPaymentTextKey.ErrorPaymentUnconfirmed -> R.string.error_payment_unconfirmed
+        FlintPaymentTextKey.ErrorPaymentUnconfirmed -> R.string.spark_error_payment_unconfirmed
 
         FlintPaymentTextKey.ErrorRelayConnectionFailed ->
-            R.string.error_relay_connection_failed
+            R.string.spark_error_relay_connection_failed
     }
 
     is PaymentUiTextKey -> key.androidStringResource()

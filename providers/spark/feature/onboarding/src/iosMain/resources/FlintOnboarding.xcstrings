@@ -1,7 +1,7 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "onboarding_add_wallet_intro": {
+    "spark_onboarding_add_wallet_intro": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -23,7 +23,7 @@
         }
       }
     },
-    "onboarding_add_wallet_step1": {
+    "spark_onboarding_add_wallet_step1": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -45,7 +45,7 @@
         }
       }
     },
-    "onboarding_add_wallet_step2": {
+    "spark_onboarding_add_wallet_step2": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -67,7 +67,7 @@
         }
       }
     },
-    "onboarding_add_wallet_step3": {
+    "spark_onboarding_add_wallet_step3": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -89,7 +89,7 @@
         }
       }
     },
-    "onboarding_add_wallet_title": {
+    "spark_onboarding_add_wallet_title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -111,7 +111,7 @@
         }
       }
     },
-    "onboarding_agreement_body": {
+    "spark_onboarding_agreement_body": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -133,7 +133,7 @@
         }
       }
     },
-    "onboarding_autopay_body": {
+    "spark_onboarding_autopay_body": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -155,7 +155,7 @@
         }
       }
     },
-    "onboarding_features_page1_body": {
+    "spark_onboarding_features_page1_body": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -177,7 +177,7 @@
         }
       }
     },
-    "onboarding_features_page1_subtitle": {
+    "spark_onboarding_features_page1_subtitle": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -199,7 +199,7 @@
         }
       }
     },
-    "onboarding_features_page1_title": {
+    "spark_onboarding_features_page1_title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -221,7 +221,7 @@
         }
       }
     },
-    "onboarding_features_page2_body": {
+    "spark_onboarding_features_page2_body": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -243,7 +243,7 @@
         }
       }
     },
-    "onboarding_features_page2_subtitle": {
+    "spark_onboarding_features_page2_subtitle": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -265,7 +265,7 @@
         }
       }
     },
-    "onboarding_features_page2_title": {
+    "spark_onboarding_features_page2_title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -287,7 +287,7 @@
         }
       }
     },
-    "onboarding_features_page3_body": {
+    "spark_onboarding_features_page3_body": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -309,7 +309,7 @@
         }
       }
     },
-    "onboarding_features_page3_subtitle": {
+    "spark_onboarding_features_page3_subtitle": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -331,7 +331,7 @@
         }
       }
     },
-    "onboarding_features_page3_title": {
+    "spark_onboarding_features_page3_title": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -353,7 +353,7 @@
         }
       }
     },
-    "onboarding_welcome_subtitle_line1": {
+    "spark_onboarding_welcome_subtitle_line1": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -375,7 +375,7 @@
         }
       }
     },
-    "onboarding_welcome_subtitle_line2": {
+    "spark_onboarding_welcome_subtitle_line2": {
       "localizations": {
         "en": {
           "stringUnit": {
@@ -397,7 +397,7 @@
         }
       }
     },
-    "onboarding_welcome_title": {
+    "spark_onboarding_welcome_title": {
       "localizations": {
         "en": {
           "stringUnit": {

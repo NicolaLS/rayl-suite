@@ -20,19 +20,19 @@ data class NativeFlintOnboardingText(
 suspend fun nativeFlintOnboardingText(appName: String): NativeFlintOnboardingText =
     NativeFlintOnboardingText(
         welcomeTitle = nativeString(
-            NativeStringResource(table = "FlintOnboarding", key = "onboarding_welcome_title"),
+            NativeStringResource(table = "FlintOnboarding", key = "spark_onboarding_welcome_title"),
             appName
         ),
         welcomeSubtitle = nativeString(
             NativeStringResource(
                 table = "FlintOnboarding",
-                key = "onboarding_welcome_subtitle_line1"
+                key = "spark_onboarding_welcome_subtitle_line1"
             )
         ),
         welcomeDescription = nativeString(
             NativeStringResource(
                 table = "FlintOnboarding",
-                key = "onboarding_welcome_subtitle_line2"
+                key = "spark_onboarding_welcome_subtitle_line2"
             )
         ),
         featurePages =
@@ -41,19 +41,19 @@ suspend fun nativeFlintOnboardingText(appName: String): NativeFlintOnboardingTex
                     title = nativeString(
                         NativeStringResource(
                             table = "FlintOnboarding",
-                            key = "onboarding_features_page1_title"
+                            key = "spark_onboarding_features_page1_title"
                         )
                     ),
                     subtitle = nativeString(
                         NativeStringResource(
                             table = "FlintOnboarding",
-                            key = "onboarding_features_page1_subtitle"
+                            key = "spark_onboarding_features_page1_subtitle"
                         )
                     ),
                     body = nativeString(
                         NativeStringResource(
                             table = "FlintOnboarding",
-                            key = "onboarding_features_page1_body"
+                            key = "spark_onboarding_features_page1_body"
                         ),
                         appName
                     )
@@ -62,19 +62,19 @@ suspend fun nativeFlintOnboardingText(appName: String): NativeFlintOnboardingTex
                     title = nativeString(
                         NativeStringResource(
                             table = "FlintOnboarding",
-                            key = "onboarding_features_page2_title"
+                            key = "spark_onboarding_features_page2_title"
                         )
                     ),
                     subtitle = nativeString(
                         NativeStringResource(
                             table = "FlintOnboarding",
-                            key = "onboarding_features_page2_subtitle"
+                            key = "spark_onboarding_features_page2_subtitle"
                         )
                     ),
                     body = nativeString(
                         NativeStringResource(
                             table = "FlintOnboarding",
-                            key = "onboarding_features_page2_body"
+                            key = "spark_onboarding_features_page2_body"
                         ),
                         appName
                     )
@@ -83,38 +83,47 @@ suspend fun nativeFlintOnboardingText(appName: String): NativeFlintOnboardingTex
                     title = nativeString(
                         NativeStringResource(
                             table = "FlintOnboarding",
-                            key = "onboarding_features_page3_title"
+                            key = "spark_onboarding_features_page3_title"
                         )
                     ),
                     subtitle = nativeString(
                         NativeStringResource(
                             table = "FlintOnboarding",
-                            key = "onboarding_features_page3_subtitle"
+                            key = "spark_onboarding_features_page3_subtitle"
                         ),
                         appName
                     ),
                     body = nativeString(
                         NativeStringResource(
                             table = "FlintOnboarding",
-                            key = "onboarding_features_page3_body"
+                            key = "spark_onboarding_features_page3_body"
                         ),
                         appName
                     )
                 )
             ),
         autoPayBody = nativeString(
-            NativeStringResource(table = "FlintOnboarding", key = "onboarding_autopay_body"),
+            NativeStringResource(table = "FlintOnboarding", key = "spark_onboarding_autopay_body"),
             appName
         ),
         agreementBody = nativeString(
-            NativeStringResource(table = "FlintOnboarding", key = "onboarding_agreement_body"),
+            NativeStringResource(
+                table = "FlintOnboarding",
+                key = "spark_onboarding_agreement_body"
+            ),
             appName
         ),
         instructionsTitle = nativeString(
-            NativeStringResource(table = "FlintOnboarding", key = "onboarding_add_wallet_title")
+            NativeStringResource(
+                table = "FlintOnboarding",
+                key = "spark_onboarding_add_wallet_title"
+            )
         ),
         instructionsIntro = nativeString(
-            NativeStringResource(table = "FlintOnboarding", key = "onboarding_add_wallet_intro"),
+            NativeStringResource(
+                table = "FlintOnboarding",
+                key = "spark_onboarding_add_wallet_intro"
+            ),
             appName
         ),
         instructionSteps =
@@ -122,20 +131,20 @@ suspend fun nativeFlintOnboardingText(appName: String): NativeFlintOnboardingTex
                 nativeString(
                     NativeStringResource(
                         table = "FlintOnboarding",
-                        key = "onboarding_add_wallet_step1"
+                        key = "spark_onboarding_add_wallet_step1"
                     )
                 ),
                 nativeString(
                     NativeStringResource(
                         table = "FlintOnboarding",
-                        key = "onboarding_add_wallet_step2"
+                        key = "spark_onboarding_add_wallet_step2"
                     ),
                     appName
                 ),
                 nativeString(
                     NativeStringResource(
                         table = "FlintOnboarding",
-                        key = "onboarding_add_wallet_step3"
+                        key = "spark_onboarding_add_wallet_step3"
                     ),
                     appName
                 )
