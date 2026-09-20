@@ -36,6 +36,7 @@
 
                 <data android:scheme="lightning" />
                 <data android:scheme="lnurlp" />
+                <data android:scheme="nostr+walletconnect" />
             </intent-filter>
         </activity>
 

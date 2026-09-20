@@ -1,1 +1,1 @@
-"NSCameraUsageDescription" = "Rayl verwendet die Kamera, um QR-Codes für Blink und Bitcoin Lightning zu scannen.";
+"NSCameraUsageDescription" = "Rayl verwendet die Kamera, um QR-Codes für Wallet-Verbindungen und Bitcoin Lightning zu scannen.";

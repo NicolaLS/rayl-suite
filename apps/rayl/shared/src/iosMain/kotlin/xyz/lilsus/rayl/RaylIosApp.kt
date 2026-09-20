@@ -20,7 +20,7 @@ import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
 
 class RaylSnapshot(
     val wallet: String?,
-    val availableWallets: List<String>,
+    val wallets: List<String>,
     val blinkExperience: BlinkIosExperience?,
     val nwcExperience: NwcIosExperience?,
     val welcomeCompleted: Boolean,
@@ -58,9 +58,7 @@ object RaylIosApp {
                     null -> false
                 }
                 if (uri.substringBefore(':').equals("nostr+walletconnect", true)) {
-                    if (RaylWallet.Nwc !in RAYL_AVAILABLE_WALLETS) {
-                        messageKey.value = "wallet_unavailable"
-                    } else if (selected == null) {
+                    if (selected == null) {
                         choose("nwc")
                         LasrDeepLinks.emit(uri)
                     } else if (selected == RaylWallet.Nwc && !hasConnection) {
@@ -120,10 +118,10 @@ object RaylIosApp {
                     nwcExperience != null -> "nwc"
                     else -> null
                 }
-                val availableWallets = RAYL_AVAILABLE_WALLETS.map { it.name.lowercase() }
+                val wallets = RaylWallet.entries.map { it.name.lowercase() }
                 RaylSnapshot(
                     mountedWallet,
-                    availableWallets,
+                    wallets,
                     blinkExperience,
                     nwcExperience,
                     welcome,
@@ -160,7 +158,6 @@ object RaylIosApp {
             "nwc" -> RaylWallet.Nwc
             else -> return
         }
-        if (selected !in RAYL_AVAILABLE_WALLETS) return
         selection.choose(selected)
     }
 

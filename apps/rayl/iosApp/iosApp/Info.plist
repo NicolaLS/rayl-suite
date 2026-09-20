@@ -24,10 +24,11 @@
 			<array>
 				<string>lightning</string>
 				<string>lnurlp</string>
+				<string>nostr+walletconnect</string>
 			</array>
 		</dict>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>Rayl uses the camera to scan Blink and Bitcoin Lightning QR codes.</string>
+	<string>Rayl uses the camera to scan wallet connection and Bitcoin Lightning QR codes.</string>
 </dict>
 </plist>

@@ -143,13 +143,12 @@ validation use, but it does not justify describing the whole Blip binary as
 signature-only: retained ECDH and configuration-dependent cipher code are recorded
 below. The current Apple answer therefore does not depend on that narrower claim.
 
-### Rayl's retained NWC implementation
+### Rayl's NWC implementation
 
-Rayl 1.0 offers only Blink through its selection policy, but its shared framework
-still exports `providers:nwc:experience`, which depends on
+Rayl offers Blink and NWC. Its shared framework exports
+`providers:nwc:experience`, which depends on
 [`providers:nwc:integration:nwc`](../providers/nwc/integration/nwc/build.gradle.kts).
-The cached NWC client registers both NIP-04 and NIP-44. The dependency is included
-in this assessment even when its UI is unavailable.
+The cached NWC client registers both NIP-04 and NIP-44.
 
 | Function | Cached implementation |
 | --- | --- |

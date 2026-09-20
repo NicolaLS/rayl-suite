@@ -23,14 +23,24 @@ class RaylSelectionTest {
     }
 
     @Test
-    fun unavailableWalletCannotBeSelectedOrRestored() {
-        val settings = MapSettings()
-        val selection = RaylSelection(settings)
-        assertFailsWith<IllegalArgumentException> { selection.choose(RaylWallet.Nwc) }
-        assertNull(selection.wallet.value)
-        assertNull(settings.getStringOrNull("rayl.wallet"))
+    fun eachWalletCanBeSelectedAndRestored() {
+        RaylWallet.entries.forEach { wallet ->
+            val settings = MapSettings()
+            val selection = RaylSelection(settings)
 
-        settings.putString("rayl.wallet", RaylWallet.Nwc.name)
+            selection.choose(wallet)
+
+            assertEquals(wallet, selection.wallet.value)
+            assertEquals(wallet.name, settings.getStringOrNull("rayl.wallet"))
+            assertEquals(wallet, RaylSelection(settings).wallet.value)
+        }
+    }
+
+    @Test
+    fun unknownStoredWalletIsNotRestored() {
+        val settings = MapSettings()
+        settings.putString("rayl.wallet", "unknown-wallet")
+
         assertNull(RaylSelection(settings).wallet.value)
     }
 }

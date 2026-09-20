@@ -4,7 +4,7 @@
     <string name="welcome_body">Fast payments, tailored to your wallet.</string>
     <string name="get_started">Get started</string>
     <string name="choose_wallet">Connect your wallet</string>
-    <string name="choose_body">Connect your Blink account. Rayl uses one wallet at a time.</string>
+    <string name="choose_body">Choose your wallet provider. Rayl uses one wallet at a time.</string>
     <string name="blink_title">Blink</string>
     <string name="blink_body">Connect your Blink account with an API key.</string>
     <string name="nwc_title">Nostr Wallet Connect</string>
@@ -13,5 +13,4 @@
     <string name="connection_exists">Remove your current wallet in Settings before connecting another wallet.</string>
     <string name="connect_to_pay">Connect your wallet, then reopen the payment request.</string>
     <string name="close">Close</string>
-    <string name="wallet_unavailable">This version of Rayl supports Blink connections only.</string>
 </resources>

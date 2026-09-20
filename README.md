@@ -1,4 +1,4 @@
-> **Default app: Rayl.** Connect your Blink wallet in 1.0. Blip, Lasr, and Flint
+> **Default app: Rayl.** Connect your Blink or NWC wallet. Blip, Lasr, and Flint
 > remain purpose-built alternatives. All four apps are prerelease. See
 > [Rayl architecture and behavior](docs/rayl-app.md) for scope and provider ownership.
 
@@ -7,7 +7,7 @@
 Rayl Suite contains four independent Kotlin Multiplatform Lightning clients and
 the provider-neutral modules they share:
 
-- **Rayl** is the unified app; 1.0 offers Blink during setup, with more providers planned.
+- **Rayl** is the unified app; setup offers Blink and Nostr Wallet Connect.
 - **Blip** connects to one Blink wallet with an API key.
 - **Flint** opens one Spark wallet from its recovery phrase.
 - **Lasr** connects to one wallet through Nostr Wallet Connect.

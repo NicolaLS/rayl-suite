@@ -7,7 +7,7 @@ import kotlinx.coroutines.flow.asStateFlow
 /** Only installation/setup selection. Payment behavior remains in each provider. */
 internal class RaylSelection(private val settings: Settings) {
     private val mutableWallet = MutableStateFlow(
-        RAYL_AVAILABLE_WALLETS.firstOrNull { it.name == settings.getStringOrNull("rayl.wallet") }
+        RaylWallet.entries.firstOrNull { it.name == settings.getStringOrNull("rayl.wallet") }
     )
     val wallet = mutableWallet.asStateFlow()
     private val mutableWelcomeCompleted =
@@ -20,7 +20,6 @@ internal class RaylSelection(private val settings: Settings) {
     }
 
     fun choose(wallet: RaylWallet) {
-        require(wallet in RAYL_AVAILABLE_WALLETS) { "Wallet is unavailable in this release" }
         check(mutableWallet.value == null) {
             "Remove the current connection before choosing a wallet"
         }
@@ -37,6 +36,3 @@ internal class RaylSelection(private val settings: Settings) {
 }
 
 internal enum class RaylWallet { Blink, Nwc }
-
-// App-owned release scope; retain provider composition for later releases.
-internal val RAYL_AVAILABLE_WALLETS = listOf(RaylWallet.Blink)

@@ -16,7 +16,7 @@ struct ContentView: View {
         Group {
             if let snapshot = model.snapshot {
                 VStack(spacing: 0) {
-                    if snapshot.canCancelSetup && snapshot.availableWallets.count > 1 {
+                    if snapshot.canCancelSetup {
                         HStack {
                             Button(snapshot.text["choose_another"] ?? "") { RaylIosApp.shared.cancelSetup() }
                             Spacer()
@@ -68,11 +68,6 @@ struct ContentView: View {
                 actionTitle: snapshot.text["get_started"] ?? "",
                 action: { RaylIosApp.shared.completeWelcome() }
             )
-        } else if snapshot.availableWallets.count == 1 {
-            ProgressView()
-                .task {
-                    RaylIosApp.shared.choose(wallet: snapshot.availableWallets[0])
-                }
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
@@ -86,7 +81,7 @@ struct ContentView: View {
                         .font(.largeTitle.bold())
                     Text(snapshot.text["choose_body"] ?? "")
                         .foregroundStyle(.secondary)
-                    ForEach(snapshot.availableWallets, id: \.self) { wallet in
+                    ForEach(snapshot.wallets, id: \.self) { wallet in
                         choice(wallet, snapshot)
                     }
                 }

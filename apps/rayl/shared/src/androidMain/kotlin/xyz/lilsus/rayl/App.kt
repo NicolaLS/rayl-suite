@@ -1,7 +1,6 @@
 package xyz.lilsus.rayl
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -24,7 +22,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -67,9 +64,7 @@ fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
         RaylDeepLinks.events.collect { uri ->
             val selected = selection.wallet.value
             if (uri.substringBefore(':').equals("nostr+walletconnect", true)) {
-                if (RaylWallet.Nwc !in RAYL_AVAILABLE_WALLETS) {
-                    message = R.string.wallet_unavailable
-                } else if (selected == null) {
+                if (selected == null) {
                     selection.choose(RaylWallet.Nwc)
                     LasrDeepLinks.emit(uri)
                 } else if (selected == RaylWallet.Nwc &&
@@ -98,7 +93,7 @@ fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
                     configuration = RAYL_BLINK,
                     performanceDiagnostics = performanceDiagnostics,
                     onRemoved = leave,
-                    onChooseWallet = leave.takeIf { RAYL_AVAILABLE_WALLETS.size > 1 },
+                    onChooseWallet = leave,
                     onConnectionChanged = {
                         if (selection.wallet.value == RaylWallet.Blink) connected = it
                     }
@@ -123,16 +118,6 @@ fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
                             actionTitle = stringResource(R.string.get_started),
                             onGetStarted = selection::completeWelcome
                         )
-                    } else if (RAYL_AVAILABLE_WALLETS.size == 1) {
-                        LaunchedEffect(selection) {
-                            selection.choose(RAYL_AVAILABLE_WALLETS.single())
-                        }
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CircularProgressIndicator()
-                        }
                     } else {
                         Column(
                             modifier = Modifier.safeDrawingPadding().verticalScroll(
@@ -145,15 +130,15 @@ fun App(performanceDiagnostics: PerformanceDiagnostics? = null) {
                                 style = MaterialTheme.typography.headlineLarge
                             )
                             Text(stringResource(R.string.choose_body))
-                            RAYL_AVAILABLE_WALLETS.forEach { available ->
-                                val (title, body) = when (available) {
+                            RaylWallet.entries.forEach { provider ->
+                                val (title, body) = when (provider) {
                                     RaylWallet.Blink ->
                                         R.string.blink_title to
                                             R.string.blink_body
 
                                     RaylWallet.Nwc -> R.string.nwc_title to R.string.nwc_body
                                 }
-                                WalletChoice(title, body) { selection.choose(available) }
+                                WalletChoice(title, body) { selection.choose(provider) }
                             }
                         }
                     }

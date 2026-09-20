@@ -9,11 +9,12 @@ behavior lives in `providers/`.
 | Blip | Blink |
 | Lasr | Nostr Wallet Connect (NWC) |
 | Flint | Spark through the Breez SDK |
-| Rayl | Blink and NWC experiences; currently only Blink is enabled for selection |
+| Rayl | Blink and NWC experiences |
 
-Rayl's release availability is owned by `RAYL_AVAILABLE_WALLETS` in
-[RaylSelection](../apps/rayl/shared/src/commonMain/kotlin/xyz/lilsus/rayl/RaylSelection.kt).
-It selects a provider experience rather than combining wallets into one payment engine.
+Rayl offers every integrated provider during setup, with no release availability
+gates. [RaylSelection](../apps/rayl/shared/src/commonMain/kotlin/xyz/lilsus/rayl/RaylSelection.kt)
+remembers one selected provider experience; it does not combine wallets into one
+payment engine.
 
 ## Shared boundaries
 
