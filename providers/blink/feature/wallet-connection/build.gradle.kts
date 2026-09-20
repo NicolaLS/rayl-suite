@@ -4,7 +4,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.blip.feature.walletconnection"
+        namespace = "xyz.lilsus.rayl.providers.blink.feature.walletconnection"
     }
 
     sourceSets {

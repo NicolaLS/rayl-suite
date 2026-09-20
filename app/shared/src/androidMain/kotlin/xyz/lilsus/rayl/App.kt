@@ -28,13 +28,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import xyz.lilsus.blip.BlinkExperience
-import xyz.lilsus.blip.BlipDeepLinks
 import xyz.lilsus.flint.FlintEnvironment
 import xyz.lilsus.flint.SparkDeepLinks
 import xyz.lilsus.flint.SparkExperience
 import xyz.lilsus.lasr.LasrDeepLinks
 import xyz.lilsus.lasr.NwcExperience
+import xyz.lilsus.rayl.providers.blink.BlinkDeepLinks
+import xyz.lilsus.rayl.providers.blink.BlinkExperience
 import xyz.lilsus.rayl.shared.R
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
@@ -61,7 +61,7 @@ fun App(
     var message by remember { mutableStateOf<Int?>(null) }
     val leave = {
         RaylDeepLinks.clear()
-        BlipDeepLinks.clear()
+        BlinkDeepLinks.clear()
         LasrDeepLinks.clear()
         SparkDeepLinks.clear()
         message = null
@@ -88,7 +88,7 @@ fun App(
                 message = R.string.connect_to_pay
             } else {
                 when (selected) {
-                    RaylWallet.Blink -> BlipDeepLinks.emit(uri)
+                    RaylWallet.Blink -> BlinkDeepLinks.emit(uri)
                     RaylWallet.Nwc -> LasrDeepLinks.emit(uri)
                     RaylWallet.Spark -> SparkDeepLinks.emit(uri)
                 }

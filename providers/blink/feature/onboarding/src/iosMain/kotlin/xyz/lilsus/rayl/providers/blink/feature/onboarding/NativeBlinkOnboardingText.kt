@@ -1,0 +1,245 @@
+package xyz.lilsus.rayl.providers.blink.feature.onboarding
+
+import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
+import xyz.lilsus.raylsuite.core.ui.resources.nativeString
+
+data class NativeBlinkOnboardingPage(
+    val title: String,
+    val subtitle: String,
+    val body: String,
+    val imageName: String?
+)
+
+data class NativeBlinkOnboardingText(
+    val welcomeTitle: String,
+    val welcomeSubtitle: String,
+    val welcomeDescription: String,
+    val features: List<NativeBlinkOnboardingPage>,
+    val autoPayBody: String,
+    val agreementBody: String,
+    val instructionsTitle: String,
+    val instructionsIntro: String,
+    val instructions: List<NativeBlinkOnboardingPage>,
+    val previousStep: String,
+    val nextStep: String,
+    val dashboardButton: String,
+    val enterKeyButton: String
+)
+
+suspend fun nativeBlinkOnboardingText(appName: String): NativeBlinkOnboardingText =
+    NativeBlinkOnboardingText(
+        welcomeTitle = nativeString(
+            NativeStringResource(table = "BlinkOnboarding", key = "blink_onboarding_welcome_title"),
+            appName
+        ),
+        welcomeSubtitle = nativeString(
+            NativeStringResource(
+                table = "BlinkOnboarding",
+                key = "blink_onboarding_welcome_subtitle_line1"
+            )
+        ),
+        welcomeDescription = nativeString(
+            NativeStringResource(
+                table = "BlinkOnboarding",
+                key = "blink_onboarding_welcome_subtitle_line2"
+            )
+        ),
+        features =
+            listOf(
+                NativeBlinkOnboardingPage(
+                    title = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_features_page1_title"
+                        )
+                    ),
+                    subtitle = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_features_page1_subtitle"
+                        )
+                    ),
+                    body = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_features_page1_body"
+                        ),
+                        appName
+                    ),
+                    imageName = null
+                ),
+                NativeBlinkOnboardingPage(
+                    title = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_features_page2_title"
+                        )
+                    ),
+                    subtitle = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_features_page2_subtitle"
+                        )
+                    ),
+                    body = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_features_page2_body"
+                        ),
+                        appName
+                    ),
+                    imageName = null
+                ),
+                NativeBlinkOnboardingPage(
+                    title = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_features_page3_title"
+                        )
+                    ),
+                    subtitle = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_features_page3_subtitle"
+                        ),
+                        appName
+                    ),
+                    body = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_features_page3_body"
+                        ),
+                        appName
+                    ),
+                    imageName = null
+                )
+            ),
+        autoPayBody = nativeString(
+            NativeStringResource(table = "BlinkOnboarding", key = "blink_onboarding_autopay_body"),
+            appName
+        ),
+        agreementBody = nativeString(
+            NativeStringResource(
+                table = "BlinkOnboarding",
+                key = "blink_onboarding_agreement_body"
+            ),
+            appName
+        ),
+        instructionsTitle = nativeString(
+            NativeStringResource(
+                table = "BlinkOnboarding",
+                key = "blink_onboarding_add_wallet_title"
+            )
+        ),
+        instructionsIntro = nativeString(
+            NativeStringResource(
+                table = "BlinkOnboarding",
+                key = "blink_onboarding_add_wallet_intro"
+            ),
+            appName
+        ),
+        instructions =
+            listOf(
+                instruction(
+                    title = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_add_wallet_step1_title"
+                        )
+                    ),
+                    body = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_add_wallet_step1_body"
+                        )
+                    ),
+                    imageName = "blink_dashboard_email"
+                ),
+                instruction(
+                    title = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_add_wallet_step2_title"
+                        )
+                    ),
+                    body = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_add_wallet_step2_body"
+                        )
+                    ),
+                    imageName = "blink_dashboard_api_keys"
+                ),
+                instruction(
+                    title = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_add_wallet_step3_title"
+                        )
+                    ),
+                    body = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_add_wallet_step3_body"
+                        )
+                    ),
+                    imageName = "blink_dashboard_key_settings"
+                ),
+                instruction(
+                    title = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_add_wallet_step4_title"
+                        )
+                    ),
+                    body = nativeString(
+                        NativeStringResource(
+                            table = "BlinkOnboarding",
+                            key = "blink_onboarding_add_wallet_step4_body"
+                        ),
+                        appName
+                    ),
+                    imageName = "blink_dashboard_copy_key"
+                )
+            ),
+        previousStep = nativeString(
+            NativeStringResource(
+                table = "BlinkOnboarding",
+                key = "blink_onboarding_add_wallet_previous_step"
+            )
+        ),
+        nextStep = nativeString(
+            NativeStringResource(
+                table = "BlinkOnboarding",
+                key = "blink_onboarding_add_wallet_next_step"
+            )
+        ),
+        dashboardButton = nativeString(
+            NativeStringResource(
+                table = "BlinkOnboarding",
+                key = "blink_onboarding_add_wallet_dashboard_button"
+            )
+        ),
+        enterKeyButton = nativeString(
+            NativeStringResource(
+                table = "BlinkOnboarding",
+                key = "blink_onboarding_add_wallet_enter_key_button"
+            )
+        )
+    )
+
+suspend fun nativeBlinkInstructionProgress(step: Int, total: Int): String = nativeString(
+    NativeStringResource(
+        table = "BlinkOnboarding",
+        key = "blink_onboarding_add_wallet_step_progress"
+    ),
+    step,
+    total
+)
+
+private fun instruction(title: String, body: String, imageName: String) = NativeBlinkOnboardingPage(
+    title = title,
+    subtitle = "",
+    body = body,
+    imageName = imageName
+)

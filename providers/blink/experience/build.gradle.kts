@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.blip.experience"
+        namespace = "xyz.lilsus.rayl.providers.blink.experience"
     }
 
     sourceSets {

@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import xyz.lilsus.blip.BlinkIosExperience
-import xyz.lilsus.blip.BlipDeepLinks
 import xyz.lilsus.flint.FlintAppHost
 import xyz.lilsus.flint.FlintEnvironment
 import xyz.lilsus.flint.SparkDeepLinks
@@ -17,6 +15,8 @@ import xyz.lilsus.flint.SparkIosExperience
 import xyz.lilsus.flint.createIOSAppHost
 import xyz.lilsus.lasr.LasrDeepLinks
 import xyz.lilsus.lasr.NwcIosExperience
+import xyz.lilsus.rayl.providers.blink.BlinkDeepLinks
+import xyz.lilsus.rayl.providers.blink.BlinkIosExperience
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
@@ -84,7 +84,7 @@ object RaylIosApp {
                     messageKey.value = "connect_to_pay"
                 } else {
                     when (selected) {
-                        RaylWallet.Blink -> BlipDeepLinks.emit(uri)
+                        RaylWallet.Blink -> BlinkDeepLinks.emit(uri)
                         RaylWallet.Nwc -> LasrDeepLinks.emit(uri)
                         RaylWallet.Spark -> SparkDeepLinks.emit(uri)
                         null -> Unit
@@ -342,7 +342,7 @@ object RaylIosApp {
         }
         messageKey.value = null
         RaylDeepLinks.clear()
-        BlipDeepLinks.clear()
+        BlinkDeepLinks.clear()
         LasrDeepLinks.clear()
         SparkDeepLinks.clear()
         selection.clear()

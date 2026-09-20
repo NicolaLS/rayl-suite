@@ -4,7 +4,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.blip.ui"
+        namespace = "xyz.lilsus.rayl.providers.blink.ui"
     }
 
     sourceSets {

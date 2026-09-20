@@ -6,7 +6,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.blip.integration.blink"
+        namespace = "xyz.lilsus.rayl.providers.blink.integration.blink"
     }
 
     sourceSets {
@@ -28,10 +28,10 @@ kotlin {
 apollo {
     service("blink") {
         val blinkSchemaFile = file(
-            "src/commonMain/graphql/xyz/lilsus/blip/integration/blink/graphql/schema.graphqls"
+            "src/commonMain/graphql/xyz/lilsus/rayl/providers/blink/integration/blink/graphql/schema.graphqls"
         )
 
-        packageName.set("xyz.lilsus.blip.integration.blink.graphql")
+        packageName.set("xyz.lilsus.rayl.providers.blink.integration.blink.graphql")
         schemaFile.set(blinkSchemaFile)
         generateAsInternal.set(true)
         mapScalar("LnPaymentRequest", "kotlin.String", "com.apollographql.apollo.api.StringAdapter")

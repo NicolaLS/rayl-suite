@@ -1,7 +1,7 @@
 import SwiftUI
 import Shared
 
-private func makeBlipShellAdapter(_ experience: BlinkIosExperience) -> NativeShellAdapter {
+private func makeBlinkShellAdapter(_ experience: BlinkIosExperience) -> NativeShellAdapter {
     NativeShellAdapter(
     visibleTabIds: ["scan", "hub", "settings"],
     initialStage: {
@@ -33,7 +33,7 @@ private func makeBlipShellAdapter(_ experience: BlinkIosExperience) -> NativeShe
         AnyView(
             NativePaymentScanView(
                 controller: experience.scanController(),
-                // Blip hides the Recent tab, so Scan presents this session's payments itself.
+                // Blink hides the Recent tab, so Scan presents this session's payments itself.
                 recentController: experience.recentController()
             )
         )
@@ -49,8 +49,8 @@ private func makeBlipShellAdapter(_ experience: BlinkIosExperience) -> NativeShe
             NativeSettingsView(
                 controller: experience.settingsController(),
                 trailingContent: AnyView(
-                    BlipWalletSettingsActionsView(
-                        controller: experience.blipSettingsController()
+                    BlinkWalletSettingsActionsView(
+                        controller: experience.blinkSettingsController()
                     )
                 )
             )
@@ -58,7 +58,7 @@ private func makeBlipShellAdapter(_ experience: BlinkIosExperience) -> NativeShe
     },
     nativeOnboardingView: {
         AnyView(
-            BlipNativeOnboardingView(controller: experience.onboardingController())
+            BlinkNativeOnboardingView(controller: experience.onboardingController())
         )
     }
 )
@@ -88,7 +88,7 @@ struct BlinkExperienceView: View {
 
     init(experience: BlinkIosExperience) {
         self.experience = experience
-        self.adapter = makeBlipShellAdapter(experience)
+        self.adapter = makeBlinkShellAdapter(experience)
         _recovery = StateObject(wrappedValue: BlinkRemovalRecoveryModel(experience: experience))
     }
 
@@ -114,13 +114,13 @@ struct BlinkExperienceView: View {
 }
 
 @MainActor
-private final class BlipWalletSettingsModel: ObservableObject {
-    @Published private(set) var snapshot: BlipNativeWalletSettingsSnapshot?
+private final class BlinkWalletSettingsModel: ObservableObject {
+    @Published private(set) var snapshot: BlinkNativeWalletSettingsSnapshot?
 
-    let controller: BlipNativeSettingsController
+    let controller: BlinkNativeSettingsController
     private var cancel: (() -> Void)?
 
-    init(controller: BlipNativeSettingsController) {
+    init(controller: BlinkNativeSettingsController) {
         self.controller = controller
         cancel = controller.observe { [weak self] snapshot in
             self?.snapshot = snapshot
@@ -132,13 +132,13 @@ private final class BlipWalletSettingsModel: ObservableObject {
     }
 }
 
-private struct BlipWalletSettingsActionsView: View {
-    @StateObject private var model: BlipWalletSettingsModel
+private struct BlinkWalletSettingsActionsView: View {
+    @StateObject private var model: BlinkWalletSettingsModel
     @State private var showsFundingWallets = false
     @State private var confirmsRemoval = false
 
-    init(controller: BlipNativeSettingsController) {
-        _model = StateObject(wrappedValue: BlipWalletSettingsModel(controller: controller))
+    init(controller: BlinkNativeSettingsController) {
+        _model = StateObject(wrappedValue: BlinkWalletSettingsModel(controller: controller))
     }
 
     var body: some View {
@@ -199,7 +199,7 @@ private struct BlipWalletSettingsActionsView: View {
     }
 
     private func fundingWalletPicker(
-        _ snapshot: BlipNativeWalletSettingsSnapshot
+        _ snapshot: BlinkNativeWalletSettingsSnapshot
     ) -> some View {
         NavigationStack {
             List {
