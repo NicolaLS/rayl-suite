@@ -28,13 +28,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
-import xyz.lilsus.flint.FlintEnvironment
-import xyz.lilsus.flint.SparkDeepLinks
-import xyz.lilsus.flint.SparkExperience
 import xyz.lilsus.rayl.providers.blink.BlinkDeepLinks
 import xyz.lilsus.rayl.providers.blink.BlinkExperience
 import xyz.lilsus.rayl.providers.nwc.NwcDeepLinks
 import xyz.lilsus.rayl.providers.nwc.NwcExperience
+import xyz.lilsus.rayl.providers.spark.SparkDeepLinks
+import xyz.lilsus.rayl.providers.spark.SparkEnvironment
+import xyz.lilsus.rayl.providers.spark.SparkExperience
 import xyz.lilsus.rayl.shared.R
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
@@ -45,7 +45,7 @@ import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
 
 @Composable
 fun App(
-    sparkEnvironment: FlintEnvironment,
+    sparkEnvironment: SparkEnvironment,
     breezApiKey: String? = null,
     performanceDiagnostics: PerformanceDiagnostics? = null
 ) {

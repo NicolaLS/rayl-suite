@@ -1,0 +1,310 @@
+package xyz.lilsus.rayl.providers.spark.application.wallet
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import xyz.lilsus.rayl.providers.spark.application.AppBootstrapConfig
+import xyz.lilsus.rayl.providers.spark.application.AppEnvironment
+import xyz.lilsus.rayl.providers.spark.application.payment.DefaultPaymentEngine
+import xyz.lilsus.rayl.providers.spark.application.payment.ParsedSdkInput
+import xyz.lilsus.rayl.providers.spark.application.payment.PaymentSessionLifecycle
+import xyz.lilsus.rayl.providers.spark.application.payment.SdkPayment
+import xyz.lilsus.rayl.providers.spark.application.payment.SdkPreparedPayment
+import xyz.lilsus.rayl.providers.spark.application.payment.SparkPaymentClient
+import xyz.lilsus.raylsuite.core.model.Satoshi
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class WalletLifecycleTest {
+    @Test
+    fun initialAbsenceIsNotRemovalAndNewImportClearsCompletedRemoval() = runTest {
+        val fixture = LifecycleFixture(backgroundScope)
+        fixture.access.start()
+        runCurrent()
+
+        assertEquals(WalletAccessState.NoWallet, fixture.access.state.value)
+        assertFalse(fixture.access.removed.value)
+
+        assertEquals(RemoveWalletResult.REMOVED, fixture.access.removeWallet())
+        assertTrue(fixture.access.removed.value)
+        assertEquals(ImportWalletResult.IMPORTED, fixture.access.importWallet(TEST_MNEMONIC))
+        assertFalse(fixture.access.removed.value)
+        assertEquals(WalletAccessState.Connected, fixture.access.state.value)
+    }
+
+    @Test
+    fun closeDisconnectsWithoutWipingAndRejectsFurtherOperations() = runTest {
+        val fixture = LifecycleFixture(backgroundScope)
+        val credential = WalletCredential.fromMnemonic(TEST_MNEMONIC)
+        fixture.vault.credential = credential
+        fixture.access.start()
+        runCurrent()
+        assertEquals(WalletAccessState.Connected, fixture.access.state.value)
+
+        fixture.access.close()
+        fixture.access.close()
+        fixture.access.start()
+        assertFailsWith<CancellationException> { fixture.access.importWallet(TEST_MNEMONIC) }
+        assertFailsWith<CancellationException> { fixture.access.retryConnection() }
+        assertFailsWith<CancellationException> { fixture.access.removeWallet() }
+        runCurrent()
+
+        assertEquals(1, fixture.connections)
+        assertEquals(1, fixture.lifecycle.attachments)
+        assertEquals(1, fixture.lifecycle.detachments)
+        assertEquals(1, fixture.session.disconnections)
+        assertSame(credential, fixture.vault.credential)
+        fixture.assertNoRemoval()
+        assertTrue(backgroundScope.isActive)
+        val sibling = backgroundScope.async { "parent still works" }
+        assertEquals("parent still works", sibling.await())
+    }
+
+    @Test
+    fun closeCancelsStartupBeforeCredentialsFinishLoading() = runTest {
+        val fixture = LifecycleFixture(backgroundScope)
+        var loadingCancelled = false
+        fixture.vault.loadAction = {
+            try {
+                awaitCancellation()
+            } finally {
+                loadingCancelled = true
+            }
+        }
+        fixture.access.start()
+        runCurrent()
+        assertEquals(1, fixture.vault.loads)
+
+        fixture.access.close()
+
+        assertTrue(loadingCancelled)
+        assertEquals(0, fixture.connections)
+        fixture.assertNoRemoval()
+        assertTrue(backgroundScope.isActive)
+    }
+
+    @Test
+    fun closeCancelsSuspendedStartupConnection() = runTest {
+        val fixture = LifecycleFixture(backgroundScope)
+        fixture.vault.credential = WalletCredential.fromMnemonic(TEST_MNEMONIC)
+        var connectionCancelled = false
+        fixture.connectAction = {
+            try {
+                awaitCancellation()
+            } finally {
+                connectionCancelled = true
+            }
+        }
+        fixture.access.start()
+        runCurrent()
+        assertEquals(1, fixture.connections)
+
+        fixture.access.close()
+        fixture.access.start()
+        runCurrent()
+
+        assertTrue(connectionCancelled)
+        assertEquals(1, fixture.connections)
+        assertEquals(0, fixture.lifecycle.attachments)
+        fixture.assertNoRemoval()
+    }
+
+    @Test
+    fun closeCancelsImportAndOwnsSessionWhoseAttachmentWasInterrupted() = runTest {
+        val fixture = LifecycleFixture(backgroundScope)
+        fixture.lifecycle.attachAction = { awaitCancellation() }
+        val importing = async { fixture.access.importWallet(TEST_MNEMONIC) }
+        runCurrent()
+        assertEquals(1, fixture.lifecycle.attachments)
+        assertFalse(importing.isCompleted)
+
+        fixture.access.close()
+
+        assertFailsWith<CancellationException> { importing.await() }
+        assertEquals(1, fixture.lifecycle.detachments)
+        assertEquals(1, fixture.session.disconnections)
+        assertEquals(0, fixture.vault.stores)
+        fixture.assertNoRemoval()
+    }
+
+    @Test
+    fun failedCloseRemainsTerminalAndCanRetryWithoutReattaching() = runTest {
+        val fixture = LifecycleFixture(backgroundScope)
+        fixture.vault.credential = WalletCredential.fromMnemonic(TEST_MNEMONIC)
+        fixture.access.start()
+        runCurrent()
+        val failure = IllegalStateException("SDK disconnect failed")
+        fixture.session.disconnectAction = { throw failure }
+
+        assertEquals(
+            failure.message,
+            assertFailsWith<IllegalStateException> { fixture.access.close() }.message
+        )
+        fixture.access.start()
+        assertFailsWith<CancellationException> { fixture.access.retryConnection() }
+        assertEquals(1, fixture.lifecycle.attachments)
+        fixture.assertNoRemoval()
+
+        fixture.session.disconnectAction = {}
+        fixture.access.close()
+        fixture.access.close()
+
+        assertEquals(2, fixture.session.disconnections)
+        assertEquals(2, fixture.lifecycle.detachments)
+        assertEquals(1, fixture.lifecycle.attachments)
+        assertEquals(1, fixture.connections)
+        fixture.assertNoRemoval()
+        assertTrue(backgroundScope.isActive)
+    }
+
+    @Test
+    fun concurrentCloseCallsShareOneSuccessfulCleanup() = runTest {
+        val fixture = LifecycleFixture(backgroundScope)
+        fixture.vault.credential = WalletCredential.fromMnemonic(TEST_MNEMONIC)
+        fixture.access.start()
+        runCurrent()
+        val disconnected = CompletableDeferred<Unit>()
+        fixture.session.disconnectAction = { disconnected.await() }
+
+        val first = async { fixture.access.close() }
+        val second = async { fixture.access.close() }
+        runCurrent()
+        assertEquals(1, fixture.session.disconnections)
+        assertFalse(first.isCompleted)
+        assertFalse(second.isCompleted)
+
+        disconnected.complete(Unit)
+        first.await()
+        second.await()
+        assertEquals(1, fixture.lifecycle.detachments)
+        assertEquals(1, fixture.session.disconnections)
+    }
+}
+
+private class LifecycleFixture(scope: CoroutineScope) {
+    val vault = LifecycleVault()
+    val directories = LifecycleDirectories()
+    val session = LifecycleSession()
+    val lifecycle = TestPaymentLifecycle()
+    var connections = 0
+    var connectAction: suspend () -> SparkSdkSession = { session }
+    val access = DefaultWalletAccess(
+        bootstrapConfig = AppBootstrapConfig(AppEnvironment.DEBUG),
+        vault = vault,
+        directories = directories,
+        connector = SparkSdkConnector { _, _, _ ->
+            connections += 1
+            connectAction()
+        },
+        payments = DefaultPaymentEngine(AppEnvironment.DEBUG),
+        paymentLifecycle = lifecycle,
+        applicationScope = scope
+    )
+
+    fun assertNoRemoval() {
+        assertEquals(0, vault.deletions)
+        assertEquals(0, directories.deletions)
+        assertFalse(directories.pending)
+        assertFalse(access.removed.value)
+    }
+}
+
+private class LifecycleVault : CredentialVault {
+    var credential: WalletCredential? = null
+    var loads = 0
+    var stores = 0
+    var deletions = 0
+    var loadAction: suspend () -> CredentialLoadResult = {
+        credential?.let { CredentialLoadResult.Available(it) } ?: CredentialLoadResult.Absent
+    }
+
+    override suspend fun load(): CredentialLoadResult {
+        loads += 1
+        return loadAction()
+    }
+
+    override suspend fun store(credential: WalletCredential): CredentialStoreResult {
+        stores += 1
+        this.credential = credential
+        return CredentialStoreResult.STORED
+    }
+
+    override suspend fun delete(): CredentialDeleteResult {
+        deletions += 1
+        credential = null
+        return CredentialDeleteResult.DELETED
+    }
+}
+
+private class LifecycleDirectories : WalletDirectories {
+    override val sdkDirectory = "test-sdk-directory"
+    var pending = false
+    var deletions = 0
+
+    override fun beginReset(): Boolean {
+        pending = true
+        return true
+    }
+
+    override fun resetPending(): Boolean = pending
+
+    override fun deleteWalletData(): Boolean {
+        deletions += 1
+        return true
+    }
+
+    override fun finishReset(): Boolean {
+        pending = false
+        return true
+    }
+}
+
+private class LifecycleSession : SparkSdkSession {
+    override val paymentClient = UnusedPaymentClient
+    var disconnections = 0
+    var disconnectAction: suspend () -> Unit = {}
+
+    override suspend fun disconnect() {
+        disconnections += 1
+        disconnectAction()
+    }
+}
+
+private class TestPaymentLifecycle : PaymentSessionLifecycle {
+    var attachments = 0
+    var detachments = 0
+    var attachAction: suspend () -> Unit = {}
+
+    override suspend fun attach(client: SparkPaymentClient) {
+        attachments += 1
+        attachAction()
+    }
+
+    override suspend fun detach() {
+        detachments += 1
+    }
+}
+
+private object UnusedPaymentClient : SparkPaymentClient {
+    override suspend fun parse(input: String): Nothing = error("No payment expected")
+    override suspend fun identityPublicKey(): Nothing = error("No payment expected")
+    override suspend fun prepare(input: String, amountSats: Satoshi?): Nothing = error("No payment expected")
+    override suspend fun prepareLnurl(request: ParsedSdkInput.LnurlPay, amountSats: Satoshi): Nothing = error("No payment expected")
+    override suspend fun send(prepared: SdkPreparedPayment, idempotencyKey: String): Nothing = error("No payment expected")
+    override suspend fun getPayment(paymentId: String): Nothing = error("No payment expected")
+    override suspend fun observePayments(onPayment: (SdkPayment) -> Unit): Nothing = error("No payment expected")
+}
+
+private const val TEST_MNEMONIC =
+    "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"

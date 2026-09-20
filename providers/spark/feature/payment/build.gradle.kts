@@ -4,7 +4,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.flint.feature.payment"
+        namespace = "xyz.lilsus.rayl.providers.spark.feature.payment"
     }
 
     sourceSets {

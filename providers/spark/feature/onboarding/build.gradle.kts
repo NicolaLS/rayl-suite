@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.flint.feature.onboarding"
+        namespace = "xyz.lilsus.rayl.providers.spark.feature.onboarding"
     }
 
     sourceSets {

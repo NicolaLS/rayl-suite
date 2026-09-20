@@ -1,6 +1,6 @@
 package xyz.lilsus.rayl
 
-import xyz.lilsus.flint.FlintEnvironment
+import xyz.lilsus.rayl.providers.spark.SparkEnvironment
 
 internal fun androidRaylConfiguration(): AndroidRaylConfiguration =
-    AndroidRaylConfiguration(environment = FlintEnvironment.DEBUG)
+    AndroidRaylConfiguration(environment = SparkEnvironment.DEBUG)

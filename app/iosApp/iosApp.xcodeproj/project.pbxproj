@@ -59,12 +59,12 @@
 		F66FC212555C239ADBBF0F03 /* blink_dashboard_api_keys.png in Resources */ = {isa = PBXBuildFile; fileRef = E44C5776A776765F3F772AE6 /* blink_dashboard_api_keys.png */; };
 		D40000000000000000000001 /* SparkExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000001 /* SparkExperience.xcstrings */; };
 		E40000000000000000000001 /* SparkExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000001 /* SparkExperience.xcstrings */; };
-		D40000000000000000000002 /* FlintOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000002 /* FlintOnboarding.xcstrings */; };
-		E40000000000000000000002 /* FlintOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000002 /* FlintOnboarding.xcstrings */; };
-		D40000000000000000000003 /* FlintPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000003 /* FlintPayment.xcstrings */; };
-		E40000000000000000000003 /* FlintPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000003 /* FlintPayment.xcstrings */; };
-		D40000000000000000000004 /* FlintWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000004 /* FlintWalletConnection.xcstrings */; };
-		E40000000000000000000004 /* FlintWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000004 /* FlintWalletConnection.xcstrings */; };
+		D40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000002 /* SparkOnboarding.xcstrings */; };
+		E40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000002 /* SparkOnboarding.xcstrings */; };
+		D40000000000000000000003 /* SparkPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000003 /* SparkPayment.xcstrings */; };
+		E40000000000000000000003 /* SparkPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000003 /* SparkPayment.xcstrings */; };
+		D40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000004 /* SparkWalletConnection.xcstrings */; };
+		E40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000004 /* SparkWalletConnection.xcstrings */; };
 		A40000000000000000000004 /* BreezSdkSpark in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000002 /* BreezSdkSpark */; };
 		A40000000000000000000005 /* BreezSdkSpark in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000003 /* BreezSdkSpark */; };
 /* End PBXBuildFile section */
@@ -98,9 +98,9 @@
 		E2E000000000000000000001 /* Rayl E2E.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rayl E2E.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E44C5776A776765F3F772AE6 /* blink_dashboard_api_keys.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blink_dashboard_api_keys.png; path = ../../providers/blink/feature/onboarding/src/iosMain/resources/assets/blink_dashboard_api_keys.png; sourceTree = "<group>"; };
 		C40000000000000000000001 /* SparkExperience.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkExperience.xcstrings; path = "../../providers/spark/experience/src/iosMain/resources/SparkExperience.xcstrings"; sourceTree = "<group>"; };
-		C40000000000000000000002 /* FlintOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintOnboarding.xcstrings; path = "../../providers/spark/feature/onboarding/src/iosMain/resources/FlintOnboarding.xcstrings"; sourceTree = "<group>"; };
-		C40000000000000000000003 /* FlintPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintPayment.xcstrings; path = "../../providers/spark/feature/payment/src/iosMain/resources/FlintPayment.xcstrings"; sourceTree = "<group>"; };
-		C40000000000000000000004 /* FlintWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = FlintWalletConnection.xcstrings; path = "../../providers/spark/feature/wallet-connection/src/iosMain/resources/FlintWalletConnection.xcstrings"; sourceTree = "<group>"; };
+		C40000000000000000000002 /* SparkOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkOnboarding.xcstrings; path = "../../providers/spark/feature/onboarding/src/iosMain/resources/SparkOnboarding.xcstrings"; sourceTree = "<group>"; };
+		C40000000000000000000003 /* SparkPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkPayment.xcstrings; path = "../../providers/spark/feature/payment/src/iosMain/resources/SparkPayment.xcstrings"; sourceTree = "<group>"; };
+		C40000000000000000000004 /* SparkWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkWalletConnection.xcstrings; path = "../../providers/spark/feature/wallet-connection/src/iosMain/resources/SparkWalletConnection.xcstrings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -221,9 +221,9 @@
 			isa = PBXGroup;
 			children = (
 				C40000000000000000000001 /* SparkExperience.xcstrings */,
-				C40000000000000000000002 /* FlintOnboarding.xcstrings */,
-				C40000000000000000000003 /* FlintPayment.xcstrings */,
-				C40000000000000000000004 /* FlintWalletConnection.xcstrings */,
+				C40000000000000000000002 /* SparkOnboarding.xcstrings */,
+				C40000000000000000000003 /* SparkPayment.xcstrings */,
+				C40000000000000000000004 /* SparkWalletConnection.xcstrings */,
 				C30000000000000000000001 /* CoreUI.xcstrings */,
 				C30000000000000000000002 /* AppShell.xcstrings */,
 				C30000000000000000000003 /* CurrencySettings.xcstrings */,
@@ -401,9 +401,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				D40000000000000000000001 /* SparkExperience.xcstrings in Resources */,
-				D40000000000000000000002 /* FlintOnboarding.xcstrings in Resources */,
-				D40000000000000000000003 /* FlintPayment.xcstrings in Resources */,
-				D40000000000000000000004 /* FlintWalletConnection.xcstrings in Resources */,
+				D40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */,
+				D40000000000000000000003 /* SparkPayment.xcstrings in Resources */,
+				D40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */,
 				D3CF307EE6BABC7238C09DC0 /* BlinkUI.xcstrings in Resources */,
 				EE253643352FE7EBDE6C0C65 /* BlinkWalletSettings.xcstrings in Resources */,
 				75688C8DE56E18D33C5CE8D2 /* BlinkWalletConnection.xcstrings in Resources */,
@@ -437,9 +437,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				E40000000000000000000001 /* SparkExperience.xcstrings in Resources */,
-				E40000000000000000000002 /* FlintOnboarding.xcstrings in Resources */,
-				E40000000000000000000003 /* FlintPayment.xcstrings in Resources */,
-				E40000000000000000000004 /* FlintWalletConnection.xcstrings in Resources */,
+				E40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */,
+				E40000000000000000000003 /* SparkPayment.xcstrings in Resources */,
+				E40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */,
 				33DD96B4F486FAEA94E1F9F9 /* BlinkUI.xcstrings in Resources */,
 				59E91E194796F1BBA9A081CA /* BlinkWalletSettings.xcstrings in Resources */,
 				A1C2914A454483192B2DA915 /* BlinkWalletConnection.xcstrings in Resources */,

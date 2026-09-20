@@ -1,8 +1,8 @@
 package xyz.lilsus.rayl
 
-import xyz.lilsus.flint.FlintEnvironment
+import xyz.lilsus.rayl.providers.spark.SparkEnvironment
 
 internal fun androidRaylConfiguration(): AndroidRaylConfiguration = AndroidRaylConfiguration(
-    environment = FlintEnvironment.PRODUCTION,
+    environment = SparkEnvironment.PRODUCTION,
     breezApiKey = BuildConfig.BREEZ_API_KEY
 )

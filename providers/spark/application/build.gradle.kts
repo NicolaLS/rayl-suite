@@ -4,7 +4,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.flint.application"
+        namespace = "xyz.lilsus.rayl.providers.spark.application"
     }
 
     sourceSets {

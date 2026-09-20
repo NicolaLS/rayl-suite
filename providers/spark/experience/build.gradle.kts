@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.flint.experience"
+        namespace = "xyz.lilsus.rayl.providers.spark.experience"
     }
 
     sourceSets {

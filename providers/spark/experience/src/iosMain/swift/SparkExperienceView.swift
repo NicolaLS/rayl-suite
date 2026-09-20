@@ -51,7 +51,7 @@ private func makeSparkShellAdapter(_ experience: SparkIosExperience) -> NativeSh
                 NativeSettingsView(
                     controller: experience.settingsController(),
                     leadingContent: AnyView(
-                        FlintWalletSettingsLink(
+                        SparkWalletSettingsLink(
                             controller: experience.walletSettingsController()
                         )
                     )
@@ -59,7 +59,7 @@ private func makeSparkShellAdapter(_ experience: SparkIosExperience) -> NativeSh
             )
         },
         nativeOnboardingView: {
-            AnyView(FlintNativeOnboardingView(controller: experience.onboardingController()))
+            AnyView(SparkNativeOnboardingView(controller: experience.onboardingController()))
         }
     )
 }
@@ -77,13 +77,13 @@ struct SparkExperienceView: View {
 }
 
 @MainActor
-private final class FlintNativeWalletSettingsModel: ObservableObject {
-    @Published private(set) var snapshot: FlintNativeWalletSettingsSnapshot?
+private final class SparkNativeWalletSettingsModel: ObservableObject {
+    @Published private(set) var snapshot: SparkNativeWalletSettingsSnapshot?
 
-    let controller: FlintNativeWalletSettingsController
+    let controller: SparkNativeWalletSettingsController
     private var cancel: (() -> Void)?
 
-    init(controller: FlintNativeWalletSettingsController) {
+    init(controller: SparkNativeWalletSettingsController) {
         self.controller = controller
         cancel = controller.observe { [weak self] snapshot in
             self?.snapshot = snapshot
@@ -95,11 +95,11 @@ private final class FlintNativeWalletSettingsModel: ObservableObject {
     }
 }
 
-private struct FlintWalletSettingsLink: View {
-    @StateObject private var model: FlintNativeWalletSettingsModel
+private struct SparkWalletSettingsLink: View {
+    @StateObject private var model: SparkNativeWalletSettingsModel
 
-    init(controller: FlintNativeWalletSettingsController) {
-        _model = StateObject(wrappedValue: FlintNativeWalletSettingsModel(controller: controller))
+    init(controller: SparkNativeWalletSettingsController) {
+        _model = StateObject(wrappedValue: SparkNativeWalletSettingsModel(controller: controller))
     }
 
     var body: some View {
@@ -109,7 +109,7 @@ private struct FlintWalletSettingsLink: View {
                     title: snapshot.settingsTitle,
                     subtitle: snapshot.settingsSubtitle
                 ) {
-                    FlintWalletManagementView(snapshot: snapshot, model: model)
+                    SparkWalletManagementView(snapshot: snapshot, model: model)
                 }
             } else {
                 ProgressView()
@@ -118,9 +118,9 @@ private struct FlintWalletSettingsLink: View {
     }
 }
 
-private struct FlintWalletManagementView: View {
-    let snapshot: FlintNativeWalletSettingsSnapshot
-    @ObservedObject var model: FlintNativeWalletSettingsModel
+private struct SparkWalletManagementView: View {
+    let snapshot: SparkNativeWalletSettingsSnapshot
+    @ObservedObject var model: SparkNativeWalletSettingsModel
 
     var body: some View {
         NativeWalletManagementView(
@@ -136,7 +136,7 @@ private struct FlintWalletManagementView: View {
     }
 }
 
-private extension FlintNativeWalletSettingsSnapshot {
+private extension SparkNativeWalletSettingsSnapshot {
     var managementText: NativeWalletManagementTextValue {
         NativeWalletManagementTextValue(
             screenTitle: screenTitle,

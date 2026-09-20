@@ -5,7 +5,7 @@ plugins {
 
 kotlin {
     android {
-        namespace = "xyz.lilsus.flint.integration.wallet"
+        namespace = "xyz.lilsus.rayl.providers.spark.integration.wallet"
     }
 
     sourceSets {

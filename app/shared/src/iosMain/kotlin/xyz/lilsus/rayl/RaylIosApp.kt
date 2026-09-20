@@ -8,15 +8,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import xyz.lilsus.flint.FlintAppHost
-import xyz.lilsus.flint.FlintEnvironment
-import xyz.lilsus.flint.SparkDeepLinks
-import xyz.lilsus.flint.SparkIosExperience
-import xyz.lilsus.flint.createIOSAppHost
 import xyz.lilsus.rayl.providers.blink.BlinkDeepLinks
 import xyz.lilsus.rayl.providers.blink.BlinkIosExperience
 import xyz.lilsus.rayl.providers.nwc.NwcDeepLinks
 import xyz.lilsus.rayl.providers.nwc.NwcIosExperience
+import xyz.lilsus.rayl.providers.spark.SparkAppHost
+import xyz.lilsus.rayl.providers.spark.SparkDeepLinks
+import xyz.lilsus.rayl.providers.spark.SparkEnvironment
+import xyz.lilsus.rayl.providers.spark.SparkIosExperience
+import xyz.lilsus.rayl.providers.spark.createIOSAppHost
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
@@ -58,7 +58,7 @@ object RaylIosApp {
     private var blink: BlinkIosExperience? = null
     private var nwc: NwcIosExperience? = null
     private var spark: SparkIosExperience? = null
-    private var sparkHostFactory: (() -> FlintAppHost)? = null
+    private var sparkHostFactory: (() -> SparkAppHost)? = null
     private var cancellations = emptyList<() -> Unit>()
 
     init {
@@ -94,7 +94,7 @@ object RaylIosApp {
         }
     }
 
-    fun configureSpark(environment: FlintEnvironment, breezApiKey: String?) {
+    fun configureSpark(environment: SparkEnvironment, breezApiKey: String?) {
         check(spark == null) { "Configure Spark before mounting its experience" }
         sparkHostFactory = { createIOSAppHost(environment, breezApiKey) }
     }
