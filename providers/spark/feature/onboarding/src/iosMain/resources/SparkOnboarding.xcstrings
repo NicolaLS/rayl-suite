@@ -1,358 +1,374 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "spark_onboarding_add_wallet_intro": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Have the recovery phrase for the wallet you want %1$@ to use ready."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "spark_onboarding_add_wallet_intro" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Halte die Wiederherstellungsphrase der Wallet bereit, die %1$@ verwenden soll."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Halte die Wiederherstellungsphrase der Wallet bereit, die %1$@ verwenden soll."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Have the recovery phrase for the wallet you want %1$@ to use ready."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ten lista la frase de recuperación de la billetera que quieres usar con %1$@."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten lista la frase de recuperación de la billetera que quieres usar con %1$@."
           }
         }
       }
     },
-    "spark_onboarding_add_wallet_step1": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Open the wallet or backup where your recovery phrase is stored."
+    "spark_onboarding_add_wallet_step1" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne die Wallet oder Sicherung, in der deine Wiederherstellungsphrase gespeichert ist."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Öffne die Wallet oder Sicherung, in der deine Wiederherstellungsphrase gespeichert ist."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open the wallet or backup where your recovery phrase is stored."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Abre la billetera o copia de seguridad donde guardas tu frase de recuperación."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre la billetera o copia de seguridad donde guardas tu frase de recuperación."
           }
         }
       }
     },
-    "spark_onboarding_add_wallet_step2": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter the complete 12, 15, 18, 21, or 24-word phrase in %1$@."
+    "spark_onboarding_add_wallet_step2" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib die vollständige Phrase mit 12, 15, 18, 21 oder 24 Wörtern in %1$@ ein."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gib die vollständige Phrase mit 12, 15, 18, 21 oder 24 Wörtern in %1$@ ein."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter the complete 12, 15, 18, 21, or 24-word phrase in %1$@."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ingresa en %1$@ la frase completa de 12, 15, 18, 21 o 24 palabras."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingresa en %1$@ la frase completa de 12, 15, 18, 21 o 24 palabras."
           }
         }
       }
     },
-    "spark_onboarding_add_wallet_step3": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ opens that Spark wallet and protects the phrase with this device’s secure storage."
+    "spark_onboarding_add_wallet_step3" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ öffnet diese Spark-Wallet und schützt die Phrase im sicheren Speicher dieses Geräts."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ öffnet diese Spark-Wallet und schützt die Phrase im sicheren Speicher dieses Geräts."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ opens that Spark wallet and protects the phrase with this device’s secure storage."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ abre esa billetera Spark y protege la frase con el almacenamiento seguro de este dispositivo."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ abre esa billetera Spark y protege la frase con el almacenamiento seguro de este dispositivo."
           }
         }
       }
     },
-    "spark_onboarding_add_wallet_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Import your Spark wallet"
+    "spark_onboarding_add_wallet_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spark-Wallet importieren"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spark-Wallet importieren"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Import your Spark wallet"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Importa tu billetera Spark"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importa tu billetera Spark"
           }
         }
       }
     },
-    "spark_onboarding_agreement_body": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Using %1$@ is at your own risk. This app can spend from the Spark wallet derived from your recovery phrase. You are fully responsible for the phrase, funds, and payments made.\n\nWe strongly recommend using a wallet with a small spending balance."
+    "spark_onboarding_agreement_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Nutzung von %1$@ erfolgt auf eigenes Risiko. Diese App kann Guthaben aus der Spark-Wallet ausgeben, die aus deiner Wiederherstellungsphrase abgeleitet wird. Du bist vollständig für die Phrase, das Guthaben und alle Zahlungen verantwortlich.\n\nWir empfehlen dringend eine Wallet mit einem kleinen Ausgabeguthaben."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Nutzung von %1$@ erfolgt auf eigenes Risiko. Diese App kann Guthaben aus der Spark-Wallet ausgeben, die aus deiner Wiederherstellungsphrase abgeleitet wird. Du bist vollständig für die Phrase, das Guthaben und alle Zahlungen verantwortlich.\n\nWir empfehlen dringend eine Wallet mit einem kleinen Ausgabeguthaben."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Using %1$@ is at your own risk. This app can spend from the Spark wallet derived from your recovery phrase. You are fully responsible for the phrase, funds, and payments made.\n\nWe strongly recommend using a wallet with a small spending balance."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Usas %1$@ bajo tu propio riesgo. Esta aplicación puede gastar desde la billetera Spark derivada de tu frase de recuperación. Eres totalmente responsable de la frase, los fondos y los pagos realizados.\n\nRecomendamos usar una billetera con un saldo pequeño para gastos."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usas %1$@ bajo tu propio riesgo. Esta aplicación puede gastar desde la billetera Spark derivada de tu frase de recuperación. Eres totalmente responsable de la frase, los fondos y los pagos realizados.\n\nRecomendamos usar una billetera con un saldo pequeño para gastos."
           }
         }
       }
     },
-    "spark_onboarding_autopay_body": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose when %1$@ should ask for confirmation before paying."
+    "spark_onboarding_autopay_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle, wann %1$@ vor einer Zahlung um Bestätigung bitten soll."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wähle, wann %1$@ vor einer Zahlung um Bestätigung bitten soll."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose when %1$@ should ask for confirmation before paying."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elige cuándo %1$@ debe pedir confirmación antes de pagar."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige cuándo %1$@ debe pedir confirmación antes de pagar."
           }
         }
       }
     },
-    "spark_onboarding_features_page1_body": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ scans in the background so checkout stays smooth. Aim at the code, wait a beat, and you’re ready."
+    "spark_onboarding_features_page1_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ scannt im Hintergrund, damit das Bezahlen reibungslos bleibt. Richte es auf den Code, warte kurz und schon kann es losgehen."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ scannt im Hintergrund, damit das Bezahlen reibungslos bleibt. Richte es auf den Code, warte kurz und schon kann es losgehen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ scans in the background so checkout stays smooth. Aim at the code, wait a beat, and you’re ready."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ escanea en segundo plano para que el pago sea fluido. Apunta al código, espera un instante y listo."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ escanea en segundo plano para que el pago sea fluido. Apunta al código, espera un instante y listo."
           }
         }
       }
     },
-    "spark_onboarding_features_page1_subtitle": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "It’s working—even when the camera stays out of sight."
+    "spark_onboarding_features_page1_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Er funktioniert, auch wenn die Kamera im Hintergrund bleibt."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Er funktioniert, auch wenn die Kamera im Hintergrund bleibt."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "It’s working—even when the camera stays out of sight."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Funciona aunque la cámara permanezca fuera de vista."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Funciona aunque la cámara permanezca fuera de vista."
           }
         }
       }
     },
-    "spark_onboarding_features_page1_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quiet scanner, quick results"
+    "spark_onboarding_features_page1_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Leiser Scanner, schnelle Ergebnisse"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Leiser Scanner, schnelle Ergebnisse"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quiet scanner, quick results"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Escáner discreto, resultados rápidos"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escáner discreto, resultados rápidos"
           }
         }
       }
     },
-    "spark_onboarding_features_page2_body": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Set a limit you’re comfortable with. For anything above it, %1$@ asks before paying."
+    "spark_onboarding_features_page2_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lege ein Limit fest, mit dem du dich wohlfühlst. Bei höheren Beträgen fragt %1$@ vor der Zahlung nach."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lege ein Limit fest, mit dem du dich wohlfühlst. Bei höheren Beträgen fragt %1$@ vor der Zahlung nach."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Set a limit you’re comfortable with. For anything above it, %1$@ asks before paying."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Define un límite con el que te sientas cómodo. Para cualquier monto superior, %1$@ pedirá confirmación."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define un límite con el que te sientas cómodo. Para cualquier monto superior, %1$@ pedirá confirmación."
           }
         }
       }
     },
-    "spark_onboarding_features_page2_subtitle": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pay small amounts instantly with no extra taps."
+    "spark_onboarding_features_page2_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezahle kleine Beträge sofort und ohne zusätzliche Schritte."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bezahle kleine Beträge sofort und ohne zusätzliche Schritte."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay small amounts instantly with no extra taps."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paga montos pequeños al instante y sin pasos adicionales."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paga montos pequeños al instante y sin pasos adicionales."
           }
         }
       }
     },
-    "spark_onboarding_features_page2_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto Pay, your rules"
+    "spark_onboarding_features_page2_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Pay nach deinen Regeln"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto Pay nach deinen Regeln"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Pay, your rules"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Auto Pay, bajo tus reglas"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Auto Pay, bajo tus reglas"
           }
         }
       }
     },
-    "spark_onboarding_features_page3_body": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The recovery phrase stays protected on this device while %1$@ focuses on fast in-person payments."
+    "spark_onboarding_features_page3_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Wiederherstellungsphrase bleibt auf diesem Gerät geschützt, während %1$@ sich auf schnelle Zahlungen vor Ort konzentriert."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Wiederherstellungsphrase bleibt auf diesem Gerät geschützt, während %1$@ sich auf schnelle Zahlungen vor Ort konzentriert."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The recovery phrase stays protected on this device while %1$@ focuses on fast in-person payments."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La frase de recuperación permanece protegida en este dispositivo mientras %1$@ se concentra en pagos presenciales rápidos."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La frase de recuperación permanece protegida en este dispositivo mientras %1$@ se concentra en pagos presenciales rápidos."
           }
         }
       }
     },
-    "spark_onboarding_features_page3_subtitle": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ opens the wallet derived from your phrase."
+    "spark_onboarding_features_page3_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ öffnet die aus deiner Phrase abgeleitete Wallet."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ öffnet die aus deiner Phrase abgeleitete Wallet."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ opens the wallet derived from your phrase."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ abre la billetera derivada de tu frase."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ abre la billetera derivada de tu frase."
           }
         }
       }
     },
-    "spark_onboarding_features_page3_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Your seed, your Spark wallet"
+    "spark_onboarding_features_page3_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Phrase, deine Spark-Wallet"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Deine Phrase, deine Spark-Wallet"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your seed, your Spark wallet"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Tu frase, tu billetera Spark"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu frase, tu billetera Spark"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

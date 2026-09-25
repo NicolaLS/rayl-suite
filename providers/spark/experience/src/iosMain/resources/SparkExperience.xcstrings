@@ -1,116 +1,121 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "spark_settings_wallet_subtitle": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Recovery phrase stored securely on this device"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "spark_choose_another_wallet" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andere Wallet wählen"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wiederherstellungsphrase sicher auf diesem Gerät gespeichert"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose another wallet"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Frase de recuperación guardada de forma segura en este dispositivo"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elegir otra billetera"
           }
         }
       }
     },
-    "spark_settings_wallet_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spark wallet"
+    "spark_session_close_failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Wallet-Sitzung konnte nicht geschlossen werden. Versuche es erneut, bevor du eine andere Wallet wählst."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Spark-Wallet"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not close the wallet session. Retry before choosing another wallet."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Billetera Spark"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo cerrar la sesión de la billetera. Reintenta antes de elegir otra billetera."
           }
         }
       }
     },
-    "spark_choose_another_wallet": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Choose another wallet"
+    "spark_session_close_retry" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut versuchen"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Andere Wallet wählen"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Elegir otra billetera"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentar"
           }
         }
       }
     },
-    "spark_session_close_failed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not close the wallet session. Retry before choosing another wallet."
+    "spark_settings_wallet_subtitle" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wiederherstellungsphrase sicher auf diesem Gerät gespeichert"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Wallet-Sitzung konnte nicht geschlossen werden. Versuche es erneut, bevor du eine andere Wallet wählst."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recovery phrase stored securely on this device"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se pudo cerrar la sesión de la billetera. Reintenta antes de elegir otra billetera."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frase de recuperación guardada de forma segura en este dispositivo"
           }
         }
       }
     },
-    "spark_session_close_retry": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retry"
+    "spark_settings_wallet_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spark-Wallet"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erneut versuchen"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spark wallet"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reintentar"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Billetera Spark"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

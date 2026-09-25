@@ -1,666 +1,696 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "spark_wallet_brand": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ / 01"
+  "sourceLanguage" : "en",
+  "strings" : {
+    "spark_wallet_brand" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ / 01"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ / 01"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ / 01"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ / 01"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ / 01"
           }
         }
       }
     },
-    "spark_wallet_cancel": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CANCEL"
+    "spark_wallet_cancel" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ABBRECHEN"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ABBRECHEN"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CANCEL"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CANCELAR"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CANCELAR"
           }
         }
       }
     },
-    "spark_wallet_credential_corrupt": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The protected recovery phrase or its device key is inconsistent."
+    "spark_wallet_credential_corrupt" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die geschützte Wiederherstellungsphrase oder ihr Geräteschlüssel ist inkonsistent."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die geschützte Wiederherstellungsphrase oder ihr Geräteschlüssel ist inkonsistent."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The protected recovery phrase or its device key is inconsistent."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La frase de recuperación protegida o su clave del dispositivo son inconsistentes."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La frase de recuperación protegida o su clave del dispositivo son inconsistentes."
           }
         }
       }
     },
-    "spark_wallet_credential_invalidated": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Device security changed and the protected recovery phrase can no longer be decrypted."
+    "spark_wallet_credential_invalidated" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Gerätesicherheit wurde geändert und die geschützte Wiederherstellungsphrase kann nicht mehr entschlüsselt werden."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Gerätesicherheit wurde geändert und die geschützte Wiederherstellungsphrase kann nicht mehr entschlüsselt werden."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Device security changed and the protected recovery phrase can no longer be decrypted."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La seguridad del dispositivo cambió y la frase de recuperación protegida ya no se puede descifrar."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La seguridad del dispositivo cambió y la frase de recuperación protegida ya no se puede descifrar."
           }
         }
       }
     },
-    "spark_wallet_credential_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet credential unavailable."
+    "spark_wallet_credential_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet-Anmeldedaten nicht verfügbar."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet-Anmeldedaten nicht verfügbar."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet credential unavailable."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Credencial de la billetera no disponible."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credencial de la billetera no disponible."
           }
         }
       }
     },
-    "spark_wallet_credential_unavailable": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The protected recovery phrase is temporarily unavailable. Unlock the device and retry."
+    "spark_wallet_credential_unavailable" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die geschützte Wiederherstellungsphrase ist vorübergehend nicht verfügbar. Entsperre das Gerät und versuche es erneut."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die geschützte Wiederherstellungsphrase ist vorübergehend nicht verfügbar. Entsperre das Gerät und versuche es erneut."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The protected recovery phrase is temporarily unavailable. Unlock the device and retry."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La frase de recuperación protegida no está disponible temporalmente. Desbloquea el dispositivo y vuelve a intentarlo."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La frase de recuperación protegida no está disponible temporalmente. Desbloquea el dispositivo y vuelve a intentarlo."
           }
         }
       }
     },
-    "spark_wallet_error_already_configured": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "A wallet is already configured. Remove it before importing another."
+    "spark_wallet_error_already_configured" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eine Wallet ist bereits eingerichtet. Entferne sie, bevor du eine andere importierst."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Eine Wallet ist bereits eingerichtet. Entferne sie, bevor du eine andere importierst."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A wallet is already configured. Remove it before importing another."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ya hay una billetera configurada. Quítala antes de importar otra."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya hay una billetera configurada. Quítala antes de importar otra."
           }
         }
       }
     },
-    "spark_wallet_error_connection": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not open this wallet. Check the recovery phrase and internet connection, then try again."
+    "spark_wallet_error_connection" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Wallet konnte nicht geöffnet werden. Prüfe die Wiederherstellungsphrase und Internetverbindung und versuche es erneut."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Wallet konnte nicht geöffnet werden. Prüfe die Wiederherstellungsphrase und Internetverbindung und versuche es erneut."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not open this wallet. Check the recovery phrase and internet connection, then try again."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se pudo abrir esta billetera. Revisa la frase de recuperación y la conexión a internet, e inténtalo de nuevo."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo abrir esta billetera. Revisa la frase de recuperación y la conexión a internet, e inténtalo de nuevo."
           }
         }
       }
     },
-    "spark_wallet_error_invalid_mnemonic": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Enter a valid 12, 15, 18, 21, or 24 word recovery phrase."
+    "spark_wallet_error_invalid_mnemonic" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gib eine gültige Wiederherstellungsphrase mit 12, 15, 18, 21 oder 24 Wörtern ein."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gib eine gültige Wiederherstellungsphrase mit 12, 15, 18, 21 oder 24 Wörtern ein."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enter a valid 12, 15, 18, 21, or 24 word recovery phrase."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ingresa una frase de recuperación válida de 12, 15, 18, 21 o 24 palabras."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ingresa una frase de recuperación válida de 12, 15, 18, 21 o 24 palabras."
           }
         }
       }
     },
-    "spark_wallet_error_reset": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cleanup is incomplete. Retry reset before importing another wallet."
+    "spark_wallet_error_reset" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Bereinigung ist unvollständig. Wiederhole das Zurücksetzen, bevor du eine andere Wallet importierst."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Bereinigung ist unvollständig. Wiederhole das Zurücksetzen, bevor du eine andere Wallet importierst."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cleanup is incomplete. Retry reset before importing another wallet."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La limpieza está incompleta. Reintenta el restablecimiento antes de importar otra billetera."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La limpieza está incompleta. Reintenta el restablecimiento antes de importar otra billetera."
           }
         }
       }
     },
-    "spark_wallet_error_storage": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "The wallet opened, but its recovery phrase could not be protected on this device."
+    "spark_wallet_error_storage" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Wallet wurde geöffnet, aber ihre Wiederherstellungsphrase konnte auf diesem Gerät nicht geschützt werden."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Wallet wurde geöffnet, aber ihre Wiederherstellungsphrase konnte auf diesem Gerät nicht geschützt werden."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The wallet opened, but its recovery phrase could not be protected on this device."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La billetera se abrió, pero su frase de recuperación no se pudo proteger en este dispositivo."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La billetera se abrió, pero su frase de recuperación no se pudo proteger en este dispositivo."
           }
         }
       }
     },
-    "spark_wallet_import_action": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IMPORT WALLET"
+    "spark_wallet_import_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WALLET IMPORTIEREN"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WALLET IMPORTIEREN"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IMPORT WALLET"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "IMPORTAR BILLETERA"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "IMPORTAR BILLETERA"
           }
         }
       }
     },
-    "spark_wallet_import_body": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Importing a recovery phrase gives %1$@ spending authority. Keep your primary wallet installed for recovery and full wallet management."
+    "spark_wallet_import_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Durch den Import einer Wiederherstellungsphrase erhält %1$@ Ausgabeberechtigung. Behalte deine primäre Wallet für Wiederherstellung und vollständige Verwaltung installiert."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Durch den Import einer Wiederherstellungsphrase erhält %1$@ Ausgabeberechtigung. Behalte deine primäre Wallet für Wiederherstellung und vollständige Verwaltung installiert."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importing a recovery phrase gives %1$@ spending authority. Keep your primary wallet installed for recovery and full wallet management."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Importar una frase de recuperación otorga a %1$@ autorización para gastar. Conserva tu billetera principal instalada para recuperar y administrar la billetera por completo."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Importar una frase de recuperación otorga a %1$@ autorización para gastar. Conserva tu billetera principal instalada para recuperar y administrar la billetera por completo."
           }
         }
       }
     },
-    "spark_wallet_import_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connect your\npayment wallet."
+    "spark_wallet_import_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zahlungs-Wallet\nverbinden."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zahlungs-Wallet\nverbinden."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect your\npayment wallet."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conecta tu billetera\nde pagos."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecta tu billetera\nde pagos."
           }
         }
       }
     },
-    "spark_wallet_phrase_hint": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "twelve or twenty-four words…"
+    "spark_wallet_phrase_hint" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "zwölf oder vierundzwanzig Wörter…"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "zwölf oder vierundzwanzig Wörter…"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "twelve or twenty-four words…"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "doce o veinticuatro palabras…"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "doce o veinticuatro palabras…"
           }
         }
       }
     },
-    "spark_wallet_phrase_label": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "BIP39 recovery phrase"
+    "spark_wallet_phrase_label" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "BIP39-Wiederherstellungsphrase"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "BIP39-Wiederherstellungsphrase"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "BIP39 recovery phrase"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Frase de recuperación BIP39"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Frase de recuperación BIP39"
           }
         }
       }
     },
-    "spark_wallet_progress_connecting": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connecting wallet…"
+    "spark_wallet_progress_connecting" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet wird verbunden…"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet wird verbunden…"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connecting wallet…"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conectando billetera…"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conectando billetera…"
           }
         }
       }
     },
-    "spark_wallet_progress_loading": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Checking wallet access…"
+    "spark_wallet_progress_loading" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet-Zugriff wird geprüft…"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet-Zugriff wird geprüft…"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking wallet access…"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Comprobando acceso a la billetera…"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comprobando acceso a la billetera…"
           }
         }
       }
     },
-    "spark_wallet_progress_removing": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Removing local wallet access…"
+    "spark_wallet_progress_removing" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lokaler Wallet-Zugriff wird entfernt…"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Lokaler Wallet-Zugriff wird entfernt…"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Removing local wallet access…"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Quitando acceso local a la billetera…"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Quitando acceso local a la billetera…"
           }
         }
       }
     },
-    "spark_wallet_progress_working": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Working…"
+    "spark_wallet_progress_working" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wird verarbeitet…"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wird verarbeitet…"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Working…"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Procesando…"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procesando…"
           }
         }
       }
     },
-    "spark_wallet_reconnect_body": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ still has the recovery phrase securely stored. Check your internet connection and retry, or remove the wallet from %1$@."
+    "spark_wallet_reconnect_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ hat die Wiederherstellungsphrase weiterhin sicher gespeichert. Prüfe deine Internetverbindung und versuche es erneut oder entferne die Wallet aus %1$@."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ hat die Wiederherstellungsphrase weiterhin sicher gespeichert. Prüfe deine Internetverbindung und versuche es erneut oder entferne die Wallet aus %1$@."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ still has the recovery phrase securely stored. Check your internet connection and retry, or remove the wallet from %1$@."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "%1$@ todavía tiene guardada la frase de recuperación de forma segura. Revisa tu conexión a internet y vuelve a intentarlo, o quita la billetera de %1$@."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ todavía tiene guardada la frase de recuperación de forma segura. Revisa tu conexión a internet y vuelve a intentarlo, o quita la billetera de %1$@."
           }
         }
       }
     },
-    "spark_wallet_reconnect_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not open this wallet."
+    "spark_wallet_reconnect_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Wallet konnte nicht geöffnet werden."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Wallet konnte nicht geöffnet werden."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not open this wallet."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se pudo abrir esta billetera."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo abrir esta billetera."
           }
         }
       }
     },
-    "spark_wallet_remove_body": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "This deletes its protected phrase, payment activity, and local SDK data."
+    "spark_wallet_remove_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dadurch werden die geschützte Phrase, Zahlungsaktivitäten und lokale SDK-Daten gelöscht."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Dadurch werden die geschützte Phrase, Zahlungsaktivitäten und lokale SDK-Daten gelöscht."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This deletes its protected phrase, payment activity, and local SDK data."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Esto elimina la frase protegida, la actividad de pagos y los datos locales del SDK."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto elimina la frase protegida, la actividad de pagos y los datos locales del SDK."
           }
         }
       }
     },
-    "spark_wallet_remove_confirm": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CONFIRM REMOVAL"
+    "spark_wallet_remove_confirm" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ENTFERNEN BESTÄTIGEN"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ENTFERNEN BESTÄTIGEN"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CONFIRM REMOVAL"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "CONFIRMAR ELIMINACIÓN"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "CONFIRMAR ELIMINACIÓN"
           }
         }
       }
     },
-    "spark_wallet_remove_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Remove this wallet from %1$@?"
+    "spark_wallet_remove_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Wallet aus %1$@ entfernen?"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Wallet aus %1$@ entfernen?"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remove this wallet from %1$@?"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "¿Quitar esta billetera de %1$@?"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Quitar esta billetera de %1$@?"
           }
         }
       }
     },
-    "spark_wallet_reset_action": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "REMOVE WALLET FROM %1$@"
+    "spark_wallet_reset_action" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "WALLET AUS %1$@ ENTFERNEN"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "WALLET AUS %1$@ ENTFERNEN"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "REMOVE WALLET FROM %1$@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "QUITAR BILLETERA DE %1$@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "QUITAR BILLETERA DE %1$@"
           }
         }
       }
     },
-    "spark_wallet_reset_body": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retry cleanup before importing another wallet."
+    "spark_wallet_reset_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wiederhole die Bereinigung, bevor du eine andere Wallet importierst."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wiederhole die Bereinigung, bevor du eine andere Wallet importierst."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry cleanup before importing another wallet."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reintenta la limpieza antes de importar otra billetera."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintenta la limpieza antes de importar otra billetera."
           }
         }
       }
     },
-    "spark_wallet_reset_title": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wallet cleanup is incomplete."
+    "spark_wallet_reset_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Wallet-Bereinigung ist unvollständig."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Die Wallet-Bereinigung ist unvollständig."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wallet cleanup is incomplete."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "La limpieza de la billetera está incompleta."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La limpieza de la billetera está incompleta."
           }
         }
       }
     },
-    "spark_wallet_retry": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "RETRY"
+    "spark_wallet_retry" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ERNEUT VERSUCHEN"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "ERNEUT VERSUCHEN"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RETRY"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "REINTENTAR"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "REINTENTAR"
           }
         }
       }
     },
-    "spark_wallet_storage_note": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Protected using this device's secure credential storage."
+    "spark_wallet_storage_note" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit dem sicheren Anmeldedatenspeicher dieses Geräts geschützt."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Mit dem sicheren Anmeldedatenspeicher dieses Geräts geschützt."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protected using this device's secure credential storage."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Protegida con el almacenamiento seguro de credenciales de este dispositivo."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protegida con el almacenamiento seguro de credenciales de este dispositivo."
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }

@@ -278,6 +278,7 @@
       }
     },
     "spark_body" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -300,6 +301,7 @@
       }
     },
     "spark_title" : {
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

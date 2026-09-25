@@ -1,182 +1,190 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "spark_error_missing_wallet_connection": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Connect a wallet to continue."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "spark_error_missing_wallet_connection" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbinde zuerst eine Wallet."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verbinde zuerst eine Wallet."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Connect a wallet to continue."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Conecta una billetera para continuar."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Conecta una billetera para continuar."
           }
         }
       }
     },
-    "spark_error_payment_rejected_generic": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Payment was rejected."
+    "spark_error_payment_rejected_generic" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zahlung wurde abgewiesen."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zahlung wurde abgewiesen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment was rejected."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El pago fue rechazado."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El pago fue rechazado."
           }
         }
       }
     },
-    "spark_error_payment_rejected_message": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Payment was rejected: %1$@"
+    "spark_error_payment_rejected_message" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zahlung wurde abgewiesen: %1$@"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Zahlung wurde abgewiesen: %1$@"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Payment was rejected: %1$@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "El pago fue rechazado: %1$@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El pago fue rechazado: %1$@"
           }
         }
       }
     },
-    "spark_error_payment_unconfirmed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Unable to confirm this payment. Verify its status before paying again."
+    "spark_error_payment_unconfirmed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Zahlung konnte nicht bestätigt werden. Prüfe ihren Status, bevor du erneut bezahlst."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Diese Zahlung konnte nicht bestätigt werden. Prüfe ihren Status, bevor du erneut bezahlst."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unable to confirm this payment. Verify its status before paying again."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se pudo confirmar este pago. Verifica su estado antes de volver a pagar."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo confirmar este pago. Verifica su estado antes de volver a pagar."
           }
         }
       }
     },
-    "spark_error_relay_connection_failed": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not connect to wallet. Try again."
+    "spark_error_relay_connection_failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verbindung zum Wallet fehlgeschlagen. Bitte erneut versuchen."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Verbindung zum Wallet fehlgeschlagen. Bitte erneut versuchen."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Could not connect to wallet. Try again."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se pudo conectar a la billetera. Inténtalo de nuevo."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo conectar a la billetera. Inténtalo de nuevo."
           }
         }
       }
     },
-    "spark_transaction_fee": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fee %1$@"
+    "spark_transaction_fee" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebühr %1$@"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Gebühr %1$@"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fee %1$@"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Comisión %1$@"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comisión %1$@"
           }
         }
       }
     },
-    "spark_transaction_status_failure": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Failed"
+    "spark_transaction_status_failure" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fehlgeschlagen"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fehlgeschlagen"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fallido"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fallido"
           }
         }
       }
     },
-    "spark_transaction_status_success": {
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Paid"
+    "spark_transaction_status_success" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezahlt"
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Bezahlt"
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paid"
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Pagado"
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagado"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
