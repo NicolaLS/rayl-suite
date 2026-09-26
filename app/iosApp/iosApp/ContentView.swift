@@ -22,7 +22,20 @@ struct ContentView: View {
                             Spacer()
                         }.padding()
                     }
-                    if snapshot.closingSpark || snapshot.sparkCloseFailed {
+                    if snapshot.preparingWallets {
+                        VStack(spacing: 16) {
+                            if snapshot.walletCleanupFailed {
+                                Text(snapshot.text["wallet_cleanup_failed"] ?? "")
+                                Button(snapshot.text["wallet_cleanup_retry"] ?? "") {
+                                    RaylIosApp.shared.retryWalletCleanup()
+                                }
+                            } else {
+                                ProgressView()
+                            }
+                        }
+                        .padding(24)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if snapshot.closingSpark || snapshot.sparkCloseFailed {
                         VStack(spacing: 16) {
                             if snapshot.sparkCloseFailed {
                                 Text(snapshot.text["session_close_failed"] ?? "")
@@ -50,15 +63,18 @@ struct ContentView: View {
                 }
                 .id(snapshot.wallet)
                 .preferredColorScheme(colorScheme(snapshot.colorScheme))
-                .alert(
-                    "Rayl",
-                    isPresented: Binding(
-                        get: { snapshot.message != nil },
-                        set: { if !$0 { RaylIosApp.shared.dismissMessage() } })
-                ) {
-                    Button(snapshot.text["close"] ?? "") { RaylIosApp.shared.dismissMessage() }
-                } message: {
-                    Text(snapshot.message ?? "")
+                .background {
+                    // Keep host messages off the provider's alert presentation branch.
+                    Color.clear.alert(
+                        "Rayl",
+                        isPresented: Binding(
+                            get: { snapshot.message != nil },
+                            set: { if !$0 { RaylIosApp.shared.dismissMessage() } })
+                    ) {
+                        Button(snapshot.text["close"] ?? "") { RaylIosApp.shared.dismissMessage() }
+                    } message: {
+                        Text(snapshot.message ?? "")
+                    }
                 }
             } else {
                 ProgressView()

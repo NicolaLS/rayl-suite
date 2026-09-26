@@ -10,11 +10,15 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":core:model"))
             implementation(project(":core:network"))
             api(project(":core:settings"))
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)
             implementation(libs.nwc)
+        }
+        androidHostTest.dependencies {
+            implementation(libs.secp256k1.kmp.jni.jvm)
         }
         commonTest.dependencies {
             implementation(libs.kotlin.test)

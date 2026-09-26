@@ -14,6 +14,11 @@ history, and presentation, and submits payments through its own integration.
 [Blink](../blink/integration/blink) wraps a GraphQL API and BTC or USD funding
 wallets; [NWC](../nwc/integration/nwc) wraps the Nostr Wallet Connect client.
 Their integrations own connection credentials.
+Providers receive an explicit fresh-setup or restore mode. Fresh setup never
+loads prior credentials. Platform storage cleanup is available independently of
+runtime creation, so Rayl can enforce
+[SPEC-wallet-lifecycle](../../specs/SPEC-wallet-lifecycle.md) before mounting an
+experience.
 
 Spark defines wallet and payment interfaces in
 [`application`](../spark/application): `WalletAccess` controls wallet/session

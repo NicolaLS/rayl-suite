@@ -15,6 +15,7 @@ import xyz.lilsus.rayl.providers.blink.feature.payment.PaymentCoordinator
 import xyz.lilsus.rayl.providers.blink.feature.payment.PaymentDeepLinkEvents
 import xyz.lilsus.rayl.providers.blink.feature.payment.PaymentUiState
 import xyz.lilsus.rayl.providers.blink.integration.blink.createBlinkWallet
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.network.createNetworkConnectivity
 import xyz.lilsus.raylsuite.core.settings.ConnectionStorageReset
 import xyz.lilsus.raylsuite.core.settings.SecureStringStore
@@ -36,7 +37,8 @@ internal class BlinkRuntime(
     private val walletSettings: Settings,
     val configuration: BlinkExperienceConfiguration,
     secureSettings: SecureStringStore,
-    haptics: HapticFeedbackManager
+    haptics: HapticFeedbackManager,
+    startMode: WalletStartMode
 ) {
     private val storageReset = ConnectionStorageReset(
         appSettings,
@@ -80,6 +82,7 @@ internal class BlinkRuntime(
     private val blinkWalletDelegate = lazy {
         createBlinkWallet(
             secureSettings = secureSettings,
+            startMode = startMode,
             isNetworkAvailable = networkConnectivity::isNetworkAvailable
         )
     }
@@ -176,6 +179,7 @@ internal class BlinkRuntime(
             if (runtimeStarted) {
                 paymentCoordinator.resetSession()
                 paymentCoordinator.clear()
+                blinkWallet.close()
                 blinkWallet.disconnect()
             }
             PaymentDeepLinkEvents.clear()

@@ -10,6 +10,7 @@ import xyz.lilsus.rayl.providers.blink.feature.payment.PaymentEvent
 import xyz.lilsus.rayl.providers.blink.feature.payment.getBlinkPaymentErrorMessageFor
 import xyz.lilsus.rayl.providers.blink.feature.payment.toNativePaymentScreenState
 import xyz.lilsus.rayl.providers.blink.feature.payment.toNativeRecentItem
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.settings.createConnectionSettings
 import xyz.lilsus.raylsuite.core.settings.createSecureSettings
@@ -31,7 +32,10 @@ import xyz.lilsus.raylsuite.feature.settings.nativeSettingsAppVersionName
  * The Kotlin side of Blink's native iOS shell. Swift owns the `TabView`; this owns the app scope
  * so every tab's view controller shares one runtime.
  */
-class BlinkIosExperience(private val configuration: BlinkExperienceConfiguration) {
+class BlinkIosExperience(
+    private val configuration: BlinkExperienceConfiguration,
+    private val startMode: WalletStartMode
+) {
     private val observerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val runtime: BlinkRuntime by lazy {
@@ -40,6 +44,7 @@ class BlinkIosExperience(private val configuration: BlinkExperienceConfiguration
             secureSettings = createSecureSettings(configuration.credentialsName),
             walletSettings = createConnectionSettings(configuration.walletPreferencesName),
             configuration = configuration,
+            startMode = startMode,
             haptics = createHapticFeedbackManager()
         )
     }
@@ -120,6 +125,10 @@ class BlinkIosExperience(private val configuration: BlinkExperienceConfiguration
     fun isConnected(): Boolean = runtime.hasStarted && runtime.blinkWallet.connection.value != null
 
     fun canCancelSetup(): Boolean = runtime.canConnect && !isConnected()
+
+    fun cancelSetup() {
+        if (canCancelSetup()) runtime.removeWallet()
+    }
 
     fun observeCanCancelSetup(onChange: (Boolean) -> Unit): () -> Unit {
         val job = observerScope.launch {

@@ -8,6 +8,10 @@ kotlin {
     }
 
     sourceSets {
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.kotlinx.coroutines.test)
+        }
         commonMain.dependencies {
             api(project(":providers:spark:application"))
             implementation(project(":core:ui"))

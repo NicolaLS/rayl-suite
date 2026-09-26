@@ -368,6 +368,50 @@
           }
         }
       }
+    },
+    "wallet_cleanup_failed" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl could not finish clearing the previous wallet connection. Retry to continue."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl no pudo terminar de borrar la conexión de la cartera anterior. Vuelve a intentarlo para continuar."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl konnte die vorherige Wallet-Verbindung nicht vollständig entfernen. Versuche es erneut, um fortzufahren."
+          }
+        }
+      }
+    },
+    "wallet_cleanup_retry" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentar"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut versuchen"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

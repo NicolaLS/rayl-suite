@@ -23,6 +23,7 @@ import kotlin.random.Random
 import xyz.lilsus.rayl.providers.nwc.feature.onboarding.NwcOnboardingDestination
 import xyz.lilsus.rayl.providers.nwc.feature.onboarding.nwcOnboarding
 import xyz.lilsus.raylsuite.core.model.ThemePreference
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
 import xyz.lilsus.raylsuite.core.settings.rememberSecureSettings
 import xyz.lilsus.raylsuite.core.ui.platform.LocalProductName
@@ -37,9 +38,9 @@ import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalFailure
 @Composable
 fun NwcExperience(
     configuration: NwcExperienceConfiguration,
+    startMode: WalletStartMode,
     performanceDiagnostics: PerformanceDiagnostics? = null,
     onRemoved: () -> Unit,
-    onChooseWallet: () -> Unit,
     onConnectionChanged: (Boolean) -> Unit
 ) {
     val appSettings = rememberAppSettings(configuration.preferencesName)
@@ -50,7 +51,14 @@ fun NwcExperience(
     val runtime = rememberRetainedInstance(
         key = runtimeKey,
         factory = {
-            NwcRuntime(appSettings, walletSettings, configuration, secureSettings, haptics)
+            NwcRuntime(
+                appSettings,
+                walletSettings,
+                configuration,
+                secureSettings,
+                haptics,
+                startMode
+            )
         },
         onDispose = NwcRuntime::clear,
         releaseOnLeave = true
@@ -75,7 +83,6 @@ fun NwcExperience(
                 NwcExperienceContent(
                     runtime,
                     performanceDiagnostics,
-                    onChooseWallet,
                     onConnectionChanged
                 )
             }
@@ -87,7 +94,6 @@ fun NwcExperience(
 private fun NwcExperienceContent(
     runtime: NwcRuntime,
     performanceDiagnostics: PerformanceDiagnostics?,
-    onChooseWallet: () -> Unit,
     onConnectionChanged: (Boolean) -> Unit
 ) {
     val connected by runtime.nwcWallet.connection.collectAsStateWithLifecycle()
@@ -134,8 +140,7 @@ private fun NwcExperienceContent(
                     if (runtime.nwcWallet.connection.value == null &&
                         !runtime.removalPending.value
                     ) {
-                        runtime.clear()
-                        onChooseWallet()
+                        runtime.removeWallet()
                     }
                 }
             ) { Text(stringResource(android.R.string.cancel)) }

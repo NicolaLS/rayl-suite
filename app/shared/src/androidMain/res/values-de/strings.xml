@@ -15,4 +15,6 @@
     <string name="connection_exists">Entferne zuerst deine aktuelle Wallet in den Einstellungen, bevor du eine andere verbindest.</string>
     <string name="connect_to_pay">Verbinde deine Wallet und öffne danach die Zahlungsanfrage erneut.</string>
     <string name="close">Schließen</string>
+    <string name="wallet_cleanup_failed">Rayl konnte die vorherige Wallet-Verbindung nicht vollständig entfernen. Versuche es erneut, um fortzufahren.</string>
+    <string name="wallet_cleanup_retry">Erneut versuchen</string>
 </resources>

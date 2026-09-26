@@ -11,6 +11,7 @@ import xyz.lilsus.rayl.providers.nwc.feature.payment.PaymentEvent
 import xyz.lilsus.rayl.providers.nwc.feature.payment.getNwcPaymentErrorMessageFor
 import xyz.lilsus.rayl.providers.nwc.feature.payment.toNativePaymentScreenState
 import xyz.lilsus.rayl.providers.nwc.feature.payment.toNativeRecentItem
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.settings.createConnectionSettings
 import xyz.lilsus.raylsuite.core.settings.createSecureSettings
@@ -32,7 +33,10 @@ import xyz.lilsus.raylsuite.feature.settings.nativeSettingsAppVersionName
  * The Kotlin side of Nwc's native iOS shell. Swift owns the `TabView`; this owns the app scope
  * so every tab's view controller shares one runtime.
  */
-class NwcIosExperience(private val configuration: NwcExperienceConfiguration) {
+class NwcIosExperience(
+    private val configuration: NwcExperienceConfiguration,
+    private val startMode: WalletStartMode
+) {
     private val observerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
     private val runtimeDelegate = lazy {
@@ -41,6 +45,7 @@ class NwcIosExperience(private val configuration: NwcExperienceConfiguration) {
             secureSettings = createSecureSettings(configuration.credentialsName),
             walletSettings = createConnectionSettings(configuration.walletPreferencesName),
             configuration = configuration,
+            startMode = startMode,
             haptics = createHapticFeedbackManager()
         )
     }
@@ -133,6 +138,10 @@ class NwcIosExperience(private val configuration: NwcExperienceConfiguration) {
             }
         }
         return { job.cancel() }
+    }
+
+    fun cancelSetup() {
+        if (canCancelSetup()) runtime.removeWallet()
     }
 
     fun observeCanCancelSetup(onChange: (Boolean) -> Unit): () -> Unit =

@@ -16,6 +16,7 @@ import xyz.lilsus.rayl.providers.nwc.feature.onboarding.NwcConnectionDraft
 import xyz.lilsus.rayl.providers.nwc.feature.payment.PaymentCoordinator
 import xyz.lilsus.rayl.providers.nwc.feature.payment.PaymentUiState
 import xyz.lilsus.rayl.providers.nwc.integration.nwc.createNwcWallet
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.network.createNetworkConnectivity
 import xyz.lilsus.raylsuite.core.settings.ConnectionStorageReset
 import xyz.lilsus.raylsuite.core.settings.SecureStringStore
@@ -38,7 +39,8 @@ internal class NwcRuntime(
     private val walletSettings: Settings,
     val configuration: NwcExperienceConfiguration,
     secureSettings: SecureStringStore,
-    haptics: HapticFeedbackManager
+    haptics: HapticFeedbackManager,
+    startMode: WalletStartMode
 ) {
     private val storageReset = ConnectionStorageReset(
         appSettings,
@@ -88,6 +90,7 @@ internal class NwcRuntime(
     val nwcWallet by lazy {
         createNwcWallet(
             secureSettings = secureSettings,
+            startMode = startMode,
             scope = scope,
             isNetworkAvailable = networkConnectivity::isNetworkAvailable
         )

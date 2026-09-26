@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withTimeoutOrNull
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.settings.SecureStringStore
 
 data object BlinkWalletConnection
@@ -59,10 +60,17 @@ class BlinkConnectionException(val error: BlinkConnectionError) : Exception(erro
 class BlinkWallet internal constructor(
     private val apiClient: BlinkApiClient,
     private val credentialStore: BlinkCredentialStore,
-    private val isNetworkAvailable: () -> Boolean
+    private val isNetworkAvailable: () -> Boolean,
+    startMode: WalletStartMode = WalletStartMode.Restore
 ) {
     private var closed = false
-    private val initialCredentials = credentialStore.read()
+    private val initialCredentials = if (startMode ==
+        WalletStartMode.Restore
+    ) {
+        credentialStore.read()
+    } else {
+        null
+    }
     private val mutableConnection =
         MutableStateFlow(
             initialCredentials?.let { BlinkWalletConnection }
@@ -109,6 +117,7 @@ class BlinkWallet internal constructor(
     }
 
     fun close() {
+        if (closed) return
         closed = true
         apiClient.close()
     }
@@ -161,10 +170,12 @@ class BlinkWallet internal constructor(
             return BlinkPaymentOutcome.DefinitiveFailure(BlinkApiError.NetworkUnavailable)
         }
 
-        val credentials = credentialStore.read()
-            ?: return BlinkPaymentOutcome.DefinitiveFailure(
+        val credentials = if (connection.value != null) credentialStore.read() else null
+        if (credentials == null) {
+            return BlinkPaymentOutcome.DefinitiveFailure(
                 BlinkApiError.MissingWalletConnection
             )
+        }
 
         val result = try {
             withTimeoutOrNull(PAYMENT_RESOURCE_GUARD_MS) {
@@ -242,6 +253,11 @@ class BlinkWallet internal constructor(
 
     private fun requireCredentials(): BlinkCredentials {
         check(!closed) { "Blink connection was closed" }
+        if (connection.value ==
+            null
+        ) {
+            throw BlinkConnectionException(BlinkConnectionError.MissingConnection)
+        }
         return credentialStore.read()
             ?: throw BlinkConnectionException(BlinkConnectionError.MissingConnection)
     }
@@ -249,11 +265,13 @@ class BlinkWallet internal constructor(
 
 fun createBlinkWallet(
     secureSettings: SecureStringStore,
-    isNetworkAvailable: () -> Boolean
+    isNetworkAvailable: () -> Boolean,
+    startMode: WalletStartMode
 ): BlinkWallet = BlinkWallet(
     apiClient = BlinkApiClient(),
     credentialStore = BlinkCredentialStore(secureSettings),
-    isNetworkAvailable = isNetworkAvailable
+    isNetworkAvailable = isNetworkAvailable,
+    startMode = startMode
 )
 
 private fun Long.toSatsRoundedUp(): Long = (this + 999L) / 1_000L

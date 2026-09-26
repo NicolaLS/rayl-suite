@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
@@ -20,14 +21,18 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import xyz.lilsus.rayl.providers.blink.BlinkDeepLinks
 import xyz.lilsus.rayl.providers.blink.BlinkExperience
 import xyz.lilsus.rayl.providers.nwc.NwcDeepLinks
@@ -38,6 +43,7 @@ import xyz.lilsus.rayl.providers.spark.SparkExperience
 import xyz.lilsus.rayl.shared.R
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
+import xyz.lilsus.raylsuite.core.ui.platform.rememberRetainedInstance
 import xyz.lilsus.raylsuite.core.ui.theme.RaylSuiteTheme
 import xyz.lilsus.raylsuite.feature.onboarding.WelcomeScreen
 import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
@@ -50,8 +56,18 @@ fun App(
     performanceDiagnostics: PerformanceDiagnostics? = null
 ) {
     val settings = rememberAppSettings(RAYL_PREFERENCES)
-    val selection = remember { RaylSelection(settings) }
+    val selection = rememberRetainedInstance(
+        key = "rayl-selection",
+        factory = { RaylSelection(settings) },
+        onDispose = {}
+    )
     val wallet by selection.wallet.collectAsStateWithLifecycle()
+    val preparation by selection.preparation.collectAsStateWithLifecycle()
+    val context = LocalContext.current.applicationContext
+    val scope = rememberCoroutineScope()
+    LaunchedEffect(selection, wallet) {
+        selection.prepare { clearSavedWallet(context, it) }
+    }
     val welcomeCompleted by selection.welcomeCompleted.collectAsStateWithLifecycle()
     var connected by remember { mutableStateOf<Boolean?>(null) }
     val theme = remember(wallet) { DefaultThemePreferences(settings) }
@@ -70,6 +86,7 @@ fun App(
     }
     LaunchedEffect(selection, wallet) {
         RaylDeepLinks.events.collect { uri ->
+            selection.preparation.first { it == WalletPreparation.Ready }
             val selected = selection.wallet.value
             if (uri.substringBefore(':').equals("nostr+walletconnect", true)) {
                 if (selected == null) {
@@ -96,37 +113,66 @@ fun App(
         }
     }
     RaylSuiteTheme(themePreference = preference) {
-        key(wallet) {
+        if (preparation != WalletPreparation.Ready) {
+            Column(
+                modifier = Modifier.fillMaxSize().safeDrawingPadding().padding(24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                if (preparation == WalletPreparation.Failed) {
+                    Text(stringResource(R.string.wallet_cleanup_failed))
+                    TextButton(onClick = {
+                        scope.launch { selection.prepare { clearSavedWallet(context, it) } }
+                    }) {
+                        Text(stringResource(R.string.wallet_cleanup_retry))
+                    }
+                } else {
+                    CircularProgressIndicator()
+                }
+            }
+            return@RaylSuiteTheme
+        }
+        key(wallet, selection.sessionId) {
             when (wallet) {
                 RaylWallet.Blink -> BlinkExperience(
                     configuration = RAYL_BLINK,
+                    startMode = selection.startMode,
                     performanceDiagnostics = performanceDiagnostics,
                     onRemoved = leave,
-                    onChooseWallet = leave,
                     onConnectionChanged = {
-                        if (selection.wallet.value == RaylWallet.Blink) connected = it
+                        if (selection.wallet.value == RaylWallet.Blink) {
+                            connected = it
+                            if (it) selection.connected(RaylWallet.Blink)
+                        }
                     }
                 )
 
                 RaylWallet.Nwc -> NwcExperience(
                     configuration = RAYL_NWC,
+                    startMode = selection.startMode,
                     performanceDiagnostics = performanceDiagnostics,
                     onRemoved = leave,
-                    onChooseWallet = leave,
                     onConnectionChanged = {
-                        if (selection.wallet.value == RaylWallet.Nwc) connected = it
+                        if (selection.wallet.value == RaylWallet.Nwc) {
+                            connected = it
+                            if (it) selection.connected(RaylWallet.Nwc)
+                        }
                     }
                 )
 
                 RaylWallet.Spark -> SparkExperience(
                     configuration = RAYL_SPARK,
+                    startMode = selection.startMode,
                     environment = sparkEnvironment,
                     breezApiKey = breezApiKey,
                     performanceDiagnostics = performanceDiagnostics,
                     onRemoved = leave,
                     onChooseWallet = leave,
                     onConnectionChanged = {
-                        if (selection.wallet.value == RaylWallet.Spark) connected = it
+                        if (selection.wallet.value == RaylWallet.Spark) {
+                            connected = it
+                            if (it) selection.connected(RaylWallet.Spark)
+                        }
                     }
                 )
 
@@ -161,7 +207,13 @@ fun App(
 
                                     RaylWallet.Spark -> R.string.spark_title to R.string.spark_body
                                 }
-                                WalletChoice(title, body) { selection.choose(provider) }
+                                WalletChoice(title, body) {
+                                    if (selection.wallet.value == null &&
+                                        selection.preparation.value == WalletPreparation.Ready
+                                    ) {
+                                        selection.choose(provider)
+                                    }
+                                }
                             }
                         }
                     }

@@ -6,17 +6,14 @@ import kotlinx.cinterop.CPointerVarOf
 import kotlinx.cinterop.alloc
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
-import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.value
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import platform.CoreFoundation.CFDictionaryRef
-import platform.CoreFoundation.CFRelease
+import platform.CoreFoundation.CFStringRef
 import platform.CoreFoundation.CFTypeRef
 import platform.CoreFoundation.kCFBooleanTrue
 import platform.Foundation.CFBridgingRelease
-import platform.Foundation.CFBridgingRetain
 import platform.Foundation.NSApplicationSupportDirectory
 import platform.Foundation.NSData
 import platform.Foundation.NSFileManager
@@ -24,7 +21,6 @@ import platform.Foundation.NSFileProtectionCompleteUntilFirstUserAuthentication
 import platform.Foundation.NSSearchPathForDirectoriesInDomains
 import platform.Foundation.NSString
 import platform.Foundation.NSUTF8StringEncoding
-import platform.Foundation.NSUserDefaults
 import platform.Foundation.NSUserDomainMask
 import platform.Foundation.create
 import platform.Foundation.dataUsingEncoding
@@ -34,6 +30,7 @@ import platform.Security.SecItemCopyMatching
 import platform.Security.SecItemDelete
 import platform.Security.errSecAuthFailed
 import platform.Security.errSecDecode
+import platform.Security.errSecDuplicateItem
 import platform.Security.errSecInteractionNotAllowed
 import platform.Security.errSecItemNotFound
 import platform.Security.errSecSuccess
@@ -57,11 +54,17 @@ import xyz.lilsus.rayl.providers.spark.application.wallet.DefaultWalletAccess
 import xyz.lilsus.rayl.providers.spark.application.wallet.WalletAccess
 import xyz.lilsus.rayl.providers.spark.application.wallet.WalletCredential
 import xyz.lilsus.rayl.providers.spark.application.wallet.WalletDirectories
+import xyz.lilsus.rayl.providers.spark.application.wallet.clearWalletStorage
 import xyz.lilsus.rayl.providers.spark.integration.wallet.spark.BreezSparkSdkConnector
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
+import xyz.lilsus.raylsuite.core.settings.withKeychainDictionary
 
-fun createIOSWalletAccess(bootstrapConfig: AppBootstrapConfig): WalletAccess {
+fun createIOSWalletAccess(
+    bootstrapConfig: AppBootstrapConfig,
+    startMode: WalletStartMode
+): WalletAccess {
     val directories = IOSWalletDirectories()
-    val vault = IOSCredentialVault().also(IOSCredentialVault::purgeOrphanAfterFreshInstall)
+    val vault = IOSCredentialVault()
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val paymentEngine = DefaultPaymentEngine(
         environment = bootstrapConfig.environment
@@ -73,7 +76,8 @@ fun createIOSWalletAccess(bootstrapConfig: AppBootstrapConfig): WalletAccess {
         connector = BreezSparkSdkConnector,
         payments = paymentEngine,
         paymentLifecycle = paymentEngine,
-        applicationScope = applicationScope
+        applicationScope = applicationScope,
+        startMode = startMode
     ).also(WalletAccess::start)
     return walletAccess
 }
@@ -109,7 +113,7 @@ private class IOSWalletDirectories : WalletDirectories {
 
     override fun resetPending(): Boolean = fileManager.fileExistsAtPath(resetMarker)
 
-    override fun deleteWalletData(): Boolean = deleteIfPresent(sdkDirectory)
+    override fun deleteWalletData(): Boolean = deleteIfPresent("$baseDirectory/breez-spark")
 
     override fun finishReset(): Boolean = deleteIfPresent(resetMarker)
 
@@ -117,8 +121,10 @@ private class IOSWalletDirectories : WalletDirectories {
         !fileManager.fileExistsAtPath(path) || fileManager.removeItemAtPath(path, null)
 }
 
-private class IOSCredentialVault : CredentialVault {
-    override suspend fun load(): CredentialLoadResult = withDictionary(loadMap()) { query ->
+private class IOSCredentialVault(
+    private val service: String = "xyz.lilsus.rayl.providers.spark.wallet"
+) : CredentialVault {
+    override suspend fun load(): CredentialLoadResult = withKeychainDictionary(loadMap()) { query ->
         memScoped {
             val result = alloc<CPointerVarOf<CFTypeRef>>()
             when (val status = SecItemCopyMatching(query, result.ptr)) {
@@ -140,19 +146,17 @@ private class IOSCredentialVault : CredentialVault {
 
                 errSecDecode -> CredentialLoadResult.Corrupt
 
-                else -> if (status ==
-                    errSecItemNotFound
-                ) {
-                    CredentialLoadResult.Absent
-                } else {
-                    CredentialLoadResult.Invalidated
+                else -> {
+                    platform.Foundation.NSLog(
+                        "Spark credential read failed (Keychain status: $status)"
+                    )
+                    CredentialLoadResult.Unavailable
                 }
             }
         }
     }
 
     override suspend fun store(credential: WalletCredential): CredentialStoreResult {
-        if (itemExists()) return CredentialStoreResult.ALREADY_EXISTS
         val data =
             NSString.create(string = credential.value).dataUsingEncoding(NSUTF8StringEncoding)
                 ?: return CredentialStoreResult.FAILED
@@ -160,75 +164,36 @@ private class IOSCredentialVault : CredentialVault {
             kSecAttrAccessible to kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
             kSecValueData to data
         )
-        return withDictionary(attributes) { query ->
+        return withKeychainDictionary(attributes) { query ->
             when (SecItemAdd(query, null)) {
                 errSecSuccess -> CredentialStoreResult.STORED
+                errSecDuplicateItem -> CredentialStoreResult.ALREADY_EXISTS
                 errSecInteractionNotAllowed, errSecAuthFailed -> CredentialStoreResult.UNAVAILABLE
                 else -> CredentialStoreResult.FAILED
             }
         }
     }
 
-    override suspend fun delete(): CredentialDeleteResult {
-        val existed = itemExists()
-        return withDictionary(baseMap()) { query ->
+    override suspend fun delete(): CredentialDeleteResult =
+        withKeychainDictionary(baseMap()) { query ->
             when (SecItemDelete(query)) {
                 errSecSuccess -> CredentialDeleteResult.DELETED
-
-                errSecItemNotFound ->
-                    if (existed) {
-                        CredentialDeleteResult.FAILED
-                    } else {
-                        CredentialDeleteResult.ABSENT
-                    }
-
+                errSecItemNotFound -> CredentialDeleteResult.ABSENT
                 else -> CredentialDeleteResult.FAILED
             }
         }
-    }
 
-    fun purgeOrphanAfterFreshInstall() {
-        val defaults = NSUserDefaults.standardUserDefaults
-        if (!defaults.boolForKey(INSTALL_MARKER)) {
-            withDictionary(baseMap()) { SecItemDelete(it) }
-            defaults.setBool(true, INSTALL_MARKER)
-        }
-    }
-
-    private fun itemExists(): Boolean = withDictionary(existenceMap()) {
-        SecItemCopyMatching(it, null) == errSecSuccess
-    }
-
-    private fun baseMap(): Map<Any?, Any?> = mapOf(
+    private fun baseMap(): Map<CFStringRef?, Any?> = mapOf(
         kSecClass to kSecClassGenericPassword,
-        kSecAttrService to SERVICE,
-        kSecAttrAccount to ACCOUNT
+        kSecAttrService to NSString.create(string = service),
+        kSecAttrAccount to NSString.create(string = "singleton-mnemonic-v1")
     )
 
-    private fun existenceMap(): Map<Any?, Any?> = baseMap() + mapOf(
-        kSecMatchLimit to kSecMatchLimitOne
-    )
-
-    private fun loadMap(): Map<Any?, Any?> = baseMap() + mapOf(
+    private fun loadMap(): Map<CFStringRef?, Any?> = baseMap() + mapOf(
         kSecMatchLimit to kSecMatchLimitOne,
         kSecReturnData to kCFBooleanTrue
     )
-
-    private inline fun <T> withDictionary(
-        values: Map<Any?, Any?>,
-        block: (CFDictionaryRef) -> T
-    ): T {
-        val retained = checkNotNull(CFBridgingRetain(values))
-        return try {
-            block(retained.reinterpret())
-        } finally {
-            CFRelease(retained)
-        }
-    }
-
-    companion object {
-        private const val SERVICE = "xyz.lilsus.rayl.providers.spark.wallet"
-        private const val ACCOUNT = "singleton-mnemonic-v1"
-        private const val INSTALL_MARKER = "spark.install.marker.v1"
-    }
 }
+
+suspend fun clearIOSWalletStorage(): Boolean =
+    clearWalletStorage(IOSCredentialVault(), IOSWalletDirectories())

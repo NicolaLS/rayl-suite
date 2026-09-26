@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import xyz.lilsus.rayl.providers.spark.application.AppBootstrapConfig
 import xyz.lilsus.rayl.providers.spark.application.AppEnvironment
 import xyz.lilsus.rayl.providers.spark.application.payment.DefaultPaymentEngine
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WalletRemovalTest {
@@ -80,7 +81,8 @@ class WalletRemovalTest {
             connector = SparkSdkConnector { _, _, _ -> error("Cleanup must not reconnect the SDK") },
             payments = payments,
             paymentLifecycle = payments,
-            applicationScope = scope
+            applicationScope = scope,
+            startMode = WalletStartMode.Restore
         )
     }
 }

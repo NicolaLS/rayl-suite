@@ -24,9 +24,86 @@ import xyz.lilsus.rayl.providers.spark.application.payment.SdkPayment
 import xyz.lilsus.rayl.providers.spark.application.payment.SdkPreparedPayment
 import xyz.lilsus.rayl.providers.spark.application.payment.SparkPaymentClient
 import xyz.lilsus.raylsuite.core.model.Satoshi
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class WalletLifecycleTest {
+    @Test
+    fun failedImportCannotReuseASessionWhoseCleanupFailed() = runTest {
+        val fixture = LifecycleFixture(backgroundScope, WalletStartMode.Fresh)
+        fixture.vault.storeResult = CredentialStoreResult.FAILED
+        fixture.session.disconnectAction = { throw IllegalStateException("SDK still running") }
+        assertEquals(ImportWalletResult.CREDENTIAL_STORE_FAILED, fixture.access.importWallet(TEST_MNEMONIC))
+        assertEquals(WalletAccessState.ResetRequired, fixture.access.state.value)
+        assertTrue(fixture.directories.pending)
+        assertFalse(fixture.access.removed.value)
+        assertEquals(0, fixture.directories.deletions)
+        val anotherPhrase = List(12) { "other" }.joinToString(" ")
+        assertEquals(ImportWalletResult.ALREADY_CONFIGURED, fixture.access.importWallet(anotherPhrase))
+        assertEquals(1, fixture.vault.stores)
+        assertEquals(1, fixture.connections)
+        fixture.session.disconnectAction = {}
+        fixture.access.retryConnection()
+        assertEquals(WalletAccessState.NoWallet, fixture.access.state.value)
+        assertFalse(fixture.directories.pending)
+        fixture.vault.storeResult = CredentialStoreResult.STORED
+        assertEquals(ImportWalletResult.IMPORTED, fixture.access.importWallet(anotherPhrase))
+        assertEquals(2, fixture.connections)
+        assertEquals(anotherPhrase, fixture.vault.credential?.value)
+    }
+
+    @Test
+    fun freshSetupNeverReadsCredentialsOnStartupRetryOrImport() = runTest {
+        val fixture = LifecycleFixture(backgroundScope, WalletStartMode.Fresh)
+        fixture.vault.loadAction = { error("Fresh onboarding must never read old credentials") }
+        fixture.access.start()
+        runCurrent()
+        fixture.access.retryConnection()
+        assertEquals(WalletAccessState.NoWallet, fixture.access.state.value)
+        assertEquals(0, fixture.connections)
+        assertEquals(ImportWalletResult.IMPORTED, fixture.access.importWallet(TEST_MNEMONIC))
+        assertEquals(0, fixture.vault.loads)
+        assertEquals(1, fixture.connections)
+        assertEquals(WalletAccessState.Connected, fixture.access.state.value)
+    }
+
+    @Test
+    fun freshSetupCannotResurrectAnUnexpectedExistingCredential() = runTest {
+        val fixture = LifecycleFixture(backgroundScope, WalletStartMode.Fresh)
+        fixture.vault.storeResult = CredentialStoreResult.ALREADY_EXISTS
+        fixture.vault.loadAction = { error("Conflicting credentials must not be restored") }
+        assertEquals(ImportWalletResult.CREDENTIAL_STORE_FAILED, fixture.access.importWallet(TEST_MNEMONIC))
+        assertEquals(WalletAccessState.NoWallet, fixture.access.state.value)
+        assertEquals(0, fixture.vault.loads)
+        assertEquals(1, fixture.session.disconnections)
+    }
+
+    @Test
+    fun credentialFailureCanBeRetriedAndRemovedWithoutDecrypting() = runTest {
+        val fixture = LifecycleFixture(backgroundScope)
+        fixture.vault.loadAction = { CredentialLoadResult.Unavailable }
+        fixture.access.start()
+        runCurrent()
+        fixture.access.retryConnection()
+        assertEquals(2, fixture.vault.loads)
+        assertEquals(WalletAccessState.CredentialProblem(CredentialProblemKind.UNAVAILABLE), fixture.access.state.value)
+        assertEquals(RemoveWalletResult.REMOVED, fixture.access.removeWallet())
+        assertEquals(2, fixture.vault.loads)
+        assertEquals(WalletAccessState.NoWallet, fixture.access.state.value)
+        assertTrue(fixture.access.removed.value)
+    }
+
+    @Test
+    fun standaloneCleanupDoesNotReadCredentialsOrConnect() = runTest {
+        val fixture = LifecycleFixture(backgroundScope)
+        fixture.vault.loadAction = { error("Cleanup cannot require decryption") }
+        assertTrue(clearWalletStorage(fixture.vault, fixture.directories))
+        assertEquals(1, fixture.vault.deletions)
+        assertEquals(1, fixture.directories.deletions)
+        assertEquals(0, fixture.connections)
+        assertFalse(fixture.directories.pending)
+    }
+
     @Test
     fun initialAbsenceIsNotRemovalAndNewImportClearsCompletedRemoval() = runTest {
         val fixture = LifecycleFixture(backgroundScope)
@@ -192,7 +269,7 @@ class WalletLifecycleTest {
     }
 }
 
-private class LifecycleFixture(scope: CoroutineScope) {
+private class LifecycleFixture(scope: CoroutineScope, startMode: WalletStartMode = WalletStartMode.Restore) {
     val vault = LifecycleVault()
     val directories = LifecycleDirectories()
     val session = LifecycleSession()
@@ -209,7 +286,8 @@ private class LifecycleFixture(scope: CoroutineScope) {
         },
         payments = DefaultPaymentEngine(AppEnvironment.DEBUG),
         paymentLifecycle = lifecycle,
-        applicationScope = scope
+        applicationScope = scope,
+        startMode = startMode
     )
 
     fun assertNoRemoval() {
@@ -224,6 +302,7 @@ private class LifecycleVault : CredentialVault {
     var credential: WalletCredential? = null
     var loads = 0
     var stores = 0
+    var storeResult = CredentialStoreResult.STORED
     var deletions = 0
     var loadAction: suspend () -> CredentialLoadResult = {
         credential?.let { CredentialLoadResult.Available(it) } ?: CredentialLoadResult.Absent
@@ -236,6 +315,7 @@ private class LifecycleVault : CredentialVault {
 
     override suspend fun store(credential: WalletCredential): CredentialStoreResult {
         stores += 1
+        if (storeResult != CredentialStoreResult.STORED) return storeResult
         this.credential = credential
         return CredentialStoreResult.STORED
     }

@@ -13,8 +13,25 @@ import xyz.lilsus.rayl.providers.blink.integration.blink.graphql.BlinkPaymentTra
 import xyz.lilsus.rayl.providers.blink.integration.blink.graphql.FundingWalletsQuery
 import xyz.lilsus.rayl.providers.blink.integration.blink.graphql.LnInvoicePaymentSendMutation
 import xyz.lilsus.rayl.providers.blink.integration.blink.graphql.LnNoAmountUsdInvoicePaymentSendMutation
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 
 class BlinkWalletPaymentTest {
+    @Test
+    fun freshSetupAndPaymentWithoutAConnectionNeverReadOldCredentials() = runTest {
+        val secure = TestSecureStringStore().apply { forbidReads = true }
+        val wallet = BlinkWallet(
+            apiClient = createClient { error("No network request expected") },
+            credentialStore = BlinkCredentialStore(secure),
+            isNetworkAvailable = { true },
+            startMode = WalletStartMode.Fresh
+        )
+        assertNull(wallet.connection.value)
+        val result = wallet.submitPayment(BlinkPaymentRequest("lnbc1test", TEST_BTC_WALLET))
+        assertIs<BlinkPaymentOutcome.DefinitiveFailure>(result)
+        assertEquals(0, secure.reads)
+        wallet.close()
+    }
+
     @Test
     fun connectSeedsTheServerDefaultByWalletIdentity() = runBlocking {
         val store = BlinkCredentialStore(TestSecureStringStore())

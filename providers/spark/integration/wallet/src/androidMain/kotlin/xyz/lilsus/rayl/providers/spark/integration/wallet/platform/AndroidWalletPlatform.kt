@@ -26,9 +26,15 @@ import xyz.lilsus.rayl.providers.spark.application.wallet.DefaultWalletAccess
 import xyz.lilsus.rayl.providers.spark.application.wallet.WalletAccess
 import xyz.lilsus.rayl.providers.spark.application.wallet.WalletCredential
 import xyz.lilsus.rayl.providers.spark.application.wallet.WalletDirectories
+import xyz.lilsus.rayl.providers.spark.application.wallet.clearWalletStorage
 import xyz.lilsus.rayl.providers.spark.integration.wallet.spark.BreezSparkSdkConnector
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 
-fun createAndroidWalletAccess(context: Context, bootstrapConfig: AppBootstrapConfig): WalletAccess {
+fun createAndroidWalletAccess(
+    context: Context,
+    bootstrapConfig: AppBootstrapConfig,
+    startMode: WalletStartMode
+): WalletAccess {
     val appContext = context.applicationContext
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val paymentEngine = DefaultPaymentEngine(
@@ -41,7 +47,8 @@ fun createAndroidWalletAccess(context: Context, bootstrapConfig: AppBootstrapCon
         connector = BreezSparkSdkConnector,
         payments = paymentEngine,
         paymentLifecycle = paymentEngine,
-        applicationScope = applicationScope
+        applicationScope = applicationScope,
+        startMode = startMode
     ).also(WalletAccess::start)
     return walletAccess
 }
@@ -62,7 +69,7 @@ private class AndroidWalletDirectories(context: Context) : WalletDirectories {
 
     override fun resetPending(): Boolean = resetMarker.isFile
 
-    override fun deleteWalletData(): Boolean = File(sdkDirectory).let {
+    override fun deleteWalletData(): Boolean = File(filesDirectory, "breez-spark").let {
         !it.exists() ||
             it.deleteRecursively()
     }
@@ -170,3 +177,8 @@ private class AndroidCredentialVault(private val context: Context) : CredentialV
         private const val TAG_LENGTH_BITS = 128
     }
 }
+
+suspend fun clearAndroidWalletStorage(context: Context): Boolean = clearWalletStorage(
+    AndroidCredentialVault(context.applicationContext),
+    AndroidWalletDirectories(context.applicationContext)
+)

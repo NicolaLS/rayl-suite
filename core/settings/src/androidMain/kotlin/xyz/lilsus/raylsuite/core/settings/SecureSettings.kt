@@ -20,18 +20,23 @@ fun rememberSecureSettings(storageName: String): SecureStringStore {
     require(storageName.isNotBlank()) { "Secure storage name cannot be blank" }
     val context = LocalContext.current.applicationContext
     return remember(context, storageName) {
-        val preferences =
-            SharedPreferencesSettings(
-                context.getSharedPreferences(
-                    "${storageName}_encrypted",
-                    Context.MODE_PRIVATE
-                )
-            )
-        EncryptedStringSettings(
-            delegate = preferences,
-            keyAlias = "xyz.lilsus.raylsuite.$storageName"
-        )
+        createSecureSettings(context, storageName)
     }
+}
+
+fun createSecureSettings(context: Context, storageName: String): SecureStringStore {
+    require(storageName.isNotBlank()) { "Secure storage name cannot be blank" }
+    val preferences =
+        SharedPreferencesSettings(
+            context.getSharedPreferences(
+                "${storageName}_encrypted",
+                Context.MODE_PRIVATE
+            )
+        )
+    return EncryptedStringSettings(
+        delegate = preferences,
+        keyAlias = "xyz.lilsus.raylsuite.$storageName"
+    )
 }
 
 private class EncryptedStringSettings(

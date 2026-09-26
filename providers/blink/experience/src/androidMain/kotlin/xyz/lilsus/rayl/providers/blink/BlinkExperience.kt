@@ -24,6 +24,7 @@ import kotlin.random.Random
 import xyz.lilsus.rayl.providers.blink.feature.onboarding.BlinkOnboarding
 import xyz.lilsus.rayl.providers.blink.feature.onboarding.BlinkOnboardingStep
 import xyz.lilsus.raylsuite.core.model.ThemePreference
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
 import xyz.lilsus.raylsuite.core.settings.rememberSecureSettings
 import xyz.lilsus.raylsuite.core.ui.platform.LocalProductName
@@ -37,9 +38,9 @@ import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalFailure
 @Composable
 fun BlinkExperience(
     configuration: BlinkExperienceConfiguration,
+    startMode: WalletStartMode,
     performanceDiagnostics: PerformanceDiagnostics? = null,
     onRemoved: () -> Unit,
-    onChooseWallet: () -> Unit,
     onConnectionChanged: (Boolean) -> Unit
 ) {
     val appSettings = rememberAppSettings(configuration.preferencesName)
@@ -50,7 +51,14 @@ fun BlinkExperience(
     val runtime = rememberRetainedInstance(
         key = runtimeKey,
         factory = {
-            BlinkRuntime(appSettings, walletSettings, configuration, secureSettings, haptics)
+            BlinkRuntime(
+                appSettings,
+                walletSettings,
+                configuration,
+                secureSettings,
+                haptics,
+                startMode
+            )
         },
         onDispose = BlinkRuntime::clear,
         releaseOnLeave = true
@@ -99,8 +107,7 @@ fun BlinkExperience(
                 if (connected == null) {
                     TextButton(onClick = {
                         if (runtime.blinkWallet.connection.value == null) {
-                            runtime.clear()
-                            onChooseWallet()
+                            runtime.removeWallet()
                         }
                     }) { Text(stringResource(android.R.string.cancel)) }
                 }

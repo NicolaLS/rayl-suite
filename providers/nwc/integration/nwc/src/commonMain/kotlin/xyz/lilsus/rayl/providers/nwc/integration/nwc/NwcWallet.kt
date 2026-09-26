@@ -16,6 +16,7 @@ import io.github.nicolals.nwc.WalletDiscovery
 import io.github.nicolals.nwc.WalletInfo
 import io.ktor.client.HttpClient
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
@@ -24,6 +25,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.network.createWebSocketHttpClient
 import xyz.lilsus.raylsuite.core.settings.SecureStringStore
 
@@ -115,12 +118,23 @@ class NwcWallet internal constructor(
     private val scope: CoroutineScope,
     private val httpClient: HttpClient,
     private val isNetworkAvailable: () -> Boolean,
-    private val ownsHttpClient: Boolean
+    startMode: WalletStartMode = WalletStartMode.Restore,
+    private val ownsHttpClient: Boolean,
+    private val closeClient: suspend (NwcClient) -> Unit = { it.close() }
 ) {
     private var closed = false
     private val clientMutex = Mutex()
     private var client: NwcClient? = null
-    private val mutableConnection = MutableStateFlow(credentialStore.read()?.toConnection())
+    private var closingClient: NwcClient? = null
+    private val mutableConnection = MutableStateFlow(
+        if (startMode ==
+            WalletStartMode.Restore
+        ) {
+            credentialStore.read()?.toConnection()
+        } else {
+            null
+        }
+    )
     private var isInForeground = true
 
     val connection: StateFlow<NwcWalletConnection?> = mutableConnection.asStateFlow()
@@ -183,12 +197,11 @@ class NwcWallet internal constructor(
     }
 
     suspend fun disconnect() {
-        val previousClient = clientMutex.withLock {
+        clientMutex.withLock {
+            releaseClientLocked()
             credentialStore.clear()
             mutableConnection.value = null
-            client.also { client = null }
         }
-        previousClient?.close()
     }
 
     suspend fun payInvoice(
@@ -273,14 +286,26 @@ class NwcWallet internal constructor(
     }
 
     private suspend fun releaseClient() {
-        val previousClient = clientMutex.withLock {
-            client.also { client = null }
-        }
-        previousClient?.close()
+        clientMutex.withLock { releaseClientLocked() }
+    }
+
+    private suspend fun releaseClientLocked() {
+        finishClosingClient()
+        closingClient = client
+        client = null
+        finishClosingClient()
+    }
+
+    private suspend fun finishClosingClient() = withContext(NonCancellable) {
+        // collectLatest may cancel a background transition. Never make its half-closed client
+        // available to the foreground, and retain failed disposal for retry before opening another.
+        closingClient?.let { closeClient(it) }
+        closingClient = null
     }
 
     private suspend fun getOrCreateClient(): NwcClient? = clientMutex.withLock {
-        if (closed) return@withLock null
+        if (closed || connection.value == null) return@withLock null
+        finishClosingClient()
         client?.let { return@withLock it }
         val credentials = credentialStore.read() ?: return@withLock null
         val uri = NwcConnectionUri.parse(credentials.connectionUri) ?: return@withLock null
@@ -325,7 +350,8 @@ class NwcWallet internal constructor(
 fun createNwcWallet(
     secureSettings: SecureStringStore,
     scope: CoroutineScope,
-    isNetworkAvailable: () -> Boolean
+    isNetworkAvailable: () -> Boolean,
+    startMode: WalletStartMode
 ): NwcWallet {
     val httpClient = createWebSocketHttpClient()
     return NwcWallet(
@@ -333,6 +359,7 @@ fun createNwcWallet(
         scope = scope,
         httpClient = httpClient,
         isNetworkAvailable = isNetworkAvailable,
+        startMode = startMode,
         ownsHttpClient = true
     )
 }
@@ -341,12 +368,14 @@ fun createNwcWallet(
     secureSettings: SecureStringStore,
     scope: CoroutineScope,
     httpClient: HttpClient,
-    isNetworkAvailable: () -> Boolean
+    isNetworkAvailable: () -> Boolean,
+    startMode: WalletStartMode
 ): NwcWallet = NwcWallet(
     credentialStore = NwcCredentialStore(secureSettings),
     scope = scope,
     httpClient = httpClient,
     isNetworkAvailable = isNetworkAvailable,
+    startMode = startMode,
     ownsHttpClient = false
 )
 

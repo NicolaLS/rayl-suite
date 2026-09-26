@@ -20,6 +20,7 @@ import xyz.lilsus.rayl.providers.spark.application.AppBootstrapConfig
 import xyz.lilsus.rayl.providers.spark.application.payment.PaymentEngine
 import xyz.lilsus.rayl.providers.spark.application.payment.PaymentSessionLifecycle
 import xyz.lilsus.rayl.providers.spark.application.payment.SparkPaymentClient
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 
 interface SparkSdkSession {
     val paymentClient: SparkPaymentClient
@@ -49,7 +50,8 @@ class DefaultWalletAccess(
     private val connector: SparkSdkConnector,
     override val payments: PaymentEngine,
     private val paymentLifecycle: PaymentSessionLifecycle,
-    applicationScope: CoroutineScope
+    applicationScope: CoroutineScope,
+    startMode: WalletStartMode
 ) : WalletAccess {
     private val lifecycleJob = SupervisorJob(applicationScope.coroutineContext[Job])
     private val lifecycleScope = CoroutineScope(applicationScope.coroutineContext + lifecycleJob)
@@ -58,6 +60,7 @@ class DefaultWalletAccess(
     private val mutableRemoved = MutableStateFlow(false)
     private var sdk: SparkSdkSession? = null
     private var connectingSdk: SparkSdkSession? = null
+    private var hasCredential = startMode == WalletStartMode.Restore
     private var started = false
     private var closeCompleted = false
 
@@ -77,11 +80,13 @@ class DefaultWalletAccess(
     override suspend fun importWallet(mnemonic: String): ImportWalletResult = runOperation {
         operationMutex.withLock {
             mutableRemoved.value = false
-            val existing = vault.load()
-            if (existing !is CredentialLoadResult.Absent) {
-                if (existing !is CredentialLoadResult.Available) {
-                    applyCredentialLoadState(existing)
-                }
+            if (!started) {
+                started = true
+                restoreOrResumeReset()
+            }
+            if (hasCredential || directories.resetPending() ||
+                mutableState.value == WalletAccessState.ResetRequired
+            ) {
                 return@withLock ImportWalletResult.ALREADY_CONFIGURED
             }
 
@@ -94,38 +99,22 @@ class DefaultWalletAccess(
 
             mutableState.value = WalletAccessState.Connecting
             if (!connectApplicationSession(credential)) {
-                directories.deleteWalletData()
-                mutableState.value = WalletAccessState.NoWallet
+                discardUnstoredSession()
                 return@withLock ImportWalletResult.CONNECTION_FAILED
             }
 
             when (vault.store(credential)) {
                 CredentialStoreResult.STORED -> {
+                    hasCredential = true
                     mutableState.value = WalletAccessState.Connected
                     return@withLock ImportWalletResult.IMPORTED
                 }
 
-                CredentialStoreResult.ALREADY_EXISTS -> {
-                    disconnectCurrent()
-                    restoreOrResumeReset()
-                    return@withLock ImportWalletResult.ALREADY_CONFIGURED
-                }
-
-                CredentialStoreResult.UNAVAILABLE -> {
-                    discardUnstoredSession()
-                    mutableState.value = WalletAccessState.NoWallet
-                    return@withLock ImportWalletResult.CREDENTIAL_STORE_FAILED
-                }
-
-                CredentialStoreResult.INVALIDATED -> {
-                    discardUnstoredSession()
-                    mutableState.value = WalletAccessState.NoWallet
-                    return@withLock ImportWalletResult.CREDENTIAL_STORE_FAILED
-                }
-
+                CredentialStoreResult.ALREADY_EXISTS,
+                CredentialStoreResult.UNAVAILABLE,
+                CredentialStoreResult.INVALIDATED,
                 CredentialStoreResult.FAILED -> {
                     discardUnstoredSession()
-                    mutableState.value = WalletAccessState.NoWallet
                     return@withLock ImportWalletResult.CREDENTIAL_STORE_FAILED
                 }
             }
@@ -178,7 +167,7 @@ class DefaultWalletAccess(
         }
     }
 
-    private suspend fun removeLocalWallet(): RemoveWalletResult {
+    private suspend fun removeLocalWallet(notifyRemoval: Boolean = true): RemoveWalletResult {
         mutableRemoved.value = false
         mutableState.value = WalletAccessState.Removing
         // Record removal before touching credentials so a restart can resume partial cleanup.
@@ -186,7 +175,7 @@ class DefaultWalletAccess(
             mutableState.value = WalletAccessState.ResetRequired
             return RemoveWalletResult.RESET_REQUIRED
         }
-        return resumeReset()
+        return resumeReset(notifyRemoval)
     }
 
     private suspend fun restoreOrResumeReset() {
@@ -196,6 +185,10 @@ class DefaultWalletAccess(
             return
         }
 
+        if (!hasCredential) {
+            mutableState.value = WalletAccessState.NoWallet
+            return
+        }
         when (val result = vault.load()) {
             is CredentialLoadResult.Available -> {
                 mutableState.value = WalletAccessState.Connecting
@@ -210,15 +203,19 @@ class DefaultWalletAccess(
         }
     }
 
-    private suspend fun resumeReset(): RemoveWalletResult {
-        val disconnected = disconnectCurrent() && discardConnectingSession()
+    private suspend fun resumeReset(notifyRemoval: Boolean = true): RemoveWalletResult {
+        if (!disconnectCurrent() || !discardConnectingSession()) {
+            mutableState.value = WalletAccessState.ResetRequired
+            return RemoveWalletResult.RESET_REQUIRED
+        }
         val credentialDeleted = vault.delete() != CredentialDeleteResult.FAILED
         val dataDeleted = directories.deleteWalletData()
         // Startup must keep seeing the marker until every cleanup step has succeeded.
-        val finished = disconnected && credentialDeleted && dataDeleted && directories.finishReset()
+        val finished = credentialDeleted && dataDeleted && directories.finishReset()
         mutableState.value =
             if (finished) WalletAccessState.NoWallet else WalletAccessState.ResetRequired
-        mutableRemoved.value = finished
+        if (finished) hasCredential = false
+        mutableRemoved.value = finished && notifyRemoval
         return if (finished) RemoveWalletResult.REMOVED else RemoveWalletResult.RESET_REQUIRED
     }
 
@@ -261,8 +258,9 @@ class DefaultWalletAccess(
     }
 
     private suspend fun discardUnstoredSession() {
-        disconnectCurrent()
-        directories.deleteWalletData()
+        // A failed import still owns its SDK until teardown completes. Persist cleanup before
+        // reporting NoWallet so another import cannot reuse a session for a different phrase.
+        removeLocalWallet(notifyRemoval = false)
     }
 
     private suspend fun disconnectCurrent(): Boolean {
@@ -288,7 +286,10 @@ class DefaultWalletAccess(
 
     private fun applyCredentialLoadState(result: CredentialLoadResult) {
         mutableState.value = when (result) {
-            CredentialLoadResult.Absent -> WalletAccessState.NoWallet
+            CredentialLoadResult.Absent -> {
+                hasCredential = false
+                WalletAccessState.NoWallet
+            }
 
             CredentialLoadResult.Unavailable -> WalletAccessState.CredentialProblem(
                 CredentialProblemKind.UNAVAILABLE
@@ -309,4 +310,12 @@ class DefaultWalletAccess(
     private companion object {
         const val CONNECTION_TIMEOUT_MILLIS = 30_000L
     }
+}
+
+/** Erases an unmounted wallet without decrypting its credential or connecting the SDK. */
+suspend fun clearWalletStorage(vault: CredentialVault, directories: WalletDirectories): Boolean {
+    if (!directories.beginReset()) return false
+    val credentialDeleted = vault.delete() != CredentialDeleteResult.FAILED
+    val dataDeleted = directories.deleteWalletData()
+    return credentialDeleted && dataDeleted && directories.finishReset()
 }

@@ -12,6 +12,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":providers:spark:application"))
             implementation(project(":core:payment"))
+            implementation(project(":core:settings"))
             implementation(libs.breez.sdk.spark)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.serialization.json)

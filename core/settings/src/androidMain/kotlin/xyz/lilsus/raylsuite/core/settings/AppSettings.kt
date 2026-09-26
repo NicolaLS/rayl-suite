@@ -11,8 +11,10 @@ import com.russhwolf.settings.SharedPreferencesSettings
 fun rememberAppSettings(storageName: String): Settings {
     val context = LocalContext.current.applicationContext
     return remember(context, storageName) {
-        SharedPreferencesSettings(
-            context.getSharedPreferences(storageName, Context.MODE_PRIVATE)
-        )
+        createAppSettings(context, storageName)
     }
 }
+
+fun createAppSettings(context: Context, storageName: String): Settings = SharedPreferencesSettings(
+    context.applicationContext.getSharedPreferences(storageName, Context.MODE_PRIVATE)
+)

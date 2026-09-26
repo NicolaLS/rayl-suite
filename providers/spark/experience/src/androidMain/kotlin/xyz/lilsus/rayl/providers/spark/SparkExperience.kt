@@ -39,6 +39,7 @@ import xyz.lilsus.rayl.providers.spark.feature.onboarding.SparkOnboardingDestina
 import xyz.lilsus.rayl.providers.spark.feature.onboarding.sparkOnboarding
 import xyz.lilsus.rayl.providers.spark.feature.walletconnection.WalletConnectionScreen
 import xyz.lilsus.raylsuite.core.model.ThemePreference
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
 import xyz.lilsus.raylsuite.core.ui.platform.LocalProductName
 import xyz.lilsus.raylsuite.core.ui.platform.rememberHapticFeedbackManager
@@ -50,6 +51,7 @@ import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 fun SparkExperience(
     configuration: SparkExperienceConfiguration,
     environment: SparkEnvironment,
+    startMode: WalletStartMode,
     breezApiKey: String? = null,
     performanceDiagnostics: PerformanceDiagnostics? = null,
     onRemoved: () -> Unit,
@@ -65,7 +67,7 @@ fun SparkExperience(
             key = runtimeKey,
             factory = {
                 SparkRuntime(
-                    host = createAndroidAppHost(context, environment, breezApiKey),
+                    host = createAndroidAppHost(context, environment, startMode, breezApiKey),
                     configuration = configuration,
                     appSettings = appSettings,
                     haptics = haptics
@@ -82,7 +84,7 @@ fun SparkExperience(
     val walletState by walletViewModel.state.collectAsStateWithLifecycle()
     var navigationReady by remember { mutableStateOf(!walletState.access.isInitialising()) }
 
-    var exitAction by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var exiting by rememberSaveable { mutableStateOf(false) }
     var exitAttempt by remember { mutableStateOf(0) }
     val closeFailed by runtime.closeFailed.collectAsStateWithLifecycle()
     LaunchedEffect(runtime) {
@@ -90,11 +92,11 @@ fun SparkExperience(
             if (removed) onRemoved()
         }
     }
-    LaunchedEffect(runtime, exitAction, exitAttempt) {
-        val action = exitAction ?: return@LaunchedEffect
+    LaunchedEffect(runtime, exiting, exitAttempt) {
+        if (!exiting) return@LaunchedEffect
         try {
             runtime.close()
-            action()
+            onChooseWallet()
         } catch (cancellation: CancellationException) {
             throw cancellation
         } catch (_: Exception) {
@@ -113,7 +115,7 @@ fun SparkExperience(
     }
     CompositionLocalProvider(LocalProductName provides configuration.appName) {
         RaylSuiteTheme(themePreference = themePreference) {
-            if (exitAction != null) {
+            if (exiting) {
                 Column(modifier = Modifier.safeDrawingPadding().padding(24.dp)) {
                     if (closeFailed) {
                         Text(stringResource(R.string.spark_session_close_failed))
@@ -148,7 +150,7 @@ fun SparkExperience(
                 Column(modifier = cancellationInsets) {
                     if (canChooseWallet) {
                         TextButton(
-                            onClick = { if (runtime.canCancelSetup) exitAction = onChooseWallet }
+                            onClick = { if (runtime.canCancelSetup) exiting = true }
                         ) {
                             Text(stringResource(R.string.spark_choose_another_wallet))
                         }

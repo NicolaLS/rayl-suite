@@ -7,21 +7,14 @@ package xyz.lilsus.raylsuite.core.settings
 
 import kotlinx.cinterop.CPointerVarOf
 import kotlinx.cinterop.alloc
-import kotlinx.cinterop.allocArrayOf
-import kotlinx.cinterop.convert
 import kotlinx.cinterop.memScoped
 import kotlinx.cinterop.ptr
 import kotlinx.cinterop.reinterpret
 import kotlinx.cinterop.value
-import platform.CoreFoundation.CFDictionaryCreate
-import platform.CoreFoundation.CFDictionaryRef
-import platform.CoreFoundation.CFRelease
 import platform.CoreFoundation.CFStringRef
 import platform.CoreFoundation.CFTypeRef
-import platform.CoreFoundation.kCFAllocatorDefault
 import platform.CoreFoundation.kCFBooleanTrue
 import platform.Foundation.CFBridgingRelease
-import platform.Foundation.CFBridgingRetain
 import platform.Foundation.NSData
 import platform.Foundation.NSString
 import platform.Foundation.NSUTF8StringEncoding
@@ -69,8 +62,8 @@ private class KeychainSecureStringStore(private val service: String) : SecureStr
             NSString.create(string = value).dataUsingEncoding(NSUTF8StringEncoding)
         )
         val updateStatus =
-            withDictionary(baseMap(key)) { query ->
-                withDictionary(
+            withKeychainDictionary(baseMap(key)) { query ->
+                withKeychainDictionary(
                     mapOf(
                         kSecAttrAccessible to kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
                         kSecValueData to data
@@ -85,7 +78,7 @@ private class KeychainSecureStringStore(private val service: String) : SecureStr
         }
 
         val addStatus =
-            withDictionary(
+            withKeychainDictionary(
                 baseMap(key) +
                     mapOf(
                         kSecAttrAccessible to kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
@@ -99,7 +92,7 @@ private class KeychainSecureStringStore(private val service: String) : SecureStr
         }
     }
 
-    override fun getStringOrNull(key: String): String? = withDictionary(
+    override fun getStringOrNull(key: String): String? = withKeychainDictionary(
         baseMap(key) +
             mapOf(
                 kSecMatchLimit to kSecMatchLimitOne,
@@ -124,14 +117,14 @@ private class KeychainSecureStringStore(private val service: String) : SecureStr
     }
 
     override fun remove(key: String) {
-        val status = withDictionary(baseMap(key)) { SecItemDelete(it) }
+        val status = withKeychainDictionary(baseMap(key)) { SecItemDelete(it) }
         check(status == errSecSuccess || status == errSecItemNotFound) {
             "Unable to remove secure value: Keychain status $status"
         }
     }
 
     override fun clear() {
-        val status = withDictionary(baseMap()) { SecItemDelete(it) }
+        val status = withKeychainDictionary(baseMap()) { SecItemDelete(it) }
         check(status == errSecSuccess || status == errSecItemNotFound) {
             "Unable to clear secure values: Keychain status $status"
         }
@@ -141,43 +134,6 @@ private class KeychainSecureStringStore(private val service: String) : SecureStr
         put(kSecClass, kSecClassGenericPassword)
         put(kSecAttrService, NSString.create(string = service))
         key?.let { put(kSecAttrAccount, NSString.create(string = it)) }
-    }
-
-    private inline fun <T> withDictionary(
-        values: Map<CFStringRef?, Any?>,
-        block: (CFDictionaryRef) -> T
-    ): T = memScoped {
-        val retainedValues =
-            values.values.map { value ->
-                when (value) {
-                    is NSData, is NSString -> checkNotNull(CFBridgingRetain(value))
-                    else -> value as CFTypeRef?
-                }
-            }
-        return try {
-            val keys = allocArrayOf(*values.keys.toTypedArray())
-            val nativeValues = allocArrayOf(*retainedValues.toTypedArray())
-            val dictionary =
-                checkNotNull(
-                    CFDictionaryCreate(
-                        allocator = kCFAllocatorDefault,
-                        keys = keys.reinterpret(),
-                        values = nativeValues.reinterpret(),
-                        numValues = values.size.convert(),
-                        keyCallBacks = null,
-                        valueCallBacks = null
-                    )
-                )
-            try {
-                block(dictionary)
-            } finally {
-                CFRelease(dictionary)
-            }
-        } finally {
-            values.values.zip(retainedValues).forEach { (value, retained) ->
-                if (value is NSData || value is NSString) CFRelease(retained)
-            }
-        }
     }
 }
 

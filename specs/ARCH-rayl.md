@@ -7,8 +7,10 @@ independent Blink, Nostr Wallet Connect (NWC), and Spark implementations live in
 
 Rayl offers every integrated provider during setup, with no release availability
 gates. [RaylSelection](../app/shared/src/commonMain/kotlin/xyz/lilsus/rayl/RaylSelection.kt)
-remembers one selected provider experience; it does not combine wallets into one
-payment engine.
+keeps setup selection transient and remembers only the configured provider; it
+does not combine wallets into one payment engine. Before mounting an experience,
+the platform host clears unowned provider storage. Returning to the chooser also
+requires cleanup, as defined by [SPEC-wallet-lifecycle](SPEC-wallet-lifecycle.md).
 
 ## Shared boundaries
 
