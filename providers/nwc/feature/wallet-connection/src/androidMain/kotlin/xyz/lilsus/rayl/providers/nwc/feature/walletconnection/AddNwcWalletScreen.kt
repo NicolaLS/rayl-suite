@@ -2,31 +2,17 @@ package xyz.lilsus.rayl.providers.nwc.feature.walletconnection
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.consumeWindowInsets
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material3.Button
-import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -39,21 +25,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.currentStateAsState
-import xyz.lilsus.rayl.providers.nwc.feature.walletconnection.R
 import xyz.lilsus.raylsuite.core.camera.CameraAuthorizationState
 import xyz.lilsus.raylsuite.core.camera.rememberQrScannerController
-import xyz.lilsus.raylsuite.core.ui.components.BackIconButton
+import xyz.lilsus.raylsuite.core.ui.components.CredentialConnectionScreen
+import xyz.lilsus.raylsuite.core.ui.components.CredentialInput
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddNwcWalletScreen(
     state: AddNwcWalletUiState,
@@ -65,9 +46,11 @@ fun AddNwcWalletScreen(
     onCameraPermissionAction: () -> Unit,
     cameraAuthorization: CameraAuthorizationState,
     canRequestCameraPermission: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShowInstructions: (() -> Unit)? = null,
+    privacyPolicyUrl: String? = null,
+    termsUrl: String? = null
 ) {
-    val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val focusManager = LocalFocusManager.current
     val scanner = rememberQrScannerController()
     val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateAsState()
@@ -92,90 +75,43 @@ fun AddNwcWalletScreen(
         onDispose(scanner::stop)
     }
 
-    Scaffold(
+    CredentialConnectionScreen(
+        title = stringResource(R.string.add_wallet_title),
+        description = stringResource(R.string.add_wallet_description),
+        actionTitle = stringResource(xyz.lilsus.raylsuite.core.ui.R.string.credential_connect),
+        canSubmit = state.isUriValid,
+        isSubmitting = false,
+        onSubmit = submitOrClearFocus,
+        onBack = onBack,
+        onShowInstructions = onShowInstructions,
+        privacyPolicyUrl = privacyPolicyUrl,
+        termsUrl = termsUrl,
         modifier = modifier.testTag(NwcWalletConnectionTestTags.SCREEN),
-        topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text(stringResource(R.string.add_wallet_title)) },
-                navigationIcon = {
-                    onBack?.let { BackIconButton(onClick = it) }
-                },
-                scrollBehavior = scrollBehavior
-            )
-        }
-    ) { padding ->
-        Column(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .consumeWindowInsets(padding)
-                    .navigationBarsPadding()
-                    .imePadding()
-                    .padding(horizontal = 16.dp, vertical = 24.dp)
-                    .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
-        ) {
+        actionModifier = Modifier.testTag(NwcWalletConnectionTestTags.CONNECT_BUTTON)
+    ) {
+        CredentialInput(
+            value = state.uri,
+            onValueChange = onUriChange,
+            label = stringResource(R.string.add_wallet_uri_label),
+            placeholder = stringResource(R.string.add_wallet_uri_placeholder),
+            onPaste = onPaste,
+            onSubmit = { if (state.isUriValid) submitOrClearFocus() },
+            fieldModifier = Modifier.testTag(NwcWalletConnectionTestTags.URI_FIELD),
+            pasteModifier = Modifier.testTag(NwcWalletConnectionTestTags.PASTE_BUTTON)
+        )
+        state.error?.let { error ->
             Text(
-                text = stringResource(R.string.add_wallet_description),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            OutlinedTextField(
-                value = state.uri,
-                onValueChange = onUriChange,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .testTag(NwcWalletConnectionTestTags.URI_FIELD),
-                singleLine = true,
-                label = { Text(stringResource(R.string.add_wallet_uri_label)) },
-                placeholder = {
-                    Text(stringResource(R.string.add_wallet_uri_placeholder))
-                },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    autoCorrectEnabled = false,
-                    capitalization = KeyboardCapitalization.None,
-                    imeAction = ImeAction.Done
-                ),
-                keyboardActions =
-                    KeyboardActions(
-                        onDone = { submitOrClearFocus() }
-                    )
-            )
-            TextButton(
-                onClick = onPaste,
-                modifier = Modifier.testTag(NwcWalletConnectionTestTags.PASTE_BUTTON)
-            ) {
-                Text(stringResource(R.string.add_wallet_uri_paste))
-            }
-            state.error?.let { error ->
-                Text(
-                    text = nwcConnectionErrorMessageFor(error),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-
-            Button(
-                onClick = submitOrClearFocus,
-                enabled = state.isUriValid,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(NwcWalletConnectionTestTags.CONNECT_BUTTON)
-            ) {
-                Text(stringResource(R.string.add_wallet_title))
-            }
-
-            CameraCard(
-                authorization = cameraAuthorization,
-                scannerUnavailable = scannerUnavailable,
-                canRequestPermission = canRequestCameraPermission,
-                onCameraPermissionAction = onCameraPermissionAction
+                text = nwcConnectionErrorMessageFor(error),
+                color = MaterialTheme.colorScheme.error,
+                style = MaterialTheme.typography.bodySmall
             )
         }
+        CameraCard(
+            authorization = cameraAuthorization,
+            scannerUnavailable = scannerUnavailable,
+            canRequestPermission = canRequestCameraPermission,
+            onCameraPermissionAction = onCameraPermissionAction
+        )
     }
 }
 

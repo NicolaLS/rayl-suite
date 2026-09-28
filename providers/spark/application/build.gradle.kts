@@ -10,6 +10,7 @@ kotlin {
     sourceSets {
         commonMain.dependencies {
             api(project(":core:model"))
+            api(project(":core:payment"))
             api(libs.kotlinx.coroutines.core)
             implementation(libs.okio)
         }

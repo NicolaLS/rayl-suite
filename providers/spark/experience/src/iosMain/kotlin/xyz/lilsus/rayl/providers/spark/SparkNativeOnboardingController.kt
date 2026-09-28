@@ -22,7 +22,10 @@ import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.model.DisplayCurrency
 import xyz.lilsus.raylsuite.core.model.PaymentConfirmationMode
 import xyz.lilsus.raylsuite.core.model.PaymentPreferences
+import xyz.lilsus.raylsuite.core.ui.NativeCredentialText
 import xyz.lilsus.raylsuite.core.ui.format.currentAmountFormatter
+import xyz.lilsus.raylsuite.core.ui.nativeCredentialText
+import xyz.lilsus.raylsuite.core.ui.platform.CredentialClipboard
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingViewModel
 import xyz.lilsus.raylsuite.feature.onboarding.nativeOnboardingText
 import xyz.lilsus.raylsuite.feature.onboarding.nativeOnboardingThresholdLabel
@@ -31,6 +34,9 @@ data class SparkNativeOnboardingPage(val title: String, val subtitle: String, va
 
 data class SparkNativeOnboardingSnapshot(
     val step: String,
+    val credentialText: NativeCredentialText,
+    val privacyPolicyUrl: String?,
+    val termsUrl: String?,
     val stepIndex: Int,
     val stepCount: Int,
     val canGoBack: Boolean,
@@ -81,16 +87,31 @@ class SparkNativeOnboardingController internal constructor(
     private val onboarding: OnboardingViewModel,
     walletAccess: WalletAccess,
     languageChanges: Flow<*>,
-    private val appName: String
+    private val appName: String,
+    private val connectionOnly: Boolean = false,
+    initialEducationStep: String = "features",
+    private val onEducationStepChanged: (String) -> Unit = {},
+    private val onComplete: () -> Unit = {},
+    private val privacyPolicyUrl: String? = null,
+    private val termsUrl: String? = null
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var closed = false
     private val wallet = WalletViewModel(walletAccess)
+    private val clipboard = CredentialClipboard()
     private val snapshot = MutableStateFlow<SparkNativeOnboardingSnapshot?>(null)
     private var resolvingInitialWallet = walletAccess.state.value.isInitialising()
+    private var educationStep = initialEducationStep
     private var currentStep =
-        if (walletAccess.state.value == WalletAccessState.NoWallet) STEP_FEATURES else STEP_WALLET
+        if (walletAccess.state.value == WalletAccessState.Connected &&
+            !connectionOnly
+        ) {
+            educationStep
+        } else {
+            STEP_WALLET
+        }
     private var resetRequested = false
+    private var wasConnected = walletAccess.state.value == WalletAccessState.Connected
 
     init {
         scope.launch {
@@ -107,7 +128,9 @@ class SparkNativeOnboardingController internal constructor(
     fun clear() {
         closed = true
         scope.cancel()
+        if (wallet.state.value.access == WalletAccessState.Connected) clipboard.clearAfterSaving()
         wallet.dispose()
+        clipboard.discard()
         snapshot.value = null
     }
 
@@ -144,13 +167,29 @@ class SparkNativeOnboardingController internal constructor(
     }
 
     fun continueAgreement() {
-        if (onboarding.uiState.value.hasAgreed) moveTo(STEP_INSTRUCTIONS)
+        if (!closed && onboarding.uiState.value.hasAgreed) onComplete()
     }
 
     fun showWalletConnection() = moveTo(STEP_WALLET)
 
+    fun showWalletInstructions() {
+        if (closed || wallet.state.value.access != WalletAccessState.NoWallet) return
+        clipboard.discard()
+        wallet.dispatch(WalletAction.RecoveryPhraseChanged(""))
+        moveTo(STEP_INSTRUCTIONS)
+    }
+
     fun updateRecoveryPhrase(value: String) {
+        if (closed || wallet.state.value.access != WalletAccessState.NoWallet) return
+        clipboard.retainFor(value)
         wallet.dispatch(WalletAction.RecoveryPhraseChanged(value))
+    }
+
+    fun pasteRecoveryPhrase() {
+        if (closed || wallet.state.value.access != WalletAccessState.NoWallet) return
+        clipboard.read()?.trim()?.takeIf(String::isNotEmpty)?.let {
+            wallet.dispatch(WalletAction.RecoveryPhraseChanged(it))
+        }
     }
 
     fun importWallet() {
@@ -177,21 +216,17 @@ class SparkNativeOnboardingController internal constructor(
     fun back() {
         when (effectiveStep(wallet.state.value.access)) {
             STEP_AUTO_PAY -> moveTo(STEP_FEATURES)
-
             STEP_AGREEMENT -> moveTo(STEP_AUTO_PAY)
-
-            STEP_INSTRUCTIONS -> moveTo(STEP_AGREEMENT)
-
-            STEP_WALLET -> {
-                if (wallet.state.value.access == WalletAccessState.NoWallet) {
-                    moveTo(STEP_INSTRUCTIONS)
-                }
-            }
+            STEP_INSTRUCTIONS -> moveTo(STEP_WALLET)
         }
     }
 
     private fun moveTo(step: String) {
         if (closed) return
+        if (step == STEP_FEATURES || step == STEP_AUTO_PAY || step == STEP_AGREEMENT) {
+            educationStep = step
+            onEducationStepChanged(step)
+        }
         currentStep = step
         scope.launch { publishSnapshot() }
     }
@@ -202,14 +237,26 @@ class SparkNativeOnboardingController internal constructor(
         if (resolvingInitialWallet && !walletState.access.isInitialising()) {
             resolvingInitialWallet = false
             currentStep =
-                if (walletState.access == WalletAccessState.NoWallet) STEP_FEATURES else STEP_WALLET
+                if (walletState.access == WalletAccessState.Connected &&
+                    !connectionOnly
+                ) {
+                    educationStep
+                } else {
+                    STEP_WALLET
+                }
         }
         if (resetRequested && walletState.access == WalletAccessState.NoWallet) {
             resetRequested = false
-            currentStep = STEP_FEATURES
-            onboarding.setFeaturesPage(0)
-            onboarding.setAgreement(false)
+            currentStep = STEP_WALLET
         }
+
+        val connected = walletState.access == WalletAccessState.Connected
+        if (connected && !wasConnected) {
+            clipboard.clearAfterSaving()
+            currentStep = if (connectionOnly) STEP_WALLET else educationStep
+            if (connectionOnly) onComplete()
+        }
+        wasConnected = connected
 
         val common = nativeOnboardingText()
         val spark = nativeSparkOnboardingText(appName)
@@ -227,9 +274,14 @@ class SparkNativeOnboardingController internal constructor(
         snapshot.value =
             SparkNativeOnboardingSnapshot(
                 step = step,
+                credentialText = nativeCredentialText(),
+                privacyPolicyUrl = privacyPolicyUrl,
+                termsUrl = termsUrl,
                 stepIndex = stepIndex(step),
                 stepCount = ONBOARDING_STEP_COUNT,
-                canGoBack = step != STEP_FEATURES && !isRecovery(walletState.access),
+                canGoBack =
+                    step in listOf(STEP_AUTO_PAY, STEP_AGREEMENT, STEP_INSTRUCTIONS) &&
+                        !isRecovery(walletState.access),
                 backTitle = common.back,
                 featurePages = spark.featurePages.map(NativeSparkOnboardingPage::toSnapshot),
                 featurePage = state.featuresPage,
@@ -294,7 +346,7 @@ class SparkNativeOnboardingController internal constructor(
         STEP_FEATURES -> 1
         STEP_AUTO_PAY -> 2
         STEP_AGREEMENT -> 3
-        else -> 4
+        else -> 0
     }
 
     private companion object {
@@ -305,7 +357,7 @@ class SparkNativeOnboardingController internal constructor(
         const val STEP_WALLET = "wallet"
         const val CONFIRMATION_ALWAYS = "always"
         const val CONFIRMATION_ABOVE = "above"
-        const val ONBOARDING_STEP_COUNT = 5
+        const val ONBOARDING_STEP_COUNT = 4
     }
 }
 
@@ -318,8 +370,9 @@ private fun NativeSparkOnboardingPage.toSnapshot(): SparkNativeOnboardingPage =
 private fun walletKind(access: WalletAccessState): String = when (access) {
     WalletAccessState.NoWallet -> "import"
 
+    WalletAccessState.Connecting -> "connecting"
+
     WalletAccessState.Loading,
-    WalletAccessState.Connecting,
     WalletAccessState.Removing -> "progress"
 
     WalletAccessState.Connected -> "connected"

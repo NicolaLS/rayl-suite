@@ -1,11 +1,11 @@
 <resources>
     <string name="spark_wallet_brand">%1$s / 01</string>
-    <string name="spark_wallet_import_title">Connect your\npayment wallet.</string>
+    <string name="spark_wallet_import_title">Add Spark Wallet</string>
     <string name="spark_wallet_import_body">Importing a recovery phrase gives %1$s spending authority. Keep your primary wallet installed for recovery and full wallet management.</string>
     <string name="spark_wallet_phrase_label">BIP39 recovery phrase</string>
     <string name="spark_wallet_phrase_hint">twelve or twenty-four words…</string>
     <string name="spark_wallet_storage_note">Protected using this device\'s secure credential storage.</string>
-    <string name="spark_wallet_import_action">IMPORT WALLET</string>
+    <string name="spark_wallet_import_action">Connect</string>
     <string name="spark_wallet_remove_title">Remove this wallet from %1$s?</string>
     <string name="spark_wallet_remove_body">This deletes its protected phrase, payment activity, and local SDK data.</string>
     <string name="spark_wallet_remove_confirm">CONFIRM REMOVAL</string>

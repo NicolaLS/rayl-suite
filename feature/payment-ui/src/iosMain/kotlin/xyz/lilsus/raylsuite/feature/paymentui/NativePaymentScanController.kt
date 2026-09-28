@@ -25,8 +25,7 @@ import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountKey
  */
 class NativePaymentScanController(
     private val onPaymentIntent: (PaymentIntent) -> Unit,
-    private val onHubIntent: (PaymentHubIntent) -> Unit,
-    private val offersRecentEntryPoint: Boolean = false
+    private val onHubIntent: (PaymentHubIntent) -> Unit
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private val scanner = createNativeQrScannerController()
@@ -186,7 +185,6 @@ class NativePaymentScanController(
                 showResolvingContent = showResolvingContent,
                 recentCount = current.recentCount,
                 newRecentCount = current.newRecentCount,
-                offersRecentEntryPoint = offersRecentEntryPoint,
                 cameraAuthorization =
                     if (scannerUnavailable) {
                         CameraAuthorizationState.UNAVAILABLE

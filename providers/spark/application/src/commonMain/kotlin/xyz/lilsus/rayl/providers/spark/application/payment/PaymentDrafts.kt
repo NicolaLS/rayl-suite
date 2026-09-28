@@ -12,7 +12,8 @@ internal sealed interface Admission {
         val minimumAmountSats: Satoshi = Satoshi.positive(1),
         val maximumAmountSats: Satoshi? = null,
         val lnurlRequest: ParsedSdkInput.LnurlPay? = null,
-        val amountOverrideSats: Satoshi? = null
+        val amountOverrideSats: Satoshi? = null,
+        val comment: String? = null
     ) : Admission
 
     data class Rejected(val reason: PaymentRejection) : Admission

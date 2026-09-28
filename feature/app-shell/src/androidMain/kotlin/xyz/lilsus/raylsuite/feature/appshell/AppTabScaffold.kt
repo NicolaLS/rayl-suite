@@ -5,8 +5,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -28,8 +26,6 @@ fun AppTabScaffold(
     selectedTab: AppTab,
     onTabSelected: (AppTab) -> Unit,
     modifier: Modifier = Modifier,
-    tabs: List<AppTab> = AppTab.entries,
-    recentBadgeCount: Int = 0,
     content: @Composable (AppTab) -> Unit
 ) {
     val tabContentState = rememberSaveableStateHolder()
@@ -37,22 +33,14 @@ fun AppTabScaffold(
         modifier = modifier.testTag(AppShellTestTags.SCAFFOLD),
         bottomBar = {
             NavigationBar {
-                tabs.forEach { tab ->
+                AppTab.entries.forEach { tab ->
                     val label = stringResource(tab.labelResource())
                     NavigationBarItem(
                         selected = tab == selectedTab,
                         onClick = { onTabSelected(tab) },
                         modifier = Modifier.testTag(AppShellTestTags.tab(tab)),
                         icon = {
-                            if (tab == AppTab.Recent && recentBadgeCount > 0) {
-                                BadgedBox(
-                                    badge = { Badge { Text(recentBadgeCount.badgeLabel()) } }
-                                ) {
-                                    Icon(imageVector = tab.icon, contentDescription = null)
-                                }
-                            } else {
-                                Icon(imageVector = tab.icon, contentDescription = null)
-                            }
+                            Icon(imageVector = tab.icon, contentDescription = null)
                         },
                         label = { Text(label) }
                     )
@@ -74,17 +62,12 @@ fun AppTabScaffold(
     }
 }
 
-private fun Int.badgeLabel(): String = if (this > MAX_BADGE_COUNT) "$MAX_BADGE_COUNT+" else "$this"
-
 @StringRes
 private fun AppTab.labelResource(): Int = when (this) {
     AppTab.Scan -> R.string.app_tab_scan
-    AppTab.Recent -> R.string.app_tab_recent
     AppTab.Hub -> R.string.app_tab_hub
     AppTab.Settings -> R.string.app_tab_settings
 }
-
-private const val MAX_BADGE_COUNT = 9
 
 object AppShellTestTags {
     const val SCAFFOLD = "app_tab_scaffold"

@@ -87,7 +87,6 @@ suspend fun nativePaymentScanSnapshot(
     showResolvingContent: Boolean = true,
     recentCount: Int = 0,
     newRecentCount: Int = 0,
-    offersRecentEntryPoint: Boolean = false,
     cameraAuthorization: CameraAuthorizationState = CameraAuthorizationState.AUTHORIZED,
     formatter: AmountFormatter = currentAmountFormatter()
 ): NativePaymentScanSnapshot = NativePaymentScanSnapshot(
@@ -101,7 +100,7 @@ suspend fun nativePaymentScanSnapshot(
     sheet = savePrompt?.toNativeSheet() ?: payment.toNativeSheet(formatter),
     recent =
         if (
-            offersRecentEntryPoint && recentCount > 0 &&
+            recentCount > 0 &&
             payment !is PaymentScreenState.Loading
         ) {
             NativePaymentScanRecentEntry(

@@ -227,8 +227,7 @@ fun PaymentScanScreen(
     Scaffold(
         modifier = modifier.testTag(PaymentTestTags.SCREEN),
         floatingActionButton = {
-            // Only products that do not show Recent as a tab pass this, and only once the
-            // session actually has a payment to look back at.
+            // Session history becomes available after the first payment.
             if (onOpenRecent != null && state.sessionItems.isNotEmpty() &&
                 state.payment !is PaymentScreenState.Loading
             ) {

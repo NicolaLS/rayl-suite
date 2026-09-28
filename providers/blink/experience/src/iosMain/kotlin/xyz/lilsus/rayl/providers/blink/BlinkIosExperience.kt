@@ -188,16 +188,6 @@ class BlinkIosExperience(
         return { job.cancel() }
     }
 
-    fun recentBadgeCount(): Int = runtime.paymentCoordinator.newSessionTransactionCount.value
-
-    fun observeRecentBadgeCount(onChange: (Int) -> Unit): () -> Unit {
-        val job =
-            observerScope.launch {
-                runtime.paymentCoordinator.newSessionTransactionCount.collect(onChange)
-            }
-        return { job.cancel() }
-    }
-
     /** Localized tab titles keyed by tab ID, so the native tab bar uses one set of strings. */
     fun observeTabTitles(onChange: (Map<String, String>) -> Unit): () -> Unit {
         val job =
@@ -264,9 +254,7 @@ class BlinkIosExperience(
         val controller =
             NativePaymentScanController(
                 onPaymentIntent = runtime.paymentCoordinator::dispatch,
-                onHubIntent = runtime.paymentHub::dispatch,
-                // Blink has no Recent tab, so Scan owns the way into this session's payments.
-                offersRecentEntryPoint = true
+                onHubIntent = runtime.paymentHub::dispatch
             )
         observerScope.launch {
             combine(

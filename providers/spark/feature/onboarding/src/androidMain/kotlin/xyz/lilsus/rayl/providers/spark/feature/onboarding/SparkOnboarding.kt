@@ -1,10 +1,9 @@
 package xyz.lilsus.rayl.providers.spark.feature.onboarding
 
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -14,16 +13,13 @@ import androidx.navigation.compose.composable
 import kotlinx.serialization.Serializable
 import xyz.lilsus.rayl.providers.spark.application.wallet.WalletAccessState
 import xyz.lilsus.rayl.providers.spark.feature.onboarding.R
-import xyz.lilsus.rayl.providers.spark.feature.walletconnection.WalletConnectionContent
 import xyz.lilsus.rayl.providers.spark.feature.walletconnection.WalletConnectionScreen
 import xyz.lilsus.rayl.providers.spark.feature.walletconnection.WalletViewModel
-import xyz.lilsus.raylsuite.core.camera.rememberCameraPermissionState
 import xyz.lilsus.raylsuite.core.ui.format.rememberAmountFormatter
 import xyz.lilsus.raylsuite.feature.onboarding.AgreementScreen
 import xyz.lilsus.raylsuite.feature.onboarding.AutoPaySettingsScreen
 import xyz.lilsus.raylsuite.feature.onboarding.FeaturesScreen
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingFeaturePage
-import xyz.lilsus.raylsuite.feature.onboarding.OnboardingScaffold
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingViewModel
 import xyz.lilsus.raylsuite.feature.onboarding.WalletInstructionsScreen
 
@@ -51,15 +47,26 @@ sealed interface SparkOnboardingDestination {
     data object WalletRecovery : SparkOnboardingDestination
 }
 
+fun sparkEducationDestination(step: String): SparkOnboardingDestination = when (step) {
+    "autoPay" -> SparkOnboardingDestination.AutoPay
+    "agreement" -> SparkOnboardingDestination.Agreement
+    else -> SparkOnboardingDestination.Features
+}
+
 fun NavGraphBuilder.sparkOnboarding(
     navController: NavController,
     onboardingViewModel: OnboardingViewModel,
     walletViewModel: WalletViewModel,
+    connectionOnly: Boolean = false,
+    initialEducationStep: String = "features",
+    onEducationStepChanged: (String) -> Unit = {},
+    privacyPolicyUrl: String? = null,
+    termsUrl: String? = null,
     onWalletConnected: () -> Unit
 ) {
     composable<SparkOnboardingDestination.Features> {
+        LaunchedEffect(Unit) { onEducationStepChanged("features") }
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
-        val cameraPermission = rememberCameraPermissionState()
         FeaturesScreen(
             pages = onboardingFeaturePages(),
             currentPage = state.featuresPage,
@@ -67,11 +74,18 @@ fun NavGraphBuilder.sparkOnboarding(
             totalSteps = ONBOARDING_STEP_COUNT,
             onPageChanged = onboardingViewModel::setFeaturesPage,
             onContinue = { navController.navigate(SparkOnboardingDestination.AutoPay) },
-            onRequestCameraPermission = cameraPermission::request,
             onBack = null
         )
     }
     composable<SparkOnboardingDestination.AutoPay> {
+        LaunchedEffect(Unit) { onEducationStepChanged("autoPay") }
+        val onBack = {
+            navController.navigate(SparkOnboardingDestination.Features) {
+                popUpTo(navController.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+        BackHandler(onBack = onBack)
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
         val formatter = rememberAmountFormatter()
         AutoPaySettingsScreen(
@@ -89,10 +103,18 @@ fun NavGraphBuilder.sparkOnboarding(
             onContinue = {
                 navController.navigate(SparkOnboardingDestination.Agreement)
             },
-            onBack = navController::navigateUp
+            onBack = onBack
         )
     }
     composable<SparkOnboardingDestination.Agreement> {
+        LaunchedEffect(Unit) { onEducationStepChanged("agreement") }
+        val onBack = {
+            navController.navigate(SparkOnboardingDestination.AutoPay) {
+                popUpTo(navController.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+        BackHandler(onBack = onBack)
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
         AgreementScreen(
             body = stringResource(
@@ -104,9 +126,9 @@ fun NavGraphBuilder.sparkOnboarding(
             totalSteps = ONBOARDING_STEP_COUNT,
             onAgreementChanged = onboardingViewModel::setAgreement,
             onContinue = {
-                navController.navigate(SparkOnboardingDestination.WalletInstructions)
+                if (state.hasAgreed) onWalletConnected()
             },
-            onBack = navController::navigateUp
+            onBack = onBack
         )
     }
     composable<SparkOnboardingDestination.WalletInstructions> {
@@ -132,11 +154,9 @@ fun NavGraphBuilder.sparkOnboarding(
                         )
                     )
                 ),
-            stepIndex = OnboardingStep.Wallet.index,
-            totalSteps = ONBOARDING_STEP_COUNT,
-            onConnectWallet = {
-                navController.navigate(SparkOnboardingDestination.AddWallet)
-            },
+            stepIndex = 0,
+            totalSteps = 0,
+            onConnectWallet = { navController.navigateUp() },
             onBack = navController::navigateUp
         )
     }
@@ -144,6 +164,10 @@ fun NavGraphBuilder.sparkOnboarding(
         OnboardingWalletDestination(
             navController = navController,
             walletViewModel = walletViewModel,
+            connectionOnly = connectionOnly,
+            initialEducationStep = initialEducationStep,
+            privacyPolicyUrl = privacyPolicyUrl,
+            termsUrl = termsUrl,
             onWalletConnected = onWalletConnected
         )
     }
@@ -157,17 +181,30 @@ fun NavGraphBuilder.sparkOnboarding(
         WalletConnectionScreen(
             state = state,
             onBack = navController::navigateUp,
-            dispatch = walletViewModel::dispatch
+            dispatch = walletViewModel::dispatch,
+            onShowInstructions = {
+                navController.navigate(SparkOnboardingDestination.WalletInstructions)
+            },
+            privacyPolicyUrl = privacyPolicyUrl,
+            termsUrl = termsUrl
         )
     }
     composable<SparkOnboardingDestination.WalletRecovery> {
         val state by walletViewModel.state.collectAsStateWithLifecycle()
         LaunchedEffect(state.access) {
             when (state.access) {
-                WalletAccessState.Connected -> onWalletConnected()
+                WalletAccessState.Connected -> {
+                    if (connectionOnly) {
+                        onWalletConnected()
+                    } else {
+                        navController.navigate(sparkEducationDestination(initialEducationStep)) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                        }
+                    }
+                }
 
                 WalletAccessState.NoWallet -> {
-                    navController.navigate(SparkOnboardingDestination.Features) {
+                    navController.navigate(SparkOnboardingDestination.AddWallet) {
                         popUpTo(navController.graph.id) { inclusive = true }
                         launchSingleTop = true
                     }
@@ -188,23 +225,35 @@ fun NavGraphBuilder.sparkOnboarding(
 private fun OnboardingWalletDestination(
     navController: NavController,
     walletViewModel: WalletViewModel,
+    connectionOnly: Boolean,
+    initialEducationStep: String,
+    privacyPolicyUrl: String?,
+    termsUrl: String?,
     onWalletConnected: () -> Unit
 ) {
     val state by walletViewModel.state.collectAsStateWithLifecycle()
     LaunchedEffect(state.access) {
-        if (state.access == WalletAccessState.Connected) onWalletConnected()
+        if (state.access == WalletAccessState.Connected) {
+            if (connectionOnly) {
+                onWalletConnected()
+            } else {
+                navController.navigate(sparkEducationDestination(initialEducationStep)) {
+                    popUpTo(navController.graph.id) { inclusive = true }
+                    launchSingleTop = true
+                }
+            }
+        }
     }
-    OnboardingScaffold(
-        stepIndex = OnboardingStep.Wallet.index,
-        totalSteps = ONBOARDING_STEP_COUNT,
-        onBack = navController::navigateUp
-    ) {
-        WalletConnectionContent(
-            state = state,
-            dispatch = walletViewModel::dispatch,
-            modifier = Modifier.fillMaxSize()
-        )
-    }
+    WalletConnectionScreen(
+        state = state,
+        onBack = null,
+        dispatch = walletViewModel::dispatch,
+        onShowInstructions = {
+            navController.navigate(SparkOnboardingDestination.WalletInstructions)
+        },
+        privacyPolicyUrl = privacyPolicyUrl,
+        termsUrl = termsUrl
+    )
 }
 
 @Composable
@@ -241,8 +290,7 @@ private fun onboardingFeaturePages(): List<OnboardingFeaturePage> = listOf(
 private enum class OnboardingStep(val index: Int) {
     Features(1),
     AutoPay(2),
-    Agreement(3),
-    Wallet(4)
+    Agreement(3)
 }
 
-private const val ONBOARDING_STEP_COUNT = 5
+private const val ONBOARDING_STEP_COUNT = 4

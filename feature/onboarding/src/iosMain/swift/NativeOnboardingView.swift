@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct NativeOnboardingPageValue: Identifiable {
     let id: Int
@@ -336,5 +337,148 @@ struct NativeOnboardingPrimaryButton: View {
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.roundedRectangle(radius: 16))
         .controlSize(.large)
+    }
+}
+
+/// Provider-neutral connection layout. Credential validation and connection work stay in Kotlin.
+struct NativeCredentialConnectionView<Content: View>: View {
+    let title: String
+    let description: String
+    let actionTitle: String
+    let canSubmit: Bool
+    let isSubmitting: Bool
+    let instructionsTitle: String
+    let connectionNotice: String
+    let privacyTitle: String
+    let privacyPolicyUrl: String?
+    let termsTitle: String
+    let termsUrl: String?
+    let onInstructions: () -> Void
+    let onSubmit: () -> Void
+    @ViewBuilder var content: () -> Content
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                Text(title)
+                    .font(.largeTitle.bold())
+                Text(description)
+                    .foregroundStyle(.secondary)
+                Button(instructionsTitle, action: onInstructions)
+                    .disabled(isSubmitting)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(connectionNotice)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    HStack(spacing: 20) {
+                        if let value = privacyPolicyUrl, let url = URL(string: value) {
+                            Link(privacyTitle, destination: url)
+                                .frame(minHeight: 44)
+                        }
+                        if let value = termsUrl, let url = URL(string: value) {
+                            Link(termsTitle, destination: url)
+                                .frame(minHeight: 44)
+                        }
+                    }
+                    .font(.footnote)
+                }
+                content()
+            }
+            .padding(24)
+            .frame(maxWidth: 608, alignment: .leading)
+            .frame(maxWidth: .infinity)
+        }
+        .scrollDismissesKeyboard(.interactively)
+        .navigationBarTitleDisplayMode(.inline)
+        .background(Color(uiColor: .systemGroupedBackground))
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            Button {
+                UIApplication.shared.sendAction(
+                    #selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil
+                )
+                if canSubmit { onSubmit() }
+            } label: {
+                HStack {
+                    if isSubmitting { ProgressView() }
+                    Text(actionTitle)
+                }
+                .font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 28)
+                .padding(.vertical, 4)
+            }
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.roundedRectangle(radius: 16))
+            .controlSize(.large)
+            .disabled(!canSubmit)
+            .padding(24)
+            .frame(maxWidth: 608)
+            .frame(maxWidth: .infinity)
+            .background(Color(uiColor: .systemGroupedBackground))
+        }
+    }
+}
+
+struct NativeCredentialInput: View {
+    @Binding var value: String
+    let label: String
+    let placeholder: String
+    let showTitle: String
+    let hideTitle: String
+    let pasteTitle: String
+    var enabled = true
+    var multiline = false
+    let onPaste: () -> Void
+    let onSubmit: () -> Void
+    @State private var visible = false
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        VStack(alignment: .trailing, spacing: 8) {
+            HStack(alignment: multiline ? .top : .center) {
+                Group {
+                    if visible {
+                        TextField(placeholder, text: $value, axis: multiline ? .vertical : .horizontal)
+                            .lineLimit(multiline ? 4...8 : 1...1)
+                    } else {
+                        SecureField(placeholder, text: $value)
+                    }
+                }
+                .textContentType(.password)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .keyboardType(.asciiCapable)
+                .focused($focused)
+                .submitLabel(.go)
+                .onSubmit {
+                    focused = false
+                    onSubmit()
+                }
+                .privacySensitive()
+                .accessibilityLabel(label)
+                .disabled(!enabled)
+                .frame(minHeight: multiline ? 112 : 44, alignment: multiline ? .topLeading : .leading)
+
+                Button { visible.toggle() } label: {
+                    Image(systemName: visible ? "eye.slash" : "eye")
+                        .frame(width: 44, height: 44)
+                }
+                .accessibilityLabel(visible ? hideTitle : showTitle)
+                .disabled(!enabled)
+            }
+            .padding()
+            .background(
+                Color(uiColor: .secondarySystemGroupedBackground),
+                in: RoundedRectangle(cornerRadius: 16)
+            )
+            Button(action: onPaste) {
+                Label(pasteTitle, systemImage: "doc.on.clipboard")
+                    .padding(.vertical, 8)
+            }
+            .disabled(!enabled)
+        }
+        .onDisappear {
+            visible = false
+            focused = false
+        }
     }
 }

@@ -1,12 +1,13 @@
 package xyz.lilsus.rayl.providers.nwc
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,20 +29,19 @@ import xyz.lilsus.rayl.providers.nwc.feature.onboarding.nwcOnboarding
 import xyz.lilsus.rayl.providers.nwc.feature.payment.rememberPaymentFlowState
 import xyz.lilsus.rayl.providers.nwc.feature.payment.rememberPaymentMessages
 import xyz.lilsus.rayl.providers.nwc.feature.walletdetails.NwcWalletDetailsScreen
+import xyz.lilsus.rayl.providers.nwc.feature.walletdetails.R as NwcDetailsR
 import xyz.lilsus.rayl.providers.nwc.integration.nwc.NwcWalletConnection
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
+import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRow
+import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRowDefaults
 import xyz.lilsus.raylsuite.core.ui.platform.rememberCredentialClipboard
 import xyz.lilsus.raylsuite.feature.appshell.AppTab
 import xyz.lilsus.raylsuite.feature.appshell.AppTabScaffold
 import xyz.lilsus.raylsuite.feature.paymenthub.PaymentHubTab
-import xyz.lilsus.raylsuite.feature.paymentui.PaymentRecentScreen
-import xyz.lilsus.raylsuite.feature.paymentui.PaymentScanScreen
+import xyz.lilsus.raylsuite.feature.paymentui.PaymentScanFlow
 import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
-import xyz.lilsus.raylsuite.feature.settings.SettingsEntry
 import xyz.lilsus.raylsuite.feature.settings.SettingsFlow
-import xyz.lilsus.raylsuite.feature.walletmanagement.ManagedWallet
-import xyz.lilsus.raylsuite.feature.walletmanagement.R as WalletR
-import xyz.lilsus.raylsuite.feature.walletmanagement.WalletManagementScreen
+import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalAction
 
 internal fun NavGraphBuilder.nwcHome(
     runtime: NwcRuntime,
@@ -60,14 +60,12 @@ internal fun NavGraphBuilder.nwcHome(
 private fun NwcTabs(runtime: NwcRuntime, performanceDiagnostics: PerformanceDiagnostics?) {
     val tabState = runtime.tabState
     val selectedTab by tabState.selectedTab.collectAsStateWithLifecycle()
-    val flowState = rememberPaymentFlowState(runtime.paymentCoordinator)
 
     AppTabScaffold(
         selectedTab = selectedTab,
         onTabSelected = { tab ->
             if (!runtime.paymentCoordinator.isSubmitting.value) tabState.select(tab)
-        },
-        recentBadgeCount = flowState.newSessionTransactionCount
+        }
     ) { tab ->
         NwcTabContent(
             runtime = runtime,
@@ -85,6 +83,7 @@ internal fun NwcTabContent(
     performanceDiagnostics: PerformanceDiagnostics?
 ) {
     val coordinator = runtime.paymentCoordinator
+    val isSubmitting by coordinator.isSubmitting.collectAsStateWithLifecycle()
     val tabState = runtime.tabState
     val selectedTransactionId by tabState.selectedTransactionId.collectAsStateWithLifecycle()
     val flowState = rememberPaymentFlowState(coordinator)
@@ -96,27 +95,16 @@ internal fun NwcTabContent(
 
     when (tab) {
         AppTab.Scan ->
-            PaymentScanScreen(
+            PaymentScanFlow(
                 state = flowState,
                 messageEvents = messages,
                 appTitle = runtime.configuration.appName,
                 savePrompt = hubState.savePrompt,
-                onIntent = coordinator::dispatch,
-                onHubIntent = runtime.paymentHub::dispatch,
-                onOpenTransaction = { id ->
-                    if (!coordinator.isSubmitting.value) tabState.openTransaction(id)
-                }
-            )
-
-        AppTab.Recent ->
-            PaymentRecentScreen(
-                state = flowState,
-                receiptFeeInformation = null,
+                isSubmitting = isSubmitting,
                 selectedTransactionId = selectedTransactionId,
-                onSelectTransaction = { id ->
-                    if (!coordinator.isSubmitting.value) tabState.selectTransaction(id)
-                },
-                onIntent = coordinator::dispatch
+                onSelectTransaction = tabState::selectTransaction,
+                onIntent = coordinator::dispatch,
+                onHubIntent = runtime.paymentHub::dispatch
             )
 
         AppTab.Hub ->
@@ -136,58 +124,17 @@ internal fun NwcTabContent(
 
 @Composable
 private fun NwcSettingsTab(runtime: NwcRuntime, performanceDiagnostics: PerformanceDiagnostics?) {
-    var removeConfirmation by rememberSaveable { mutableStateOf(false) }
-    val isSubmitting by runtime.paymentCoordinator.isSubmitting.collectAsStateWithLifecycle()
-    if (removeConfirmation) {
-        AlertDialog(
-            onDismissRequest = { removeConfirmation = false },
-            title = { Text(stringResource(WalletR.string.settings_manage_wallet_remove)) },
-            text = {
-                Text(
-                    stringResource(
-                        if (isSubmitting) {
-                            WalletR.string.wallet_removal_payment_active
-                        } else {
-                            WalletR.string.wallet_removal_payment_warning
-                        }
-                    )
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = !isSubmitting,
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    ),
-                    onClick = {
-                        removeConfirmation = false
-                        runtime.removeWallet()
-                    }
-                ) {
-                    Text(stringResource(WalletR.string.settings_manage_wallet_remove))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = {
-                    removeConfirmation = false
-                }) { Text(stringResource(android.R.string.cancel)) }
-            }
-        )
-    }
     var destination by rememberSaveable { mutableStateOf(NwcSettingsDestination.Root) }
     val connection by runtime.nwcWallet.connection.collectAsStateWithLifecycle()
+    val isSubmitting by runtime.paymentCoordinator.isSubmitting.collectAsStateWithLifecycle()
     val walletFlowRequested by runtime.settingsWalletFlow.collectAsStateWithLifecycle()
 
     NavigationEventHandler(
         state = rememberNavigationEventState(currentInfo = NwcSettingsNavigationInfo(destination)),
         isForwardEnabled = false,
-        isBackEnabled = destination == NwcSettingsDestination.WalletManagement ||
-            destination == NwcSettingsDestination.WalletDetails,
+        isBackEnabled = destination == NwcSettingsDestination.WalletDetails,
         onBackCompleted = {
-            destination = when (destination) {
-                NwcSettingsDestination.WalletDetails -> NwcSettingsDestination.WalletManagement
-                else -> NwcSettingsDestination.Root
-            }
+            destination = NwcSettingsDestination.Root
         }
     )
 
@@ -206,51 +153,45 @@ private fun NwcSettingsTab(runtime: NwcRuntime, performanceDiagnostics: Performa
                 legalLinks = runtime.configuration.legalLinks,
                 modifier = Modifier,
                 performanceDiagnostics = performanceDiagnostics,
-                leadingEntries =
-                    listOf(
-                        SettingsEntry(
-                            id = "wallet",
-                            title = stringResource(WalletR.string.settings_manage_wallet),
-                            subtitle =
-                                connection?.let(::formatWalletSubtitle)
-                                    ?: stringResource(
-                                        WalletR.string.settings_manage_wallet_subtitle
-                                    ),
-                            icon = Icons.Filled.AccountBalanceWallet,
-                            onClick = {
-                                destination = NwcSettingsDestination.WalletManagement
+                overviewBottomContent = {
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(
+                            AppSettingsRowDefaults.RowSpacing
+                        )
+                    ) {
+                        connection?.let { current ->
+                            AppSettingsRow(
+                                title = stringResource(
+                                    NwcDetailsR.string.settings_wallet_details_title
+                                ),
+                                subtitle = formatWalletSubtitle(current),
+                                icon = Icons.Filled.AccountBalanceWallet,
+                                onClick = { destination = NwcSettingsDestination.WalletDetails }
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(AppSettingsRowDefaults.ChevronSize)
+                                )
                             }
+                        }
+                        WalletRemovalAction(
+                            onRemoveWallet = runtime::removeWallet,
+                            canRemove = !isSubmitting
                         )
-                    )
-            )
-
-        NwcSettingsDestination.WalletManagement ->
-            WalletManagementScreen(
-                wallet =
-                    connection?.let {
-                        ManagedWallet(
-                            id = it.walletPublicKey,
-                            title =
-                                it.alias?.takeIf(String::isNotBlank)
-                                    ?: it.walletPublicKey
-                        )
-                    },
-                onBack = { destination = NwcSettingsDestination.Root },
-                onAddWallet = { runtime.requestSettingsWalletFlow() },
-                onRemoveWallet = {
-                    removeConfirmation = true
-                },
-                onWalletDetails = { destination = NwcSettingsDestination.WalletDetails }
+                    }
+                }
             )
 
         NwcSettingsDestination.WalletDetails -> {
             val current = connection
             if (current == null) {
-                LaunchedEffect(Unit) { destination = NwcSettingsDestination.WalletManagement }
+                LaunchedEffect(Unit) { destination = NwcSettingsDestination.Root }
             } else {
                 NwcWalletDetailsScreen(
                     connection = current,
-                    onBack = { destination = NwcSettingsDestination.WalletManagement }
+                    onBack = { destination = NwcSettingsDestination.Root }
                 )
             }
         }
@@ -296,6 +237,8 @@ private fun NwcWalletFlow(runtime: NwcRuntime, onFinished: () -> Unit) {
             onboardingViewModel = runtime.onboardingViewModel,
             connectionDraft = runtime.connectionDraft,
             clipboard = clipboard,
+            privacyPolicyUrl = runtime.configuration.legalLinks.privacyPolicyUrl,
+            termsUrl = runtime.configuration.legalLinks.termsUrl,
             onWalletConnected = onFinished
         )
     }
@@ -303,7 +246,6 @@ private fun NwcWalletFlow(runtime: NwcRuntime, onFinished: () -> Unit) {
 
 private enum class NwcSettingsDestination {
     Root,
-    WalletManagement,
     WalletDetails,
     WalletFlow
 }

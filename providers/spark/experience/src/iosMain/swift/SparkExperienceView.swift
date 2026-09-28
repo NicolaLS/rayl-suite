@@ -3,7 +3,6 @@ import Shared
 
 private func makeSparkShellAdapter(_ experience: SparkIosExperience) -> NativeShellAdapter {
     NativeShellAdapter(
-        visibleTabIds: ["scan", "recent", "hub", "settings"],
         initialStage: {
             switch experience.stage() {
             case "tabs": return .tabs
@@ -28,20 +27,14 @@ private func makeSparkShellAdapter(_ experience: SparkIosExperience) -> NativeSh
         observeTheme: { observer in
             experience.observeTheme(onChange: observer.send)
         },
-        initialRecentBadgeCount: { Int(experience.recentBadgeCount()) },
-        observeRecentBadgeCount: { observer in
-            experience.observeRecentBadgeCount { value in
-                observer.send(Int(value.intValue))
-            }
-        },
-        observeTabTitles: { observer in
+    observeTabTitles: { observer in
             experience.observeTabTitles(onChange: observer.send)
         },
         nativeScanView: {
-            AnyView(NativePaymentScanView(controller: experience.scanController()))
-        },
-        nativeRecentView: {
-            AnyView(NativePaymentRecentView(controller: experience.recentController()))
+            AnyView(NativePaymentScanView(
+                controller: experience.scanController(),
+                recentController: experience.recentController()
+            ))
         },
         nativeHubView: {
             AnyView(NativePaymentHubView(controller: experience.hubController()))
@@ -50,8 +43,8 @@ private func makeSparkShellAdapter(_ experience: SparkIosExperience) -> NativeSh
             AnyView(
                 NativeSettingsView(
                     controller: experience.settingsController(),
-                    leadingContent: AnyView(
-                        SparkWalletSettingsLink(
+                    trailingContent: AnyView(
+                        SparkWalletSettingsActions(
                             controller: experience.walletSettingsController()
                         )
                     )
@@ -95,7 +88,7 @@ private final class SparkNativeWalletSettingsModel: ObservableObject {
     }
 }
 
-private struct SparkWalletSettingsLink: View {
+private struct SparkWalletSettingsActions: View {
     @StateObject private var model: SparkNativeWalletSettingsModel
 
     init(controller: SparkNativeWalletSettingsController) {
@@ -105,56 +98,23 @@ private struct SparkWalletSettingsLink: View {
     var body: some View {
         Group {
             if let snapshot = model.snapshot {
-                NativeWalletSettingsLink(
-                    title: snapshot.settingsTitle,
-                    subtitle: snapshot.settingsSubtitle
-                ) {
-                    SparkWalletManagementView(snapshot: snapshot, model: model)
+                VStack(alignment: .leading, spacing: 12) {
+                    NativeWalletRemovalAction(
+                        title: snapshot.removeTitle,
+                        confirmationTitle: snapshot.removeConfirmationTitle,
+                        message: snapshot.removeConfirmationBody,
+                        cancelTitle: snapshot.cancelTitle,
+                        confirmTitle: snapshot.removeTitle,
+                        canRemove: !snapshot.isWorking,
+                        onRemove: model.controller.removeWallet
+                    )
+                    if let message = snapshot.errorMessage {
+                        Text(message).foregroundStyle(.red)
+                    }
                 }
             } else {
                 ProgressView()
             }
         }
-    }
-}
-
-private struct SparkWalletManagementView: View {
-    let snapshot: SparkNativeWalletSettingsSnapshot
-    @ObservedObject var model: SparkNativeWalletSettingsModel
-
-    var body: some View {
-        NativeWalletManagementView(
-            text: snapshot.managementText,
-            wallet: snapshot.managedWallet,
-            isWorking: snapshot.isWorking,
-            errorMessage: snapshot.errorMessage,
-            onAddWallet: {},
-            walletDetails: { EmptyView() },
-            showsWalletDetails: false,
-            onRemoveWallet: model.controller.removeWallet
-        )
-    }
-}
-
-private extension SparkNativeWalletSettingsSnapshot {
-    var managementText: NativeWalletManagementTextValue {
-        NativeWalletManagementTextValue(
-            screenTitle: screenTitle,
-            emptyDescription: emptyDescription,
-            addTitle: addTitle,
-            removeTitle: removeTitle,
-            removeConfirmationTitle: removeConfirmationTitle,
-            removeConfirmationBody: removeConfirmationBody,
-            cancelTitle: cancelTitle
-        )
-    }
-
-    var managedWallet: NativeManagedWalletValue? {
-        guard let walletId, let walletTitle else { return nil }
-        return NativeManagedWalletValue(
-            id: walletId,
-            title: walletTitle,
-            details: walletDetails
-        )
     }
 }

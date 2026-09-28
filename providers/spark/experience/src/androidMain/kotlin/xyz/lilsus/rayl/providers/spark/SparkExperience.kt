@@ -36,6 +36,7 @@ import kotlinx.coroutines.CancellationException
 import xyz.lilsus.rayl.providers.spark.application.wallet.WalletAccessState
 import xyz.lilsus.rayl.providers.spark.experience.R
 import xyz.lilsus.rayl.providers.spark.feature.onboarding.SparkOnboardingDestination
+import xyz.lilsus.rayl.providers.spark.feature.onboarding.sparkEducationDestination
 import xyz.lilsus.rayl.providers.spark.feature.onboarding.sparkOnboarding
 import xyz.lilsus.rayl.providers.spark.feature.walletconnection.WalletConnectionScreen
 import xyz.lilsus.raylsuite.core.model.ThemePreference
@@ -80,6 +81,7 @@ fun SparkExperience(
         runtime.themePreferences.preference.collectAsStateWithLifecycle(
             initialValue = ThemePreference.System
         )
+    val connectionOnly = remember(runtime) { runtime.onboardingCompleted.value }
     val walletViewModel = runtime.walletViewModel
     val walletState by walletViewModel.state.collectAsStateWithLifecycle()
     var navigationReady by remember { mutableStateOf(!walletState.access.isInitialising()) }
@@ -159,8 +161,16 @@ fun SparkExperience(
                     val startDestination =
                         remember {
                             when (walletState.access) {
-                                WalletAccessState.Connected -> SparkDestination.Home
-                                WalletAccessState.NoWallet -> SparkOnboardingDestination.Features
+                                WalletAccessState.Connected -> if (connectionOnly) {
+                                    SparkDestination.Home
+                                } else {
+                                    sparkEducationDestination(
+                                        runtime.onboardingState.educationStep.value
+                                    )
+                                }
+
+                                WalletAccessState.NoWallet -> SparkOnboardingDestination.AddWallet
+
                                 else -> SparkOnboardingDestination.WalletRecovery
                             }
                         }
@@ -172,7 +182,13 @@ fun SparkExperience(
                             navController = navController,
                             onboardingViewModel = runtime.onboardingViewModel,
                             walletViewModel = walletViewModel,
+                            connectionOnly = connectionOnly,
+                            initialEducationStep = runtime.onboardingState.educationStep.value,
+                            onEducationStepChanged = runtime.onboardingState::moveToEducationStep,
+                            privacyPolicyUrl = configuration.legalLinks.privacyPolicyUrl,
+                            termsUrl = configuration.legalLinks.termsUrl,
                             onWalletConnected = {
+                                runtime.completeOnboarding()
                                 navController.navigate(SparkDestination.Home) {
                                     popUpTo(navController.graph.id) { inclusive = true }
                                     launchSingleTop = true
@@ -184,7 +200,7 @@ fun SparkExperience(
                             walletViewModel = walletViewModel,
                             performanceDiagnostics = performanceDiagnostics,
                             onWalletRemoved = {
-                                navController.navigate(SparkOnboardingDestination.Features) {
+                                navController.navigate(SparkOnboardingDestination.AddWallet) {
                                     popUpTo(navController.graph.id) { inclusive = true }
                                     launchSingleTop = true
                                 }

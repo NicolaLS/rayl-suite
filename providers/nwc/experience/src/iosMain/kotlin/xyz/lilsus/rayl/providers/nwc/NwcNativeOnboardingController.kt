@@ -30,7 +30,9 @@ import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.model.DisplayCurrency
 import xyz.lilsus.raylsuite.core.model.PaymentConfirmationMode
 import xyz.lilsus.raylsuite.core.model.PaymentPreferences
+import xyz.lilsus.raylsuite.core.ui.NativeCredentialText
 import xyz.lilsus.raylsuite.core.ui.format.currentAmountFormatter
+import xyz.lilsus.raylsuite.core.ui.nativeCredentialText
 import xyz.lilsus.raylsuite.core.ui.platform.CredentialClipboard
 import xyz.lilsus.raylsuite.feature.onboarding.nativeOnboardingText
 import xyz.lilsus.raylsuite.feature.onboarding.nativeOnboardingThresholdLabel
@@ -39,6 +41,9 @@ data class NwcNativeOnboardingPage(val title: String, val subtitle: String, val 
 
 data class NwcNativeOnboardingSnapshot(
     val step: String,
+    val credentialText: NativeCredentialText,
+    val privacyPolicyUrl: String?,
+    val termsUrl: String?,
     val settingsFlow: Boolean,
     val connectionOnly: Boolean,
     val stepIndex: Int,
@@ -119,7 +124,14 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
     private val snapshot = MutableStateFlow<NwcNativeOnboardingSnapshot?>(null)
     private val observers = mutableSetOf<(NwcNativeOnboardingSnapshot) -> Unit>()
     private val connectionOnly = runtime.onboardingState.completed.value
-    private var currentStep = if (connectionOnly) STEP_WALLET else STEP_FEATURES
+    private var currentStep =
+        if (runtime.nwcWallet.connection.value != null &&
+            !connectionOnly
+        ) {
+            runtime.onboardingState.educationStep.value
+        } else {
+            STEP_WALLET
+        }
     private var confirmationPresented = false
     private var scannerActive = false
     private var scannerStarted = false
@@ -158,7 +170,8 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
                                     runtime.onboardingViewModel.uiState.value.hasAgreed
                             )
                         ) {
-                            NwcWalletConnectionOutcome.ResumeOnboarding -> Unit
+                            NwcWalletConnectionOutcome.ResumeOnboarding ->
+                                moveTo(runtime.onboardingState.educationStep.value)
 
                             NwcWalletConnectionOutcome.CompleteOnboarding ->
                                 runtime.completeOnboarding()
@@ -252,7 +265,7 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
         if (!runtime.onboardingViewModel.uiState.value.hasAgreed) return
 
         if (runtime.nwcWallet.connection.value == null) {
-            moveTo(STEP_INSTRUCTIONS)
+            moveTo(STEP_WALLET)
         } else {
             runtime.completeOnboarding()
         }
@@ -260,11 +273,12 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
 
     fun showWalletConnection() {
         if (!runtime.canAcceptWalletInput) return
-        if (runtime.nwcWallet.connection.value == null) {
-            moveTo(STEP_WALLET)
-        } else {
-            runtime.completeOnboarding()
-        }
+        moveTo(STEP_WALLET)
+    }
+
+    fun showWalletInstructions() {
+        if (confirmationPresented) return
+        moveTo(STEP_INSTRUCTIONS)
     }
 
     fun updateUri(uri: String) {
@@ -337,21 +351,29 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
         runtime.connectionDraft.clear()
         runtime.walletFlowHandled()
         stopScanner()
-        currentStep = if (connectionOnly) STEP_WALLET else STEP_FEATURES
+        currentStep =
+            if (runtime.nwcWallet.connection.value != null &&
+                !connectionOnly
+            ) {
+                runtime.onboardingState.educationStep.value
+            } else {
+                STEP_WALLET
+            }
         scope.launch { publishSnapshot() }
     }
 
     fun back() {
-        if (connectionOnly) return
         when (currentStep) {
             STEP_AUTO_PAY -> moveTo(STEP_FEATURES)
             STEP_AGREEMENT -> moveTo(STEP_AUTO_PAY)
-            STEP_INSTRUCTIONS -> moveTo(STEP_AGREEMENT)
-            STEP_WALLET -> moveTo(STEP_INSTRUCTIONS)
+            STEP_INSTRUCTIONS -> moveTo(STEP_WALLET)
         }
     }
 
     private fun moveTo(step: String) {
+        if (step == STEP_FEATURES || step == STEP_AUTO_PAY || step == STEP_AGREEMENT) {
+            runtime.onboardingState.moveToEducationStep(step)
+        }
         currentStep = step
         if (step != STEP_WALLET) {
             stopScanner()
@@ -461,6 +483,9 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
         snapshot.value =
             NwcNativeOnboardingSnapshot(
                 step = currentStep,
+                credentialText = nativeCredentialText(),
+                privacyPolicyUrl = runtime.configuration.legalLinks.privacyPolicyUrl,
+                termsUrl = runtime.configuration.legalLinks.termsUrl,
                 settingsFlow = settingsFlow,
                 connectionOnly = connectionOnly,
                 stepIndex = stepIndex(currentStep),
@@ -549,7 +574,7 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
         STEP_FEATURES -> 1
         STEP_AUTO_PAY -> 2
         STEP_AGREEMENT -> 3
-        else -> 4
+        else -> 0
     }
 
     private companion object {
@@ -560,7 +585,7 @@ class NwcNativeOnboardingController internal constructor(private val runtime: Nw
         const val STEP_WALLET = "wallet"
         const val CONFIRMATION_ALWAYS = "always"
         const val CONFIRMATION_ABOVE = "above"
-        const val ONBOARDING_STEP_COUNT = 5
+        const val ONBOARDING_STEP_COUNT = 4
     }
 }
 

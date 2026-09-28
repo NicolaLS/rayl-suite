@@ -1,5 +1,5 @@
 <resources>
-    <string name="add_wallet_title">Connect Wallet</string>
+    <string name="add_wallet_title">Add NWC Wallet</string>
     <string name="add_wallet_description">Copy a NWC URI and come back here, or scan the QR code.</string>
     <string name="add_wallet_uri_label">Wallet Connect URI</string>
     <string name="add_wallet_uri_placeholder">nostr+walletconnect://your-wallet-public-key?relay=…</string>

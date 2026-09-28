@@ -15,8 +15,7 @@ import xyz.lilsus.raylsuite.feature.paymentui.components.SessionTransactionsScre
  * This session's payments and their receipts. The selected transaction is hoisted so a result on
  * the Scan tab can open its receipt directly.
  *
- * [onBack] is supplied only by a product that reaches this screen from Scan instead of a tab; it
- * adds the back control and makes system back leave the list.
+ * [onBack] returns to Scan from the list; system back from a receipt first returns to the list.
  */
 @Composable
 fun PaymentRecentScreen(

@@ -73,17 +73,15 @@ private final class NativePaymentScanModel: ObservableObject {
 
     init(
         controller: NativePaymentScanController,
-        recentController: NativePaymentRecentController?
+        recentController: NativePaymentRecentController
     ) {
         self.controller = controller
         cancels.append(controller.observe { [weak self] snapshot in
             self?.snapshot = snapshot
         })
-        if let recentController {
-            cancels.append(recentController.observe { [weak self] snapshot in
-                self?.recentSnapshot = snapshot
-            })
-        }
+        cancels.append(recentController.observe { [weak self] snapshot in
+            self?.recentSnapshot = snapshot
+        })
         cancels.append(controller.observeMessages { [weak self] message in
             guard let self else { return }
             messageDismissTask?.cancel()
@@ -117,13 +115,11 @@ struct NativePaymentScanView: View {
     @State private var seenRecentCount = 0
     @State private var isVisible = false
 
-    private let recentController: NativePaymentRecentController?
+    private let recentController: NativePaymentRecentController
 
-    /// [recentController] is supplied only by a product that reaches Recent from Scan instead of
-    /// from a tab of its own.
     init(
         controller: NativePaymentScanController,
-        recentController: NativePaymentRecentController? = nil
+        recentController: NativePaymentRecentController
     ) {
         _model = StateObject(wrappedValue: NativePaymentScanModel(
             controller: controller,
@@ -133,19 +129,13 @@ struct NativePaymentScanView: View {
     }
 
     var body: some View {
-        Group {
-            if recentController != nil {
-                NavigationStack(path: recentNavigationPath) {
-                    scanRoot
-                        .toolbar(.hidden, for: .navigationBar)
-                        .navigationDestination(for: ScanRecentRoute.self) { route in
-                            recentDestination(route)
-                                .toolbar(.visible, for: .navigationBar)
-                        }
+        NavigationStack(path: recentNavigationPath) {
+            scanRoot
+                .toolbar(.hidden, for: .navigationBar)
+                .navigationDestination(for: ScanRecentRoute.self) { route in
+                    recentDestination(route)
+                        .toolbar(.visible, for: .navigationBar)
                 }
-            } else {
-                scanRoot
-            }
         }
         .sheet(isPresented: sheetPresented) {
             if let sheet = model.snapshot?.sheet, sheet.kind != "manualAmount" {
@@ -174,7 +164,7 @@ struct NativePaymentScanView: View {
             if shown {
                 seenRecentCount = Int(model.snapshot?.recent?.transactionCount ?? 0)
             } else {
-                recentController?.closeDetail()
+                recentController.closeDetail()
             }
             updateActivity()
         }
@@ -205,7 +195,7 @@ struct NativePaymentScanView: View {
         }
         .background(Color(uiColor: .systemBackground))
         .overlay(alignment: .topTrailing) {
-            if let recent = model.snapshot?.recent, recentController != nil {
+            if let recent = model.snapshot?.recent {
                 RecentPaymentsButton(
                     entry: recent,
                     newCount: max(
@@ -248,10 +238,10 @@ struct NativePaymentScanView: View {
                 showsRecent = true
                 switch last {
                 case .recent:
-                    if model.recentTransactionId != nil { recentController?.closeDetail() }
+                    if model.recentTransactionId != nil { recentController.closeDetail() }
                 case .transaction(let id):
                     if model.recentTransactionId != id {
-                        recentController?.selectTransaction(id: id)
+                        recentController.selectTransaction(id: id)
                     }
                 }
             }
@@ -260,7 +250,7 @@ struct NativePaymentScanView: View {
 
     @ViewBuilder
     private func recentDestination(_ route: ScanRecentRoute) -> some View {
-        if let snapshot = model.recentSnapshot, let recentController {
+        if let snapshot = model.recentSnapshot {
             switch route {
             case .recent:
                 NativePaymentRecentList(snapshot: snapshot, destination: ScanRecentRoute.transaction)
@@ -338,7 +328,7 @@ struct NativePaymentScanView: View {
 
     private func updateActivity() {
         let active = isVisible && isSelected && scenePhase == .active
-        recentController?.setActive(active: active && showsRecent)
+        recentController.setActive(active: active && showsRecent)
         // Clear the previous selection before rearming the camera for another scan of that QR.
         model.controller.setActive(
             active: active && !showsRecent && model.recentTransactionId == nil

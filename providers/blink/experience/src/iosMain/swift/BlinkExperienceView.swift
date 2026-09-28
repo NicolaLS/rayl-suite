@@ -3,7 +3,6 @@ import Shared
 
 private func makeBlinkShellAdapter(_ experience: BlinkIosExperience) -> NativeShellAdapter {
     NativeShellAdapter(
-    visibleTabIds: ["scan", "hub", "settings"],
     initialStage: {
         experience.isOnboarded() ? .tabs : .onboarding
     },
@@ -20,12 +19,6 @@ private func makeBlinkShellAdapter(_ experience: BlinkIosExperience) -> NativeSh
     observeTheme: { observer in
         experience.observeTheme(onChange: observer.send)
     },
-    initialRecentBadgeCount: { Int(experience.recentBadgeCount()) },
-    observeRecentBadgeCount: { observer in
-        experience.observeRecentBadgeCount { value in
-            observer.send(Int(value.intValue))
-        }
-    },
     observeTabTitles: { observer in
         experience.observeTabTitles(onChange: observer.send)
     },
@@ -33,13 +26,9 @@ private func makeBlinkShellAdapter(_ experience: BlinkIosExperience) -> NativeSh
         AnyView(
             NativePaymentScanView(
                 controller: experience.scanController(),
-                // Blink hides the Recent tab, so Scan presents this session's payments itself.
                 recentController: experience.recentController()
             )
         )
-    },
-    nativeRecentView: {
-        AnyView(NativePaymentRecentView(controller: experience.recentController()))
     },
     nativeHubView: {
         AnyView(NativePaymentHubView(controller: experience.hubController()))
@@ -135,7 +124,6 @@ private final class BlinkWalletSettingsModel: ObservableObject {
 private struct BlinkWalletSettingsActionsView: View {
     @StateObject private var model: BlinkWalletSettingsModel
     @State private var showsFundingWallets = false
-    @State private var confirmsRemoval = false
 
     init(controller: BlinkNativeSettingsController) {
         _model = StateObject(wrappedValue: BlinkWalletSettingsModel(controller: controller))
@@ -171,22 +159,15 @@ private struct BlinkWalletSettingsActionsView: View {
 
                     Divider()
 
-                    Button(role: .destructive) {
-                        confirmsRemoval = true
-                    } label: {
-                        Label(snapshot.removeTitle, systemImage: "trash")
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                    .alert(snapshot.removeDialogTitle, isPresented: $confirmsRemoval) {
-                        Button(snapshot.removeCancelTitle, role: .cancel) {}
-                        Button(snapshot.removeConfirmTitle, role: .destructive) {
-                            model.controller.removeWallet()
-                        }.disabled(!snapshot.canRemove)
-                    } message: {
-                        Text(snapshot.removeDialogDescription)
-                    }
+                    NativeWalletRemovalAction(
+                        title: snapshot.removeTitle,
+                        confirmationTitle: snapshot.removeDialogTitle,
+                        message: snapshot.removeDialogDescription,
+                        cancelTitle: snapshot.removeCancelTitle,
+                        confirmTitle: snapshot.removeConfirmTitle,
+                        canRemove: snapshot.canRemove,
+                        onRemove: model.controller.removeWallet
+                    )
                 }
                 .sheet(isPresented: $showsFundingWallets) {
                     fundingWalletPicker(snapshot)

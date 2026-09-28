@@ -5,3 +5,29 @@ import xyz.lilsus.raylsuite.core.ui.resources.nativeString
 
 suspend fun nativeBackActionText(): String =
     nativeString(NativeStringResource(table = "CoreUI", key = "action_back"))
+
+data class NativeCredentialText(
+    val connect: String,
+    val instructions: String,
+    val connectionNotice: String,
+    val privacy: String,
+    val terms: String,
+    val show: String,
+    val hide: String,
+    val paste: String
+)
+
+suspend fun nativeCredentialText(): NativeCredentialText = NativeCredentialText(
+    connect = nativeString(NativeStringResource("CoreUI", "credential_connect")),
+    instructions = nativeString(
+        NativeStringResource(table = "CoreUI", key = "credential_instructions")
+    ),
+    connectionNotice = nativeString(
+        NativeStringResource(table = "CoreUI", key = "credential_connection_notice")
+    ),
+    privacy = nativeString(NativeStringResource(table = "CoreUI", key = "credential_privacy")),
+    terms = nativeString(NativeStringResource(table = "CoreUI", key = "credential_terms")),
+    show = nativeString(NativeStringResource(table = "CoreUI", key = "credential_show")),
+    hide = nativeString(NativeStringResource(table = "CoreUI", key = "credential_hide")),
+    paste = nativeString(NativeStringResource(table = "CoreUI", key = "credential_paste"))
+)

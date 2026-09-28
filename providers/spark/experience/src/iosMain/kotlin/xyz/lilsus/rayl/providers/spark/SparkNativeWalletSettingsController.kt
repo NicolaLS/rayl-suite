@@ -17,30 +17,20 @@ import xyz.lilsus.rayl.providers.spark.feature.walletconnection.WalletAction
 import xyz.lilsus.rayl.providers.spark.feature.walletconnection.WalletMessage
 import xyz.lilsus.rayl.providers.spark.feature.walletconnection.WalletViewModel
 import xyz.lilsus.rayl.providers.spark.feature.walletconnection.nativeSparkWalletConnectionText
-import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
-import xyz.lilsus.raylsuite.core.ui.resources.nativeString
 import xyz.lilsus.raylsuite.feature.walletmanagement.nativeWalletManagementText
+import xyz.lilsus.raylsuite.feature.walletmanagement.nativeWalletRemovalMessage
 
 data class SparkNativeWalletSettingsSnapshot(
-    val settingsTitle: String,
-    val settingsSubtitle: String,
-    val screenTitle: String,
-    val emptyDescription: String,
-    val addTitle: String,
     val removeTitle: String,
     val removeConfirmationTitle: String,
     val removeConfirmationBody: String,
     val cancelTitle: String,
-    val walletId: String?,
-    val walletTitle: String?,
-    val walletDetails: List<String>,
     val isWorking: Boolean,
     val errorMessage: String?
 )
 
 class SparkNativeWalletSettingsController internal constructor(
     walletAccess: WalletAccess,
-    private val networkLabel: String,
     languageChanges: Flow<*>,
     private val isSubmitting: StateFlow<Boolean>,
     private val appName: String
@@ -51,7 +41,7 @@ class SparkNativeWalletSettingsController internal constructor(
 
     init {
         scope.launch {
-            combine(wallet.state, languageChanges) { _, _ -> Unit }
+            combine(wallet.state, languageChanges, isSubmitting) { _, _, _ -> Unit }
                 .collect { publishSnapshot() }
         }
     }
@@ -75,40 +65,19 @@ class SparkNativeWalletSettingsController internal constructor(
         val state = wallet.state.value
         val management = nativeWalletManagementText()
         val connection = nativeSparkWalletConnectionText(appName)
-        val title =
-            nativeString(
-                NativeStringResource(table = "SparkExperience", key = "spark_settings_wallet_title")
-            )
-        val subtitle =
-            nativeString(
-                NativeStringResource(
-                    table = "SparkExperience",
-                    key = "spark_settings_wallet_subtitle"
-                )
-            )
-        val connected = state.access == WalletAccessState.Connected
-
         snapshot.value =
             SparkNativeWalletSettingsSnapshot(
-                settingsTitle = title,
-                settingsSubtitle = subtitle,
-                screenTitle = management.screenTitle,
-                emptyDescription = management.emptyDescription,
-                addTitle = management.addTitle,
-                removeTitle = connection.removeConfirm,
-                removeConfirmationTitle = connection.removeTitle,
-                removeConfirmationBody = connection.removeBody,
+                removeTitle = management.removeTitle,
+                removeConfirmationTitle = management.removeConfirmationTitle,
+                removeConfirmationBody = if (isSubmitting.value) {
+                    nativeWalletRemovalMessage(true)
+                } else {
+                    connection.removeBody + "\n\n" + nativeWalletRemovalMessage(false)
+                },
                 cancelTitle = connection.cancel,
-                walletId = if (connected) SPARK_WALLET_ID else null,
-                walletTitle = if (connected) title else null,
-                walletDetails = if (connected) listOf(subtitle, networkLabel) else emptyList(),
-                isWorking = state.access == WalletAccessState.Removing,
+                isWorking = state.access != WalletAccessState.Connected || isSubmitting.value,
                 errorMessage = state.message?.message(connection)
             )
-    }
-
-    private companion object {
-        const val SPARK_WALLET_ID = "spark"
     }
 }
 

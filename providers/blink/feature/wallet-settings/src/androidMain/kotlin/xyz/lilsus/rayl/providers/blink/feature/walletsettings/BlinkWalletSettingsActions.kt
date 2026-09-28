@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountBalanceWallet
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -34,6 +33,7 @@ import xyz.lilsus.rayl.providers.blink.integration.blink.BlinkWalletCurrency
 import xyz.lilsus.rayl.providers.blink.ui.blinkErrorMessageFor
 import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRow
 import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRowDefaults
+import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalAction
 
 /** Android renderer for Blink's wallet settings actions. */
 @Composable
@@ -47,7 +47,6 @@ fun BlinkWalletSettingsActions(
     removalMessage: String? = null
 ) {
     var showFundingWallets by remember { mutableStateOf(false) }
-    var showRemoveConfirmation by remember { mutableStateOf(false) }
 
     Column(
         modifier = modifier.fillMaxWidth(),
@@ -72,12 +71,10 @@ fun BlinkWalletSettingsActions(
                 modifier = Modifier.size(AppSettingsRowDefaults.ChevronSize)
             )
         }
-        AppSettingsRow(
-            title = stringResource(R.string.settings_blink_connection_remove),
-            onClick = { showRemoveConfirmation = true },
-            icon = Icons.Filled.Delete,
-            iconTint = MaterialTheme.colorScheme.error,
-            contentColor = MaterialTheme.colorScheme.error,
+        WalletRemovalAction(
+            onRemoveWallet = onRemoveWallet,
+            canRemove = canRemove,
+            removalMessage = removalMessage,
             testTag = BlinkWalletSettingsTestTags.REMOVE_BUTTON
         )
     }
@@ -90,49 +87,6 @@ fun BlinkWalletSettingsActions(
                 showFundingWallets = false
             },
             onDismiss = { showFundingWallets = false }
-        )
-    }
-
-    if (showRemoveConfirmation) {
-        AlertDialog(
-            onDismissRequest = { showRemoveConfirmation = false },
-            title = {
-                Text(stringResource(R.string.settings_blink_connection_remove_title))
-            },
-            text = {
-                Text(
-                    removalMessage ?: stringResource(
-                        R.string.settings_blink_connection_remove_description,
-                        xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
-                    )
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    enabled = canRemove,
-                    onClick = {
-                        showRemoveConfirmation = false
-                        onRemoveWallet()
-                    }
-                ) {
-                    Text(
-                        text =
-                            stringResource(
-                                R.string.settings_blink_connection_remove_confirm
-                            ),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showRemoveConfirmation = false }) {
-                    Text(
-                        stringResource(
-                            R.string.settings_blink_connection_remove_cancel
-                        )
-                    )
-                }
-            }
         )
     }
 }

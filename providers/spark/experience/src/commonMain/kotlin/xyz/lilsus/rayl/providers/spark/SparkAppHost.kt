@@ -5,6 +5,7 @@ import xyz.lilsus.rayl.providers.spark.application.AppEnvironment
 import xyz.lilsus.rayl.providers.spark.application.payment.PaymentLinkInbox
 import xyz.lilsus.rayl.providers.spark.application.payment.createPaymentLinkInbox
 import xyz.lilsus.rayl.providers.spark.application.wallet.WalletAccess
+import xyz.lilsus.raylsuite.core.model.WalletStartMode
 
 enum class SparkEnvironment {
     DEBUG,
@@ -13,13 +14,10 @@ enum class SparkEnvironment {
 
 class SparkAppHost internal constructor(
     internal val bootstrapConfig: AppBootstrapConfig,
+    internal val startMode: WalletStartMode,
     internal val walletAccess: WalletAccess,
     internal val paymentLinks: PaymentLinkInbox = createPaymentLinkInbox()
 ) {
-    fun offerPaymentLink(rawUrl: String) {
-        paymentLinks.offer(rawUrl)
-    }
-
     override fun toString(): String = "SparkAppHost(<opaque>)"
 }
 

@@ -323,6 +323,52 @@
         }
       }
     },
+    "wallet_cleanup_failed" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl konnte die vorherige Wallet-Verbindung nicht vollständig entfernen. Versuche es erneut, um fortzufahren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl could not finish clearing the previous wallet connection. Retry to continue."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl no pudo terminar de borrar la conexión de la cartera anterior. Vuelve a intentarlo para continuar."
+          }
+        }
+      }
+    },
+    "wallet_cleanup_retry" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erneut versuchen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Retry"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentar"
+          }
+        }
+      }
+    },
     "welcome_body" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -365,50 +411,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Bienvenido a Rayl"
-          }
-        }
-      }
-    },
-    "wallet_cleanup_failed" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rayl could not finish clearing the previous wallet connection. Retry to continue."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rayl no pudo terminar de borrar la conexión de la cartera anterior. Vuelve a intentarlo para continuar."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rayl konnte die vorherige Wallet-Verbindung nicht vollständig entfernen. Versuche es erneut, um fortzufahren."
-          }
-        }
-      }
-    },
-    "wallet_cleanup_retry" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retry"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reintentar"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erneut versuchen"
           }
         }
       }

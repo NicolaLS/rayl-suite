@@ -260,19 +260,19 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "WALLET IMPORTIEREN"
+            "value" : "Verbinden"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "IMPORT WALLET"
+            "value" : "Connect"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "IMPORTAR BILLETERA"
+            "value" : "Conectar"
           }
         }
       }
@@ -306,19 +306,19 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zahlungs-Wallet\nverbinden."
+            "value" : "Spark-Wallet hinzufügen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Connect your\npayment wallet."
+            "value" : "Add Spark Wallet"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Conecta tu billetera\nde pagos."
+            "value" : "Añadir billetera Spark"
           }
         }
       }

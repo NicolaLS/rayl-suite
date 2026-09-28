@@ -2,12 +2,8 @@ package xyz.lilsus.rayl.providers.blink
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,8 +18,7 @@ import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.feature.appshell.AppTab
 import xyz.lilsus.raylsuite.feature.appshell.AppTabScaffold
 import xyz.lilsus.raylsuite.feature.paymenthub.PaymentHubTab
-import xyz.lilsus.raylsuite.feature.paymentui.PaymentRecentScreen
-import xyz.lilsus.raylsuite.feature.paymentui.PaymentScanScreen
+import xyz.lilsus.raylsuite.feature.paymentui.PaymentScanFlow
 import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 import xyz.lilsus.raylsuite.feature.settings.SettingsFlow
 import xyz.lilsus.raylsuite.feature.walletmanagement.R as WalletManagementR
@@ -56,8 +51,7 @@ private fun BlinkTabs(
         selectedTab = selectedTab,
         onTabSelected = { tab ->
             if (!runtime.paymentCoordinator.isSubmitting.value) tabState.select(tab)
-        },
-        tabs = BLINK_PRIMARY_TABS
+        }
     ) { tab ->
         BlinkTabContent(
             runtime = runtime,
@@ -89,57 +83,18 @@ internal fun BlinkTabContent(
     val receiptFeeInformation = stringResource(BlinkUiR.string.receipt_fee_blink_hint)
 
     when (tab) {
-        // Blink has no Recent tab, so its session history lives behind the Scan screen's button.
-        AppTab.Scan -> {
-            var showingRecent by rememberSaveable { mutableStateOf(false) }
-            LaunchedEffect(isSubmitting) {
-                if (isSubmitting) {
-                    tabState.selectTransaction(null)
-                    showingRecent = false
-                }
-            }
-            if (showingRecent) {
-                PaymentRecentScreen(
-                    state = flowState,
-                    receiptFeeInformation = receiptFeeInformation,
-                    selectedTransactionId = selectedTransactionId,
-                    onSelectTransaction = tabState::selectTransaction,
-                    onIntent = coordinator::dispatch,
-                    onBack = {
-                        tabState.selectTransaction(null)
-                        showingRecent = false
-                    }
-                )
-            } else {
-                PaymentScanScreen(
-                    state = flowState,
-                    messageEvents = messages,
-                    appTitle = runtime.configuration.appName,
-                    savePrompt = hubState.savePrompt,
-                    onIntent = coordinator::dispatch,
-                    onHubIntent = runtime.paymentHub::dispatch,
-                    onOpenTransaction = { id ->
-                        if (!coordinator.isSubmitting.value) {
-                            tabState.selectTransaction(id)
-                            showingRecent = true
-                        }
-                    },
-                    onOpenRecent = if (isSubmitting) {
-                        null
-                    } else {
-                        { if (!coordinator.isSubmitting.value) showingRecent = true }
-                    }
-                )
-            }
-        }
-
-        AppTab.Recent ->
-            PaymentRecentScreen(
+        AppTab.Scan ->
+            PaymentScanFlow(
                 state = flowState,
-                receiptFeeInformation = receiptFeeInformation,
+                messageEvents = messages,
+                appTitle = runtime.configuration.appName,
+                savePrompt = hubState.savePrompt,
+                isSubmitting = isSubmitting,
                 selectedTransactionId = selectedTransactionId,
                 onSelectTransaction = tabState::selectTransaction,
-                onIntent = coordinator::dispatch
+                receiptFeeInformation = receiptFeeInformation,
+                onIntent = coordinator::dispatch,
+                onHubIntent = runtime.paymentHub::dispatch
             )
 
         AppTab.Hub -> BlinkHubTab(runtime = runtime, currencyCode = currencyCode)
@@ -205,5 +160,3 @@ private fun BlinkSettingsTab(
         }
     )
 }
-
-private val BLINK_PRIMARY_TABS = listOf(AppTab.Scan, AppTab.Hub, AppTab.Settings)

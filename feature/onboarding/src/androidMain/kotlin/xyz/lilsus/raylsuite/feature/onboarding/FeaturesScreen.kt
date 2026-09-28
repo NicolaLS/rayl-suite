@@ -45,7 +45,6 @@ fun FeaturesScreen(
     totalSteps: Int,
     onPageChanged: (Int) -> Unit,
     onContinue: () -> Unit,
-    onRequestCameraPermission: () -> Unit = {},
     onBack: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
@@ -98,10 +97,7 @@ fun FeaturesScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(
-                onClick = {
-                    onRequestCameraPermission()
-                    onContinue()
-                },
+                onClick = onContinue,
                 modifier =
                     Modifier
                         .fillMaxWidth()

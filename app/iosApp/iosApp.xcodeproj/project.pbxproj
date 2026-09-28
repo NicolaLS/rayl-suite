@@ -20,6 +20,8 @@
 		9319F0D3424F21CA12CFD693 /* blink_dashboard_api_keys.png in Resources */ = {isa = PBXBuildFile; fileRef = E44C5776A776765F3F772AE6 /* blink_dashboard_api_keys.png */; };
 		97B715AA94F1C50E03BE6B2F /* blink_dashboard_email.png in Resources */ = {isa = PBXBuildFile; fileRef = BC2886D02E50CCBBE7296BF7 /* blink_dashboard_email.png */; };
 		A1C2914A454483192B2DA915 /* BlinkWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 121F94BD3E44023657EF0431 /* BlinkWalletConnection.xcstrings */; };
+		A40000000000000000000004 /* BreezSdkSpark in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000002 /* BreezSdkSpark */; };
+		A40000000000000000000005 /* BreezSdkSpark in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000003 /* BreezSdkSpark */; };
 		BD1CD8020AA75DE8BD806D28 /* blink_dashboard_key_settings.png in Resources */ = {isa = PBXBuildFile; fileRef = 8BF1858AEA2F1117CB741F14 /* blink_dashboard_key_settings.png */; };
 		D30000000000000000000001 /* CoreUI.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000001 /* CoreUI.xcstrings */; };
 		D30000000000000000000002 /* AppShell.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C30000000000000000000002 /* AppShell.xcstrings */; };
@@ -37,6 +39,10 @@
 		D3000000000000000000000E /* NwcWalletDetails.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000E /* NwcWalletDetails.xcstrings */; };
 		D3000000000000000000000F /* RaylApp.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000F /* RaylApp.xcstrings */; };
 		D3CF307EE6BABC7238C09DC0 /* BlinkUI.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 0D78D1E3C8DCAC0CF7558919 /* BlinkUI.xcstrings */; };
+		D40000000000000000000001 /* SparkExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000001 /* SparkExperience.xcstrings */; };
+		D40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000002 /* SparkOnboarding.xcstrings */; };
+		D40000000000000000000003 /* SparkPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000003 /* SparkPayment.xcstrings */; };
+		D40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000004 /* SparkWalletConnection.xcstrings */; };
 		D8D428B72EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D8D428B62EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy */; };
 		E1DD348ED9D15B051664ABCC /* blink_dashboard_copy_key.png in Resources */ = {isa = PBXBuildFile; fileRef = 2452E53FCF66E3EE09362089 /* blink_dashboard_copy_key.png */; };
 		E2E000000000000000000008 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D8D428B62EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy */; };
@@ -55,18 +61,12 @@
 		E3000000000000000000000D /* NwcWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000D /* NwcWalletConnection.xcstrings */; };
 		E3000000000000000000000E /* NwcWalletDetails.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000E /* NwcWalletDetails.xcstrings */; };
 		E3000000000000000000000F /* RaylApp.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C3000000000000000000000F /* RaylApp.xcstrings */; };
+		E40000000000000000000001 /* SparkExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000001 /* SparkExperience.xcstrings */; };
+		E40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000002 /* SparkOnboarding.xcstrings */; };
+		E40000000000000000000003 /* SparkPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000003 /* SparkPayment.xcstrings */; };
+		E40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000004 /* SparkWalletConnection.xcstrings */; };
 		EE253643352FE7EBDE6C0C65 /* BlinkWalletSettings.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AC25F142F2335CECAEAB2D19 /* BlinkWalletSettings.xcstrings */; };
 		F66FC212555C239ADBBF0F03 /* blink_dashboard_api_keys.png in Resources */ = {isa = PBXBuildFile; fileRef = E44C5776A776765F3F772AE6 /* blink_dashboard_api_keys.png */; };
-		D40000000000000000000001 /* SparkExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000001 /* SparkExperience.xcstrings */; };
-		E40000000000000000000001 /* SparkExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000001 /* SparkExperience.xcstrings */; };
-		D40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000002 /* SparkOnboarding.xcstrings */; };
-		E40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000002 /* SparkOnboarding.xcstrings */; };
-		D40000000000000000000003 /* SparkPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000003 /* SparkPayment.xcstrings */; };
-		E40000000000000000000003 /* SparkPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000003 /* SparkPayment.xcstrings */; };
-		D40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000004 /* SparkWalletConnection.xcstrings */; };
-		E40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000004 /* SparkWalletConnection.xcstrings */; };
-		A40000000000000000000004 /* BreezSdkSpark in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000002 /* BreezSdkSpark */; };
-		A40000000000000000000005 /* BreezSdkSpark in Frameworks */ = {isa = PBXBuildFile; productRef = A40000000000000000000003 /* BreezSdkSpark */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -94,13 +94,13 @@
 		C3000000000000000000000D /* NwcWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = NwcWalletConnection.xcstrings; path = "../../providers/nwc/feature/wallet-connection/src/iosMain/resources/NwcWalletConnection.xcstrings"; sourceTree = "<group>"; };
 		C3000000000000000000000E /* NwcWalletDetails.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = NwcWalletDetails.xcstrings; path = "../../providers/nwc/feature/wallet-details/src/iosMain/resources/NwcWalletDetails.xcstrings"; sourceTree = "<group>"; };
 		C3000000000000000000000F /* RaylApp.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = RaylApp.xcstrings; path = ../shared/src/iosMain/resources/RaylApp.xcstrings; sourceTree = "<group>"; };
+		C40000000000000000000001 /* SparkExperience.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkExperience.xcstrings; path = ../../providers/spark/experience/src/iosMain/resources/SparkExperience.xcstrings; sourceTree = "<group>"; };
+		C40000000000000000000002 /* SparkOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkOnboarding.xcstrings; path = ../../providers/spark/feature/onboarding/src/iosMain/resources/SparkOnboarding.xcstrings; sourceTree = "<group>"; };
+		C40000000000000000000003 /* SparkPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkPayment.xcstrings; path = ../../providers/spark/feature/payment/src/iosMain/resources/SparkPayment.xcstrings; sourceTree = "<group>"; };
+		C40000000000000000000004 /* SparkWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkWalletConnection.xcstrings; path = "../../providers/spark/feature/wallet-connection/src/iosMain/resources/SparkWalletConnection.xcstrings"; sourceTree = "<group>"; };
 		D8D428B62EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		E2E000000000000000000001 /* Rayl E2E.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rayl E2E.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		E44C5776A776765F3F772AE6 /* blink_dashboard_api_keys.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = blink_dashboard_api_keys.png; path = ../../providers/blink/feature/onboarding/src/iosMain/resources/assets/blink_dashboard_api_keys.png; sourceTree = "<group>"; };
-		C40000000000000000000001 /* SparkExperience.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkExperience.xcstrings; path = "../../providers/spark/experience/src/iosMain/resources/SparkExperience.xcstrings"; sourceTree = "<group>"; };
-		C40000000000000000000002 /* SparkOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkOnboarding.xcstrings; path = "../../providers/spark/feature/onboarding/src/iosMain/resources/SparkOnboarding.xcstrings"; sourceTree = "<group>"; };
-		C40000000000000000000003 /* SparkPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkPayment.xcstrings; path = "../../providers/spark/feature/payment/src/iosMain/resources/SparkPayment.xcstrings"; sourceTree = "<group>"; };
-		C40000000000000000000004 /* SparkWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkWalletConnection.xcstrings; path = "../../providers/spark/feature/wallet-connection/src/iosMain/resources/SparkWalletConnection.xcstrings"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -301,7 +301,6 @@
 			fileSystemSynchronizedGroups = (
 				8AB20B57D09014CBC9805679 /* Blink Experience Swift */,
 				ABC5659E4400D0CC657B53E3 /* Nwc Experience Swift */,
-				F40000000000000000000001 /* Spark Experience Swift */,
 				D90BDCC58B0B3EAC96B0EEB8 /* iosApp */,
 				F22E00000000000000000001 /* App Shell Swift */,
 				F22E00000000000000000002 /* Settings Swift */,
@@ -309,6 +308,7 @@
 				F22E00000000000000000004 /* Payment Hub Swift */,
 				F22E00000000000000000005 /* Onboarding Swift */,
 				F22E00000000000000000006 /* Wallet Management Swift */,
+				F40000000000000000000001 /* Spark Experience Swift */,
 			);
 			name = iosApp;
 			packageProductDependencies = (
@@ -334,7 +334,6 @@
 			fileSystemSynchronizedGroups = (
 				8AB20B57D09014CBC9805679 /* Blink Experience Swift */,
 				ABC5659E4400D0CC657B53E3 /* Nwc Experience Swift */,
-				F40000000000000000000001 /* Spark Experience Swift */,
 				D90BDCC58B0B3EAC96B0EEB8 /* iosApp */,
 				E2E000000000000000000002 /* iosAppE2E */,
 				F22E00000000000000000001 /* App Shell Swift */,
@@ -343,6 +342,7 @@
 				F22E00000000000000000004 /* Payment Hub Swift */,
 				F22E00000000000000000005 /* Onboarding Swift */,
 				F22E00000000000000000006 /* Wallet Management Swift */,
+				F40000000000000000000001 /* Spark Experience Swift */,
 			);
 			name = iosAppE2E;
 			packageProductDependencies = (
@@ -381,11 +381,11 @@
 			);
 			mainGroup = 97A229AE63675C10A9DAA454;
 			minimizedProjectReferenceProxies = 1;
-			preferredProjectObjectVersion = 77;
-			productRefGroup = E073F01B7BAFD6FD252567F6 /* Products */;
 			packageReferences = (
 				A40000000000000000000001 /* XCRemoteSwiftPackageReference "breez-sdk-spark-swift" */,
 			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E073F01B7BAFD6FD252567F6 /* Products */;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (

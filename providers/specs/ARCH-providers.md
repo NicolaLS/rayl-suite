@@ -6,6 +6,12 @@ payment input; `feature/payment-ui` supplies presentation models, user intents,
 and platform UI. Provider payment features translate their own state into that
 shared presentation.
 
+The [provider experience requirement](../../specs/REQ-provider-experience.md)
+requires consistent UI and UX across all providers. Shared platform shells own
+primary navigation; neutral credential forms, Scan/session-history presentation,
+and wallet-removal actions own common interactions. Provider composition supplies credentials,
+capability-specific controls, and execution callbacks.
+
 ## Composition and execution
 
 Blink and NWC assemble their runtimes in their `experience` modules. Each

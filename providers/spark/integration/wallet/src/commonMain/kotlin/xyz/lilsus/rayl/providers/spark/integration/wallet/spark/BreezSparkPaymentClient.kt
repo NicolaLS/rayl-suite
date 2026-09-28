@@ -9,6 +9,7 @@ import breez_sdk_spark.InputType
 import breez_sdk_spark.LnurlPayRequest
 import breez_sdk_spark.LnurlPayRequestDetails
 import breez_sdk_spark.Payment
+import breez_sdk_spark.PaymentDetails
 import breez_sdk_spark.PaymentRequest
 import breez_sdk_spark.PaymentStatus
 import breez_sdk_spark.PrepareLnurlPayRequest
@@ -51,7 +52,7 @@ class BreezSparkPaymentClient(private val sdk: BreezSdk) : SparkPaymentClient {
             additionalInstantParsers = listOf(PaymentInputParser(::parseSparkInput))
         )
 
-    override suspend fun parse(input: String): ParsedSdkInput = try {
+    override suspend fun parse(input: String): ParsedSdkInput =
         when (val result = inputParser.parse(input)) {
             is LightningInputParser.ParseResult.Success ->
                 when (val target = result.target) {
@@ -71,17 +72,10 @@ class BreezSparkPaymentClient(private val sdk: BreezSdk) : SparkPaymentClient {
                     else -> ParsedSdkInput.Unsupported
                 }
 
-            is LightningInputParser.ParseResult.Failure ->
-                when (result.reason) {
-                    LightningInputParser.FailureReason.BitcoinAddress -> ParsedSdkInput.OnChain
-                    else -> ParsedSdkInput.Unsupported
-                }
+            is LightningInputParser.ParseResult.Failure -> ParsedSdkInput.InvalidInput(
+                result.reason
+            )
         }
-    } catch (cancellation: CancellationException) {
-        throw cancellation
-    } catch (_: SdkException) {
-        ParsedSdkInput.Unsupported
-    }
 
     private suspend fun parseSparkInput(
         input: String
@@ -92,12 +86,19 @@ class BreezSparkPaymentClient(private val sdk: BreezSdk) : SparkPaymentClient {
         if (!SPARK_PREFIXES.any { input.startsWith(it, ignoreCase = true) }) {
             return PaymentInputParseAttempt.NoMatch
         }
-        return when (val parsed = normalizeBreezInput(sdk.parse(input))) {
+        val parsed = try {
+            normalizeBreezInput(sdk.parse(input))
+        } catch (cancellation: CancellationException) {
+            throw cancellation
+        } catch (_: SdkException) {
+            ParsedSdkInput.Unsupported
+        }
+        return when (parsed) {
             is ParsedSdkInput.SparkInvoice ->
                 PaymentInputParseAttempt.Parsed(SparkInputTarget(parsed))
 
             else -> PaymentInputParseAttempt.Rejected(
-                LightningInputParser.FailureReason.Unrecognized
+                LightningInputParser.FailureReason.InvalidInvoice("Invalid Spark invoice")
             )
         }
     }
@@ -143,7 +144,8 @@ class BreezSparkPaymentClient(private val sdk: BreezSdk) : SparkPaymentClient {
 
     override suspend fun prepareLnurl(
         request: ParsedSdkInput.LnurlPay,
-        amountSats: Satoshi
+        amountSats: Satoshi,
+        comment: String?
     ): SdkPreparationResult = preparationResult {
         val details = (request.payload as? BreezLnurlRequestPayload)?.details
             ?: error("LNURL request did not originate from Breez")
@@ -151,7 +153,7 @@ class BreezSparkPaymentClient(private val sdk: BreezSdk) : SparkPaymentClient {
             PrepareLnurlPayRequest(
                 amount = BigInteger.fromLong(amountSats.value),
                 payRequest = details,
-                comment = null,
+                comment = comment,
                 validateSuccessActionUrl = true,
                 tokenIdentifier = null,
                 conversionOptions = null,
@@ -239,7 +241,8 @@ class BreezSparkPaymentClient(private val sdk: BreezSdk) : SparkPaymentClient {
             PaymentStatus.PENDING -> SdkPaymentStatus.PENDING
             PaymentStatus.COMPLETED -> SdkPaymentStatus.COMPLETED
             PaymentStatus.FAILED -> SdkPaymentStatus.FAILED
-        }
+        },
+        preimage = details.paymentPreimage()
     )
 
     private fun ULong.checkedLong(label: String): Long {
@@ -263,6 +266,12 @@ class BreezSparkPaymentClient(private val sdk: BreezSdk) : SparkPaymentClient {
 
 private data class SparkInputTarget(val input: ParsedSdkInput.SparkInvoice) :
     LightningInputParser.Target
+
+internal fun PaymentDetails?.paymentPreimage(): String? = when (this) {
+    is PaymentDetails.Lightning -> htlcDetails.preimage
+    is PaymentDetails.Spark -> htlcDetails?.preimage
+    else -> null
+}?.trim()?.takeIf(String::isNotEmpty)
 
 private fun Bolt11Invoice.toParsedSdkInput(): ParsedSdkInput.Bolt11 {
     val timestamp = timestampSeconds.coerceAtLeast(0).toULong()
@@ -311,7 +320,8 @@ private fun normalizeBreezInput(input: InputType, allowBip21: Boolean): ParsedSd
             minSendableMsat = input.v1.payRequest.minSendable,
             maxSendableMsat = input.v1.payRequest.maxSendable,
             reviewDetails = input.v1.payRequest.toReviewDetails(),
-            payload = BreezLnurlRequestPayload(input.v1.payRequest)
+            payload = BreezLnurlRequestPayload(input.v1.payRequest),
+            commentAllowed = input.v1.payRequest.commentAllowed.toInt()
         )
 
         is InputType.LnurlPay -> ParsedSdkInput.LnurlPay(
@@ -321,7 +331,8 @@ private fun normalizeBreezInput(input: InputType, allowBip21: Boolean): ParsedSd
             minSendableMsat = input.v1.minSendable,
             maxSendableMsat = input.v1.maxSendable,
             reviewDetails = input.v1.toReviewDetails(),
-            payload = BreezLnurlRequestPayload(input.v1)
+            payload = BreezLnurlRequestPayload(input.v1),
+            commentAllowed = input.v1.commentAllowed.toInt()
         )
 
         is InputType.Bip21 -> normalizeBip21(input, allowBip21)
@@ -384,10 +395,12 @@ private fun applyBip21Amount(amountSats: ULong?, input: ParsedSdkInput): ParsedS
             maxSendableMsat = input.maxSendableMsat,
             reviewDetails = input.reviewDetails,
             payload = input.payload,
-            amountOverrideSats = amount
+            amountOverrideSats = amount,
+            commentAllowed = input.commentAllowed
         )
 
-        ParsedSdkInput.OnChain, ParsedSdkInput.Unsupported -> ParsedSdkInput.Unsupported
+        ParsedSdkInput.OnChain, ParsedSdkInput.Unsupported,
+        is ParsedSdkInput.InvalidInput -> ParsedSdkInput.Unsupported
     }
 }
 

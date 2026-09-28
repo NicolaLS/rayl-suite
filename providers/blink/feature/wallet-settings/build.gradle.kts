@@ -15,6 +15,7 @@ kotlin {
             implementation(libs.compose.runtime)
         }
         androidMain.dependencies {
+            implementation(project(":feature:wallet-management"))
             implementation(project(":core:ui"))
             implementation(libs.compose.foundation)
             implementation(libs.compose.material.icons.extended)

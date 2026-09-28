@@ -11,6 +11,16 @@ internal class NwcOnboardingState(private val settings: Settings) {
 
     val completed: StateFlow<Boolean> = mutableCompleted.asStateFlow()
 
+    private val mutableEducationStep =
+        MutableStateFlow(settings.getString(KEY_EDUCATION_STEP, "features"))
+    val educationStep = mutableEducationStep.asStateFlow()
+
+    fun moveToEducationStep(step: String) {
+        require(step in setOf("features", "autoPay", "agreement"))
+        settings.putString(KEY_EDUCATION_STEP, step)
+        mutableEducationStep.value = step
+    }
+
     fun complete() {
         if (mutableCompleted.value) return
 
@@ -28,6 +38,7 @@ internal class NwcOnboardingState(private val settings: Settings) {
         completed.value && walletConnected
 
     private companion object {
+        const val KEY_EDUCATION_STEP = "nwc.onboarding.education.step"
         const val KEY_COMPLETED = "onboarding.completed"
     }
 }

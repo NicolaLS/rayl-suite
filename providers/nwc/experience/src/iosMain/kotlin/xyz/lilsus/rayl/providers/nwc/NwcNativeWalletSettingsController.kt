@@ -9,25 +9,18 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
 import xyz.lilsus.rayl.providers.nwc.feature.walletdetails.nativeNwcWalletDetailsText
-import xyz.lilsus.rayl.providers.nwc.integration.nwc.NwcWalletConnection
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
 import xyz.lilsus.raylsuite.core.ui.resources.nativeString
 import xyz.lilsus.raylsuite.feature.walletmanagement.nativeWalletManagementText
 import xyz.lilsus.raylsuite.feature.walletmanagement.nativeWalletRemovalMessage
 
 data class NwcNativeWalletSettingsSnapshot(
-    val settingsTitle: String,
-    val settingsSubtitle: String,
-    val screenTitle: String,
-    val emptyDescription: String,
-    val addTitle: String,
     val removeTitle: String,
     val removeConfirmationTitle: String,
     val removeConfirmationBody: String,
     val cancelTitle: String,
     val walletId: String?,
     val walletTitle: String?,
-    val walletDetails: List<String>,
     val detailsTitle: String,
     val walletTypeLabel: String,
     val walletType: String,
@@ -108,12 +101,6 @@ class NwcNativeWalletSettingsController internal constructor(
 
         snapshot.value =
             NwcNativeWalletSettingsSnapshot(
-                settingsTitle = management.settingsTitle,
-                settingsSubtitle =
-                    connection?.settingsSubtitle() ?: management.disconnectedSubtitle,
-                screenTitle = management.screenTitle,
-                emptyDescription = management.emptyDescription,
-                addTitle = management.addTitle,
                 removeTitle = management.removeTitle,
                 removeConfirmationTitle = management.removeConfirmationTitle,
                 removeConfirmationBody = nativeWalletRemovalMessage(
@@ -124,7 +111,6 @@ class NwcNativeWalletSettingsController internal constructor(
                 walletTitle =
                     connection?.alias?.takeIf(String::isNotBlank)
                         ?: connection?.walletPublicKey,
-                walletDetails = emptyList(),
                 detailsTitle = details.title,
                 walletTypeLabel = details.typeLabel,
                 walletType = details.walletType,
@@ -137,14 +123,5 @@ class NwcNativeWalletSettingsController internal constructor(
                 },
                 isWorking = isWorking || runtime.paymentCoordinator.isSubmitting.value
             )
-    }
-}
-
-private fun NwcWalletConnection.settingsSubtitle(): String {
-    alias?.takeIf(String::isNotBlank)?.let { return it }
-    return if (walletPublicKey.length <= 12) {
-        walletPublicKey
-    } else {
-        "${walletPublicKey.take(6)}…${walletPublicKey.takeLast(4)}"
     }
 }

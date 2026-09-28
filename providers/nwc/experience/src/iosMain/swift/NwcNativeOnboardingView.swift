@@ -1,4 +1,3 @@
-import AVFoundation
 import Shared
 import SwiftUI
 import UIKit
@@ -36,7 +35,7 @@ struct NwcNativeOnboardingView: View {
                 if let snapshot = model.snapshot {
                     screen(snapshot)
                         .toolbar {
-                            if snapshot.settingsFlow || (!snapshot.connectionOnly && snapshot.step != "features") {
+                            if snapshot.settingsFlow || ["autoPay", "agreement", "instructions"].contains(snapshot.step) {
                                 ToolbarItem(placement: .topBarLeading) {
                                     Button(
                                         action: snapshot.settingsFlow
@@ -77,7 +76,7 @@ struct NwcNativeOnboardingView: View {
                 stepCount: snapshot.stepCount,
                 actionTitle: snapshot.featuresNextTitle,
                 onPageChanged: model.controller.setFeaturePage,
-                action: requestCameraPermissionThenContinue
+                action: model.controller.continueFeatures
             )
         case "autoPay":
             NativeOnboardingAutoPayView(
@@ -120,8 +119,8 @@ struct NwcNativeOnboardingView: View {
 
     private func instructions(_ snapshot: NwcNativeOnboardingSnapshot) -> some View {
         NativeOnboardingProgressLayout(
-            stepIndex: snapshot.stepIndex,
-            stepCount: snapshot.stepCount
+            stepIndex: 0,
+            stepCount: 0
         ) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
@@ -155,52 +154,41 @@ struct NwcNativeOnboardingView: View {
     }
 
     private func wallet(_ snapshot: NwcNativeOnboardingSnapshot) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text(snapshot.addDescription)
-                    .foregroundStyle(.secondary)
-
-                SecureField(
-                    snapshot.uriPlaceholder,
-                    text: Binding(
-                        get: { snapshot.uri },
-                        set: model.controller.updateUri
-                    ),
-                    prompt: Text(snapshot.uriLabel)
-                )
-                .textContentType(.password)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .submitLabel(.done)
-                .onSubmit(model.controller.submitUri)
-                .privacySensitive()
-                .padding()
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-
-                Button(snapshot.pasteTitle) {
-                    model.controller.pasteUri()
+        NativeCredentialConnectionView(
+            title: snapshot.addTitle,
+            description: snapshot.addDescription,
+            actionTitle: snapshot.credentialText.connect,
+            canSubmit: snapshot.canSubmitUri,
+            isSubmitting: false,
+            instructionsTitle: snapshot.credentialText.instructions,
+            connectionNotice: snapshot.credentialText.connectionNotice,
+            privacyTitle: snapshot.credentialText.privacy,
+            privacyPolicyUrl: snapshot.privacyPolicyUrl,
+            termsTitle: snapshot.credentialText.terms,
+            termsUrl: snapshot.termsUrl,
+            onInstructions: model.controller.showWalletInstructions,
+            onSubmit: model.controller.submitUri
+        ) {
+            NativeCredentialInput(
+                value: Binding(get: { snapshot.uri }, set: model.controller.updateUri),
+                label: snapshot.uriLabel,
+                placeholder: snapshot.uriPlaceholder,
+                showTitle: snapshot.credentialText.show,
+                hideTitle: snapshot.credentialText.hide,
+                pasteTitle: snapshot.credentialText.paste,
+                onPaste: model.controller.pasteUri,
+                onSubmit: {
+                    if snapshot.canSubmitUri { model.controller.submitUri() }
                 }
-
-                if let error = snapshot.uriError {
-                    Text(error)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                        .accessibilityAddTraits(.isStaticText)
-                }
-
-                Button(snapshot.connectWalletTitle, action: model.controller.submitUri)
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
-                    .frame(maxWidth: .infinity)
-                    .disabled(!snapshot.canSubmitUri)
-
-                scannerCard(snapshot)
+            )
+            if let error = snapshot.uriError {
+                Text(error)
+                    .font(.footnote)
+                    .foregroundStyle(.red)
+                    .accessibilityAddTraits(.isStaticText)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(24)
+            scannerCard(snapshot)
         }
-        .navigationTitle(snapshot.addTitle)
-        .navigationBarTitleDisplayMode(.inline)
         .onAppear {
             model.controller.setScannerActive(active: scenePhase == .active)
         }
@@ -372,18 +360,6 @@ struct NwcNativeOnboardingView: View {
                 }
             }
         )
-    }
-
-    private func requestCameraPermissionThenContinue() {
-        guard AVCaptureDevice.authorizationStatus(for: .video) == .notDetermined else {
-            model.controller.continueFeatures()
-            return
-        }
-        AVCaptureDevice.requestAccess(for: .video) { _ in
-            DispatchQueue.main.async {
-                model.controller.continueFeatures()
-            }
-        }
     }
 
     private func cameraMessage(_ snapshot: NwcNativeOnboardingSnapshot) -> String {

@@ -20,6 +20,7 @@ kotlin {
             implementation(libs.compose.runtime)
         }
         androidMain.dependencies {
+            implementation(libs.androidx.activity.compose)
             api(project(":core:ui"))
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.compose.foundation)

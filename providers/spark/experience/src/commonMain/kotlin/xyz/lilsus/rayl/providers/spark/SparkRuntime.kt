@@ -39,7 +39,9 @@ internal class SparkRuntime(
     private val mutableCloseFailed = MutableStateFlow(false)
     val closeFailed = mutableCloseFailed.asStateFlow()
 
-    val networkLabel = host.bootstrapConfig.environment.networkLabel
+    val onboardingState = SparkOnboardingState(appSettings, host.startMode)
+    val onboardingCompleted = onboardingState.completed
+
     val walletAccess = host.walletAccess
     val walletViewModel = WalletViewModel(walletAccess)
     val removed = walletAccess.removed
@@ -75,7 +77,14 @@ internal class SparkRuntime(
 
     init {
         scope.launch {
-            SparkDeepLinks.events.collect { host.offerPaymentLink(it) }
+            SparkDeepLinks.events.collect { link ->
+                if (onboardingState.canHandlePaymentDeepLink(
+                        walletConnected = walletAccess.state.value == WalletAccessState.Connected
+                    )
+                ) {
+                    host.paymentLinks.offer(link)
+                }
+            }
         }
         scope.launch {
             // A payment always presents on the Scan tab, wherever it was started from.
@@ -83,6 +92,10 @@ internal class SparkRuntime(
                 if (state != PaymentUiState.Active) tabState.requestScan()
             }
         }
+    }
+
+    fun completeOnboarding() {
+        onboardingState.complete()
     }
 
     fun resetPaymentSession() {

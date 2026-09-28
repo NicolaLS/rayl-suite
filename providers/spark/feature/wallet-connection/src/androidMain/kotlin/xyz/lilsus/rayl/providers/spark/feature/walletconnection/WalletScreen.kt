@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -17,23 +16,26 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import xyz.lilsus.rayl.providers.spark.application.wallet.CredentialProblemKind
 import xyz.lilsus.rayl.providers.spark.application.wallet.WalletAccessState
 import xyz.lilsus.rayl.providers.spark.feature.walletconnection.R
 import xyz.lilsus.raylsuite.core.ui.components.BackIconButton
+import xyz.lilsus.raylsuite.core.ui.components.CredentialConnectionScreen
+import xyz.lilsus.raylsuite.core.ui.components.CredentialInput
+import xyz.lilsus.raylsuite.core.ui.platform.rememberCredentialClipboard
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,8 +43,86 @@ fun WalletConnectionScreen(
     state: WalletUiState,
     onBack: (() -> Unit)?,
     dispatch: (WalletAction) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onShowInstructions: (() -> Unit)? = null,
+    privacyPolicyUrl: String? = null,
+    termsUrl: String? = null
 ) {
+    val clipboard = rememberCredentialClipboard()
+    val currentAccess by rememberUpdatedState(state.access)
+    DisposableEffect(clipboard) {
+        onDispose {
+            if (currentAccess == WalletAccessState.Connected) clipboard.clearAfterSaving()
+            clipboard.discard()
+        }
+    }
+    LaunchedEffect(state.access) {
+        if (state.access == WalletAccessState.Connected) clipboard.clearAfterSaving()
+    }
+    if (state.access == WalletAccessState.NoWallet ||
+        state.access == WalletAccessState.Connecting
+    ) {
+        CredentialConnectionScreen(
+            title = stringResource(R.string.spark_wallet_import_title),
+            description = stringResource(
+                R.string.spark_wallet_import_body,
+                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
+            ),
+            actionTitle = stringResource(R.string.spark_wallet_import_action),
+            canSubmit =
+                state.access == WalletAccessState.NoWallet && state.recoveryPhrase.isNotBlank(),
+            isSubmitting = state.access == WalletAccessState.Connecting,
+            onSubmit = { dispatch(WalletAction.Import) },
+            onBack = onBack,
+            onShowInstructions = onShowInstructions?.let { show ->
+                {
+                    clipboard.discard()
+                    dispatch(WalletAction.RecoveryPhraseChanged(""))
+                    show()
+                }
+            },
+            privacyPolicyUrl = privacyPolicyUrl,
+            termsUrl = termsUrl,
+            modifier = modifier
+        ) {
+            CredentialInput(
+                value = state.recoveryPhrase,
+                onValueChange = {
+                    clipboard.retainFor(it)
+                    dispatch(WalletAction.RecoveryPhraseChanged(it))
+                },
+                label = stringResource(R.string.spark_wallet_phrase_label),
+                placeholder = stringResource(R.string.spark_wallet_phrase_hint),
+                onPaste = {
+                    clipboard.read()?.trim()?.takeIf(String::isNotEmpty)?.let {
+                        dispatch(WalletAction.RecoveryPhraseChanged(it))
+                    }
+                },
+                onSubmit = {
+                    if (state.access == WalletAccessState.NoWallet &&
+                        state.recoveryPhrase.isNotBlank()
+                    ) {
+                        dispatch(WalletAction.Import)
+                    }
+                },
+                enabled = state.access == WalletAccessState.NoWallet,
+                multiline = true
+            )
+            Text(
+                text = stringResource(R.string.spark_wallet_storage_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            state.message?.let { message ->
+                Text(
+                    text = stringResource(message.resource()),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+        return
+    }
     Scaffold(
         modifier = modifier,
         topBar = {
@@ -78,7 +158,7 @@ fun WalletConnectionContent(
             WalletAccessState.Connecting,
             WalletAccessState.Removing -> ProgressContent(access)
 
-            WalletAccessState.NoWallet -> ImportContent(state, dispatch)
+            WalletAccessState.NoWallet -> Unit
 
             WalletAccessState.ReconnectRequired -> RecoveryContent(
                 title = R.string.spark_wallet_reconnect_title,
@@ -102,61 +182,6 @@ fun WalletConnectionContent(
     }
     if (state.confirmRemoval) {
         WalletRemovalConfirmation(dispatch)
-    }
-}
-
-@Composable
-private fun ImportContent(state: WalletUiState, dispatch: (WalletAction) -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.spark_wallet_import_title),
-            style = MaterialTheme.typography.headlineSmall
-        )
-        Text(
-            text = stringResource(
-                R.string.spark_wallet_import_body,
-                xyz.lilsus.raylsuite.core.ui.platform.LocalProductName.current
-            ),
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        OutlinedTextField(
-            value = state.recoveryPhrase,
-            onValueChange = { dispatch(WalletAction.RecoveryPhraseChanged(it)) },
-            label = { Text(stringResource(R.string.spark_wallet_phrase_label)) },
-            placeholder = { Text(stringResource(R.string.spark_wallet_phrase_hint)) },
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions =
-                KeyboardOptions(
-                    capitalization = KeyboardCapitalization.None,
-                    autoCorrectEnabled = false,
-                    keyboardType = KeyboardType.Password
-                ),
-            minLines = 4,
-            modifier = Modifier.fillMaxWidth()
-        )
-        Text(
-            text = stringResource(R.string.spark_wallet_storage_note),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        state.message?.let { message ->
-            Text(
-                text = stringResource(message.resource()),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.error
-            )
-        }
-        Button(
-            enabled = state.recoveryPhrase.isNotBlank(),
-            onClick = { dispatch(WalletAction.Import) },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.spark_wallet_import_action))
-        }
     }
 }
 

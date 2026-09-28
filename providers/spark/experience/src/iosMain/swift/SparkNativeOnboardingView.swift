@@ -1,4 +1,3 @@
-import AVFoundation
 import Shared
 import SwiftUI
 
@@ -74,7 +73,7 @@ struct SparkNativeOnboardingView: View {
                 stepCount: snapshot.stepCount,
                 actionTitle: snapshot.featuresNextTitle,
                 onPageChanged: model.controller.setFeaturePage,
-                action: requestCameraPermissionThenContinue
+                action: model.controller.continueFeatures
             )
         case "autoPay":
             NativeOnboardingAutoPayView(
@@ -117,8 +116,8 @@ struct SparkNativeOnboardingView: View {
 
     private func instructions(_ snapshot: SparkNativeOnboardingSnapshot) -> some View {
         NativeOnboardingProgressLayout(
-            stepIndex: snapshot.stepIndex,
-            stepCount: snapshot.stepCount
+            stepIndex: 0,
+            stepCount: 0
         ) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
@@ -151,66 +150,68 @@ struct SparkNativeOnboardingView: View {
         }
     }
 
+    @ViewBuilder
     private func wallet(_ snapshot: SparkNativeOnboardingSnapshot) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                switch snapshot.walletKind {
-                case "import":
-                    importWallet(snapshot)
-                case "recovery":
-                    recovery(snapshot)
-                case "progress":
-                    progress(snapshot)
-                default:
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
+        if snapshot.walletKind == "import" || snapshot.walletKind == "connecting" {
+            NativeCredentialConnectionView(
+                title: snapshot.walletTitle,
+                description: snapshot.walletBody,
+                actionTitle: snapshot.importTitle,
+                canSubmit: snapshot.canImport,
+                isSubmitting: snapshot.walletKind == "connecting",
+                instructionsTitle: snapshot.credentialText.instructions,
+                connectionNotice: snapshot.credentialText.connectionNotice,
+                privacyTitle: snapshot.credentialText.privacy,
+                privacyPolicyUrl: snapshot.privacyPolicyUrl,
+                termsTitle: snapshot.credentialText.terms,
+                termsUrl: snapshot.termsUrl,
+                onInstructions: model.controller.showWalletInstructions,
+                onSubmit: model.controller.importWallet
+            ) {
+                NativeCredentialInput(
+                    value: Binding(
+                        get: { snapshot.recoveryPhrase },
+                        set: model.controller.updateRecoveryPhrase
+                    ),
+                    label: snapshot.phraseLabel,
+                    placeholder: snapshot.phraseHint,
+                    showTitle: snapshot.credentialText.show,
+                    hideTitle: snapshot.credentialText.hide,
+                    pasteTitle: snapshot.credentialText.paste,
+                    enabled: snapshot.walletKind == "import",
+                    multiline: true,
+                    onPaste: model.controller.pasteRecoveryPhrase,
+                    onSubmit: {
+                        if snapshot.canImport { model.controller.importWallet() }
+                    }
+                )
+                Text(snapshot.storageNote)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                if let error = snapshot.walletError {
+                    Text(error)
+                        .font(.footnote)
+                        .foregroundStyle(.red)
+                        .accessibilityAddTraits(.isStaticText)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(24)
+        } else {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 20) {
+                    if snapshot.walletKind == "recovery" {
+                        recovery(snapshot)
+                    } else {
+                        progress(snapshot)
+                    }
+                }
+                .padding(24)
+                .frame(maxWidth: 608, alignment: .leading)
+                .frame(maxWidth: .infinity)
+            }
+            .background(Color(uiColor: .systemGroupedBackground))
+            .navigationTitle(snapshot.walletTitle)
+            .navigationBarTitleDisplayMode(.inline)
         }
-        .navigationTitle(snapshot.walletTitle)
-        .navigationBarTitleDisplayMode(.inline)
-    }
-
-    @ViewBuilder
-    private func importWallet(_ snapshot: SparkNativeOnboardingSnapshot) -> some View {
-        Text(snapshot.walletTitle)
-            .font(.title2.bold())
-        Text(snapshot.walletBody)
-            .foregroundStyle(.secondary)
-
-        SecureField(
-            snapshot.phraseHint,
-            text: Binding(
-                get: { snapshot.recoveryPhrase },
-                set: model.controller.updateRecoveryPhrase
-            ),
-            prompt: Text(snapshot.phraseLabel)
-        )
-        .textInputAutocapitalization(.never)
-        .autocorrectionDisabled()
-        .submitLabel(.done)
-        .privacySensitive()
-        .padding()
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
-
-        Text(snapshot.storageNote)
-            .font(.footnote)
-            .foregroundStyle(.secondary)
-
-        if let error = snapshot.walletError {
-            Text(error)
-                .font(.footnote)
-                .foregroundStyle(.red)
-                .accessibilityAddTraits(.isStaticText)
-        }
-
-        Button(snapshot.importTitle, action: model.controller.importWallet)
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            .frame(maxWidth: .infinity)
-            .disabled(!snapshot.canImport)
     }
 
     @ViewBuilder
@@ -275,15 +276,4 @@ struct SparkNativeOnboardingView: View {
         )
     }
 
-    private func requestCameraPermissionThenContinue() {
-        guard AVCaptureDevice.authorizationStatus(for: .video) == .notDetermined else {
-            model.controller.continueFeatures()
-            return
-        }
-        AVCaptureDevice.requestAccess(for: .video) { _ in
-            DispatchQueue.main.async {
-                model.controller.continueFeatures()
-            }
-        }
-    }
 }

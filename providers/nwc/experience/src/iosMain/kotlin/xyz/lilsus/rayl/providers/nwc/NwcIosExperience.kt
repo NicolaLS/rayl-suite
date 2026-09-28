@@ -214,16 +214,6 @@ class NwcIosExperience(
         return { job.cancel() }
     }
 
-    fun recentBadgeCount(): Int = runtime.paymentCoordinator.newSessionTransactionCount.value
-
-    fun observeRecentBadgeCount(onChange: (Int) -> Unit): () -> Unit {
-        val job =
-            observerScope.launch {
-                runtime.paymentCoordinator.newSessionTransactionCount.collect(onChange)
-            }
-        return { job.cancel() }
-    }
-
     /** Localized tab titles keyed by tab ID, so the native tab bar uses one set of strings. */
     fun observeTabTitles(onChange: (Map<String, String>) -> Unit): () -> Unit {
         val job =
@@ -261,13 +251,17 @@ class NwcIosExperience(
         observerScope.launch {
             combine(
                 runtime.paymentCoordinator.uiState,
+                runtime.paymentCoordinator.sessionTransactions,
+                runtime.paymentCoordinator.newSessionTransactionCount,
                 runtime.paymentHub.state,
                 runtime.languageRepository.preference
-            ) { payment, hubState, _ ->
+            ) { payment, transactions, newTransactionCount, hubState, _ ->
                 controller.update(
                     payment = payment.toNativePaymentScreenState(),
                     appTitle = configuration.appName,
-                    savePrompt = hubState.savePrompt
+                    savePrompt = hubState.savePrompt,
+                    recentCount = transactions.size,
+                    newRecentCount = newTransactionCount
                 )
             }.collect {}
         }

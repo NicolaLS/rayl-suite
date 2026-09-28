@@ -3,7 +3,6 @@ import Shared
 
 private func makeNwcShellAdapter(_ experience: NwcIosExperience) -> NativeShellAdapter {
     NativeShellAdapter(
-    visibleTabIds: ["scan", "recent", "hub", "settings"],
     initialStage: {
         experience.isOnboarded() ? .tabs : .onboarding
     },
@@ -20,20 +19,14 @@ private func makeNwcShellAdapter(_ experience: NwcIosExperience) -> NativeShellA
     observeTheme: { observer in
         experience.observeTheme(onChange: observer.send)
     },
-    initialRecentBadgeCount: { Int(experience.recentBadgeCount()) },
-    observeRecentBadgeCount: { observer in
-        experience.observeRecentBadgeCount { value in
-            observer.send(Int(value.intValue))
-        }
-    },
     observeTabTitles: { observer in
         experience.observeTabTitles(onChange: observer.send)
     },
     nativeScanView: {
-        AnyView(NativePaymentScanView(controller: experience.scanController()))
-    },
-    nativeRecentView: {
-        AnyView(NativePaymentRecentView(controller: experience.recentController()))
+        AnyView(NativePaymentScanView(
+                controller: experience.scanController(),
+                recentController: experience.recentController()
+            ))
     },
     nativeHubView: {
         AnyView(NativePaymentHubView(controller: experience.hubController()))
@@ -42,8 +35,8 @@ private func makeNwcShellAdapter(_ experience: NwcIosExperience) -> NativeShellA
         AnyView(
             NativeSettingsView(
                 controller: experience.settingsController(),
-                leadingContent: AnyView(
-                    NwcWalletSettingsLink(
+                trailingContent: AnyView(
+                    NwcWalletSettingsActions(
                         controller: experience.walletSettingsController(),
                         onboardingController: experience.onboardingController()
                     )
@@ -123,7 +116,7 @@ private final class NwcNativeWalletSettingsModel: ObservableObject {
     }
 }
 
-private struct NwcWalletSettingsLink: View {
+private struct NwcWalletSettingsActions: View {
     @StateObject private var model: NwcNativeWalletSettingsModel
     let onboardingController: NwcNativeOnboardingController
 
@@ -138,11 +131,25 @@ private struct NwcWalletSettingsLink: View {
     var body: some View {
         Group {
             if let snapshot = model.snapshot {
-                NativeWalletSettingsLink(
-                    title: snapshot.settingsTitle,
-                    subtitle: snapshot.settingsSubtitle
-                ) {
-                    NwcWalletManagementView(snapshot: snapshot, model: model)
+                VStack(alignment: .leading, spacing: 12) {
+                    NavigationLink {
+                        NwcWalletDetailsView(snapshot: snapshot)
+                    } label: {
+                        Label(snapshot.detailsTitle, systemImage: "wallet.pass")
+                    }
+                    Divider()
+                    NativeWalletRemovalAction(
+                        title: snapshot.removeTitle,
+                        confirmationTitle: snapshot.removeConfirmationTitle,
+                        message: snapshot.removeConfirmationBody,
+                        cancelTitle: snapshot.cancelTitle,
+                        confirmTitle: snapshot.removeTitle,
+                        canRemove: !snapshot.isWorking,
+                        onRemove: model.controller.removeWallet
+                    )
+                    if let message = snapshot.removalErrorMessage {
+                        Text(message).foregroundStyle(.red)
+                    }
                 }
             } else {
                 ProgressView()
@@ -161,26 +168,6 @@ private struct NwcWalletSettingsLink: View {
                     model.controller.finishWalletConnection()
                 }
             }
-        )
-    }
-}
-
-private struct NwcWalletManagementView: View {
-    let snapshot: NwcNativeWalletSettingsSnapshot
-    @ObservedObject var model: NwcNativeWalletSettingsModel
-
-    var body: some View {
-        NativeWalletManagementView(
-            text: snapshot.managementText,
-            wallet: snapshot.managedWallet,
-            isWorking: snapshot.isWorking,
-            errorMessage: snapshot.removalErrorMessage,
-            onAddWallet: model.controller.requestWalletConnection,
-            walletDetails: {
-                NwcWalletDetailsView(snapshot: snapshot)
-            },
-            showsWalletDetails: snapshot.walletId != nil,
-            onRemoveWallet: model.controller.removeWallet
         )
     }
 }
@@ -217,28 +204,5 @@ private struct NwcWalletDetailsView: View {
             Text(value)
                 .textSelection(.enabled)
         }
-    }
-}
-
-private extension NwcNativeWalletSettingsSnapshot {
-    var managementText: NativeWalletManagementTextValue {
-        NativeWalletManagementTextValue(
-            screenTitle: screenTitle,
-            emptyDescription: emptyDescription,
-            addTitle: addTitle,
-            removeTitle: removeTitle,
-            removeConfirmationTitle: removeConfirmationTitle,
-            removeConfirmationBody: removeConfirmationBody,
-            cancelTitle: cancelTitle
-        )
-    }
-
-    var managedWallet: NativeManagedWalletValue? {
-        guard let walletId, let walletTitle else { return nil }
-        return NativeManagedWalletValue(
-            id: walletId,
-            title: walletTitle,
-            details: walletDetails
-        )
     }
 }

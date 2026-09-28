@@ -4,7 +4,7 @@
     <string name="settings_manage_wallet_title">Wallet</string>
     <string name="settings_manage_wallet_placeholder">No wallet connected yet. Add one to start paying.</string>
     <string name="settings_manage_wallet_add">Add Wallet</string>
-    <string name="settings_manage_wallet_remove">Remove Wallet</string>
+    <string name="settings_manage_wallet_remove">Remove wallet</string>
     <string name="settings_manage_wallet_remove_confirmation_title">Remove wallet?</string>
     <string name="settings_manage_wallet_remove_confirmation_body">You will need to connect a wallet again before you can send payments.</string>
     <string name="settings_manage_wallet_cancel">Cancel</string>

@@ -1,5 +1,5 @@
 <resources>
-    <string name="add_wallet_title">Conectar billetera</string>
+    <string name="add_wallet_title">Añadir billetera NWC</string>
     <string name="add_wallet_description">Copia un URI de NWC y regresa aquí, o escanea el código QR.</string>
     <string name="add_wallet_uri_label">URI de Wallet Connect</string>
     <string name="add_wallet_uri_placeholder">nostr+walletconnect://tu-wallet-public-key?relay=…</string>

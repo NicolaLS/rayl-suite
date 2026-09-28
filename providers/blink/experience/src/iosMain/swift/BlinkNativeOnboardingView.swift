@@ -24,8 +24,6 @@ private final class BlinkNativeOnboardingModel: ObservableObject {
 /// Blink's native onboarding. Kotlin owns settings and wallet work; SwiftUI owns presentation.
 struct BlinkNativeOnboardingView: View {
     @StateObject private var model: BlinkNativeOnboardingModel
-    @State private var apiKeyVisible = false
-    @FocusState private var apiKeyFocused: Bool
 
     init(controller: BlinkNativeOnboardingController) {
         _model = StateObject(wrappedValue: BlinkNativeOnboardingModel(controller: controller))
@@ -214,130 +212,39 @@ struct BlinkNativeOnboardingView: View {
     }
 
     private func wallet(_ snapshot: BlinkNativeOnboardingSnapshot) -> some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text(snapshot.walletTitle)
-                    .font(.largeTitle.bold())
-                Text(snapshot.walletDescription)
-                    .foregroundStyle(.secondary)
-
-                Button(
-                    snapshot.walletInstructionsTitle,
-                    action: model.controller.showWalletInstructions
-                )
-                .disabled(snapshot.isConnecting)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(snapshot.connectionNotice)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                    HStack(spacing: 20) {
-                        if let value = snapshot.privacyPolicyUrl, let url = URL(string: value) {
-                            Link(snapshot.privacyTitle, destination: url)
-                                .frame(minHeight: 44)
-                        }
-                        if let value = snapshot.termsUrl, let url = URL(string: value) {
-                            Link(snapshot.termsTitle, destination: url)
-                                .frame(minHeight: 44)
-                        }
-                    }
+        NativeCredentialConnectionView(
+            title: snapshot.walletTitle,
+            description: snapshot.walletDescription,
+            actionTitle: snapshot.connectTitle,
+            canSubmit: snapshot.canConnect,
+            isSubmitting: snapshot.isConnecting,
+            instructionsTitle: snapshot.walletInstructionsTitle,
+            connectionNotice: snapshot.connectionNotice,
+            privacyTitle: snapshot.privacyTitle,
+            privacyPolicyUrl: snapshot.privacyPolicyUrl,
+            termsTitle: snapshot.termsTitle,
+            termsUrl: snapshot.termsUrl,
+            onInstructions: model.controller.showWalletInstructions,
+            onSubmit: model.controller.connectWallet
+        ) {
+            NativeCredentialInput(
+                value: apiKeyBinding(snapshot),
+                label: snapshot.apiKeyLabel,
+                placeholder: snapshot.apiKeyPlaceholder,
+                showTitle: snapshot.showApiKeyTitle,
+                hideTitle: snapshot.hideApiKeyTitle,
+                pasteTitle: snapshot.pasteTitle,
+                enabled: !snapshot.isConnecting,
+                onPaste: model.controller.pasteApiKey,
+                onSubmit: {
+                    if snapshot.canConnect { model.controller.connectWallet() }
+                }
+            )
+            if let error = snapshot.connectionError {
+                Text(error)
                     .font(.footnote)
-                }
-
-                VStack(alignment: .trailing, spacing: 8) {
-                    HStack {
-                        Group {
-                            if apiKeyVisible {
-                                TextField(
-                                    snapshot.apiKeyPlaceholder,
-                                    text: apiKeyBinding(snapshot)
-                                )
-                            } else {
-                                SecureField(
-                                    snapshot.apiKeyPlaceholder,
-                                    text: apiKeyBinding(snapshot)
-                                )
-                            }
-                        }
-                        .textContentType(.password)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .keyboardType(.asciiCapable)
-                        .focused($apiKeyFocused)
-                        .submitLabel(.go)
-                        .onSubmit {
-                            if snapshot.canConnect {
-                                apiKeyFocused = false
-                                model.controller.connectWallet()
-                            }
-                        }
-                        .accessibilityLabel(snapshot.walletTitle)
-                        .disabled(snapshot.isConnecting)
-
-                        Button {
-                            apiKeyVisible.toggle()
-                        } label: {
-                            Image(systemName: apiKeyVisible ? "eye.slash" : "eye")
-                                .frame(width: 44, height: 44)
-                        }
-                        .accessibilityLabel(
-                            apiKeyVisible
-                                ? snapshot.hideApiKeyTitle
-                                : snapshot.showApiKeyTitle
-                        )
-                    }
-                    .padding()
-                    .background(
-                        Color(uiColor: .secondarySystemGroupedBackground),
-                        in: RoundedRectangle(cornerRadius: 16))
-
-                    Button(action: model.controller.pasteApiKey) {
-                        Label(snapshot.pasteTitle, systemImage: "doc.on.clipboard")
-                            .padding(.vertical, 8)
-                    }
-                    .disabled(snapshot.isConnecting)
-                }
-
-                if let error = snapshot.connectionError {
-                    Text(error)
-                        .font(.footnote)
-                        .foregroundStyle(.red)
-                }
-
+                    .foregroundStyle(.red)
             }
-            .padding(24)
-            .frame(maxWidth: 608, alignment: .leading)
-            .frame(maxWidth: .infinity)
-        }
-        .scrollDismissesKeyboard(.interactively)
-        .onDisappear {
-            apiKeyVisible = false
-            apiKeyFocused = false
-        }
-        .background(Color(uiColor: .systemGroupedBackground))
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            Button {
-                apiKeyFocused = false
-                model.controller.connectWallet()
-            } label: {
-                HStack {
-                    if snapshot.isConnecting {
-                        ProgressView()
-                    }
-                    Text(snapshot.connectTitle)
-                }
-                .font(.headline)
-                .frame(maxWidth: .infinity, minHeight: 28)
-                .padding(.vertical, 4)
-            }
-            .buttonStyle(.borderedProminent)
-            .buttonBorderShape(.roundedRectangle(radius: 16))
-            .controlSize(.large)
-            .disabled(!snapshot.canConnect)
-            .padding(24)
-            .frame(maxWidth: 608)
-            .frame(maxWidth: .infinity)
-            .background(Color(uiColor: .systemGroupedBackground))
         }
     }
 

@@ -1,9 +1,14 @@
 package xyz.lilsus.rayl.providers.spark.application.payment
 
 import xyz.lilsus.raylsuite.core.model.Satoshi
+import xyz.lilsus.raylsuite.core.payment.LightningInputParser
 
 interface PaymentEngine {
-    suspend fun prepare(input: String, origin: PaymentOrigin): PreparePaymentResult
+    suspend fun prepare(
+        input: String,
+        origin: PaymentOrigin,
+        comment: String? = null
+    ): PreparePaymentResult
     suspend fun prepareAmount(
         handle: PaymentAmountHandle,
         amountSats: Satoshi
@@ -58,6 +63,7 @@ sealed interface PreparePaymentResult {
     data class Ready(val payment: PreparedPayment) : PreparePaymentResult
     data class Existing(val receipt: PaymentReceipt) : PreparePaymentResult
     data class Rejected(val reason: PaymentRejection) : PreparePaymentResult
+    data class InvalidInput(val reason: LightningInputParser.FailureReason) : PreparePaymentResult
     data object WalletUnavailable : PreparePaymentResult
     data object SdkFailure : PreparePaymentResult
 }
@@ -73,6 +79,7 @@ enum class PaymentRejection {
     SENDER_NOT_ALLOWED,
     METHOD_MISMATCH,
     CONVERSION_NOT_ALLOWED,
+    COMMENT_NOT_ALLOWED,
     INSUFFICIENT_FUNDS
 }
 
@@ -92,7 +99,8 @@ data class PaymentReceipt(
     val feeSats: Satoshi,
     val origin: PaymentOrigin,
     val createdAtEpochSeconds: Long,
-    val outcome: PaymentOutcome
+    val outcome: PaymentOutcome,
+    val preimage: String? = null
 )
 
 enum class PaymentOutcome {
@@ -137,13 +145,15 @@ sealed interface ParsedSdkInput {
         val maxSendableMsat: ULong,
         val reviewDetails: LnurlPayReviewDetails,
         val payload: LnurlPayRequestPayload,
-        val amountOverrideSats: Long? = null
+        val amountOverrideSats: Long? = null,
+        val commentAllowed: Int = 0
     ) : ParsedSdkInput {
         override fun toString(): String = "LnurlPay(<redacted>)"
     }
 
     data object OnChain : ParsedSdkInput
     data object Unsupported : ParsedSdkInput
+    data class InvalidInput(val reason: LightningInputParser.FailureReason) : ParsedSdkInput
 }
 
 interface PreparedSdkPayload
@@ -173,7 +183,7 @@ enum class SdkPaymentStatus {
     FAILED
 }
 
-data class SdkPayment(val id: String, val status: SdkPaymentStatus)
+data class SdkPayment(val id: String, val status: SdkPaymentStatus, val preimage: String? = null)
 
 interface SparkPaymentClient {
     suspend fun parse(input: String): ParsedSdkInput
@@ -181,7 +191,8 @@ interface SparkPaymentClient {
     suspend fun prepare(input: String, amountSats: Satoshi? = null): SdkPreparationResult
     suspend fun prepareLnurl(
         request: ParsedSdkInput.LnurlPay,
-        amountSats: Satoshi
+        amountSats: Satoshi,
+        comment: String? = null
     ): SdkPreparationResult
     suspend fun send(prepared: SdkPreparedPayment, idempotencyKey: String): SdkPayment
     suspend fun getPayment(paymentId: String): SdkPayment

@@ -191,19 +191,19 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wallet verbinden"
+            "value": "NWC-Wallet hinzufügen"
           }
         },
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Connect Wallet"
+            "value": "Add NWC Wallet"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Conectar billetera"
+            "value": "Añadir billetera NWC"
           }
         }
       }

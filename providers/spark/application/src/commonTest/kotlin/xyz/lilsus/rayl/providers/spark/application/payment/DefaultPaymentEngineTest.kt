@@ -4,6 +4,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,9 +16,63 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
 import xyz.lilsus.rayl.providers.spark.application.AppEnvironment
 import xyz.lilsus.raylsuite.core.model.Satoshi
+import xyz.lilsus.raylsuite.core.payment.LightningInputParser
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class DefaultPaymentEngineTest {
+    @Test
+    fun parserFailureReasonSurvivesWithoutPreparingAPayment() = runTest {
+        val client = TestClient().apply {
+            parsedInput = ParsedSdkInput.InvalidInput(LightningInputParser.FailureReason.Unrecognized)
+        }
+        val engine = engine(client)
+        val result = assertIs<PreparePaymentResult.InvalidInput>(
+            engine.prepare("not a payment", PaymentOrigin.DETECTED_CONTENT)
+        )
+        assertEquals(LightningInputParser.FailureReason.Unrecognized, result.reason)
+        assertEquals(0, client.preparationCount)
+    }
+
+    @Test
+    fun lnurlCommentSurvivesManualAmountPreparation() = runTest {
+        val client = TestClient().apply { parsedInput = lnurl(commentAllowed = 7) }
+        val engine = engine(client)
+        val amount = assertIs<PreparePaymentResult.AmountRequired>(
+            engine.prepare("alice@example.com", PaymentOrigin.DETECTED_CONTENT, comment = "Thanks!")
+        )
+        assertIs<PreparePaymentResult.Ready>(
+            engine.prepareAmount(amount.payment.handle, Satoshi.positive(21))
+        )
+        assertEquals<List<String?>>(listOf("Thanks!"), client.preparedComments)
+    }
+
+    @Test
+    fun lnurlFixedAmountPreservesCommentAndBlankCommentsAreOmitted() = runTest {
+        val client = TestClient().apply { parsedInput = lnurl(commentAllowed = 7, fixed = true) }
+        val engine = engine(client)
+        assertIs<PreparePaymentResult.Ready>(
+            engine.prepare("alice@example.com", PaymentOrigin.DETECTED_CONTENT, comment = "Thanks!")
+        )
+        assertIs<PreparePaymentResult.Ready>(
+            engine.prepare("alice@example.com", PaymentOrigin.DETECTED_CONTENT, comment = "  ")
+        )
+        assertEquals("Thanks!", client.preparedComments.first())
+        assertNull(client.preparedComments.last())
+    }
+
+    @Test
+    fun disallowedAndOverlongLnurlCommentsAreRejectedBeforeRequestingInvoice() = runTest {
+        for (limit in listOf(0, 6)) {
+            val client = TestClient().apply { parsedInput = lnurl(commentAllowed = limit) }
+            val engine = engine(client)
+            assertEquals(
+                PreparePaymentResult.Rejected(PaymentRejection.COMMENT_NOT_ALLOWED),
+                engine.prepare("alice@example.com", PaymentOrigin.DETECTED_CONTENT, comment = "Thanks!")
+            )
+            assertTrue(client.preparedComments.isEmpty())
+        }
+    }
+
     @Test
     fun pendingSubmissionWaitsForItsExactSdkPaymentAndBlocksDetach() = runTest {
         val client = TestClient()
@@ -64,7 +119,9 @@ class DefaultPaymentEngineTest {
     @Test
     fun completedInvoiceIsRecognizedWithoutAnotherSubmission() = runTest {
         val client = TestClient().apply {
-            sendResult = { SdkPayment("sdk-payment", SdkPaymentStatus.COMPLETED) }
+            sendResult = {
+                SdkPayment("sdk-payment", SdkPaymentStatus.COMPLETED, preimage = "ab".repeat(32))
+            }
         }
         val engine = engine(client)
         val result = assertIs<ConfirmPaymentResult.Completed>(engine.confirm(engine.prepareInvoice()))
@@ -72,8 +129,17 @@ class DefaultPaymentEngineTest {
             engine.prepare("invoice", PaymentOrigin.DETECTED_CONTENT)
         )
         assertEquals(result.receipt, existing.receipt)
+        assertEquals("ab".repeat(32), existing.receipt.preimage)
         assertEquals(1, client.sendCount)
         assertEquals(0, client.observationCount)
+        client.parsedInput = (client.parsedInput as ParsedSdkInput.Bolt11)
+            .copy(expiresAtEpochSeconds = 1uL)
+        assertEquals(
+            result.receipt,
+            assertIs<PreparePaymentResult.Existing>(
+                engine.prepare("invoice", PaymentOrigin.DETECTED_CONTENT)
+            ).receipt
+        )
     }
 
     @Test
@@ -192,6 +258,8 @@ class DefaultPaymentEngineTest {
 
     private class TestClient : SparkPaymentClient {
         var sendCount = 0
+        var preparationCount = 0
+        val preparedComments = mutableListOf<String?>()
         val lookups = mutableListOf<String>()
         var observationCount = 0
         private var observer: ((SdkPayment) -> Unit)? = null
@@ -204,28 +272,48 @@ class DefaultPaymentEngineTest {
             SdkPayment("sdk-payment", SdkPaymentStatus.PENDING)
         }
 
-        override suspend fun parse(input: String): ParsedSdkInput = ParsedSdkInput.Bolt11(
-            invoice = input,
+        var parsedInput: ParsedSdkInput = ParsedSdkInput.Bolt11(
+            invoice = "invoice",
             paymentHash = "test-hash",
             amountMsat = 21_000uL,
             network = PaymentNetwork.REGTEST,
             expiresAtEpochSeconds = 200uL
         )
 
+        override suspend fun parse(input: String): ParsedSdkInput = parsedInput
+
         override suspend fun identityPublicKey(): String = "test-public-key"
 
-        override suspend fun prepare(input: String, amountSats: Satoshi?): SdkPreparationResult = SdkPreparationResult.Prepared(
-            SdkPreparedPayment(
-                payload = TestPayload,
-                method = PaymentMethod.BOLT11,
-                amountSats = Satoshi.positive(21),
-                feeSats = Satoshi.nonNegative(1),
-                tokenIdentifier = null,
-                hasConversion = false
+        override suspend fun prepare(input: String, amountSats: Satoshi?): SdkPreparationResult {
+            preparationCount += 1
+            return SdkPreparationResult.Prepared(
+                SdkPreparedPayment(
+                    payload = TestPayload,
+                    method = PaymentMethod.BOLT11,
+                    amountSats = Satoshi.positive(21),
+                    feeSats = Satoshi.nonNegative(1),
+                    tokenIdentifier = null,
+                    hasConversion = false
+                )
             )
-        )
+        }
 
-        override suspend fun prepareLnurl(request: ParsedSdkInput.LnurlPay, amountSats: Satoshi): SdkPreparationResult = error("Not used")
+        override suspend fun prepareLnurl(request: ParsedSdkInput.LnurlPay, amountSats: Satoshi, comment: String?): SdkPreparationResult {
+            preparedComments += comment
+            return SdkPreparationResult.Prepared(
+                SdkPreparedPayment(
+                    payload = TestPayload,
+                    method = PaymentMethod.BOLT11,
+                    amountSats = amountSats,
+                    feeSats = Satoshi.nonNegative(1),
+                    tokenIdentifier = null,
+                    hasConversion = false,
+                    resolvedInvoiceFingerprint = InvoiceFingerprint.bolt11("lnurl-invoice"),
+                    resolvedNetwork = PaymentNetwork.REGTEST,
+                    resolvedExpiresAtEpochSeconds = 200uL
+                )
+            )
+        }
 
         override suspend fun send(prepared: SdkPreparedPayment, idempotencyKey: String): SdkPayment {
             sendCount += 1
@@ -249,6 +337,15 @@ class DefaultPaymentEngineTest {
             observer?.invoke(payment)
         }
     }
+
+    private fun lnurl(commentAllowed: Int, fixed: Boolean = false) = ParsedSdkInput.LnurlPay(
+        requestFingerprint = InvoiceFingerprint.lnurl("alice@example.com"),
+        minSendableMsat = if (fixed) 21_000uL else 1_000uL,
+        maxSendableMsat = 21_000uL,
+        reviewDetails = LnurlPayReviewDetails("example.com", "A payment", null, null),
+        payload = object : LnurlPayRequestPayload {},
+        commentAllowed = commentAllowed
+    )
 
     private data object TestPayload : PreparedSdkPayload
 }

@@ -380,7 +380,8 @@ private object UnusedPaymentClient : SparkPaymentClient {
     override suspend fun parse(input: String): Nothing = error("No payment expected")
     override suspend fun identityPublicKey(): Nothing = error("No payment expected")
     override suspend fun prepare(input: String, amountSats: Satoshi?): Nothing = error("No payment expected")
-    override suspend fun prepareLnurl(request: ParsedSdkInput.LnurlPay, amountSats: Satoshi): Nothing = error("No payment expected")
+    override suspend fun prepareLnurl(request: ParsedSdkInput.LnurlPay, amountSats: Satoshi, comment: String?): Nothing =
+        error("No payment expected")
     override suspend fun send(prepared: SdkPreparedPayment, idempotencyKey: String): Nothing = error("No payment expected")
     override suspend fun getPayment(paymentId: String): Nothing = error("No payment expected")
     override suspend fun observePayments(onPayment: (SdkPayment) -> Unit): Nothing = error("No payment expected")

@@ -1,11 +1,11 @@
 <resources>
     <string name="spark_wallet_brand">%1$s / 01</string>
-    <string name="spark_wallet_import_title">Zahlungs-Wallet\nverbinden.</string>
+    <string name="spark_wallet_import_title">Spark-Wallet hinzufügen</string>
     <string name="spark_wallet_import_body">Durch den Import einer Wiederherstellungsphrase erhält %1$s Ausgabeberechtigung. Behalte deine primäre Wallet für Wiederherstellung und vollständige Verwaltung installiert.</string>
     <string name="spark_wallet_phrase_label">BIP39-Wiederherstellungsphrase</string>
     <string name="spark_wallet_phrase_hint">zwölf oder vierundzwanzig Wörter…</string>
     <string name="spark_wallet_storage_note">Mit dem sicheren Anmeldedatenspeicher dieses Geräts geschützt.</string>
-    <string name="spark_wallet_import_action">WALLET IMPORTIEREN</string>
+    <string name="spark_wallet_import_action">Verbinden</string>
     <string name="spark_wallet_remove_title">Diese Wallet aus %1$s entfernen?</string>
     <string name="spark_wallet_remove_body">Dadurch werden die geschützte Phrase, Zahlungsaktivitäten und lokale SDK-Daten gelöscht.</string>
     <string name="spark_wallet_remove_confirm">ENTFERNEN BESTÄTIGEN</string>

@@ -48,5 +48,9 @@ kotlin {
         iosMain.dependencies {
             implementation(project(":feature:wallet-management"))
         }
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.multiplatform.settings.test)
+        }
     }
 }

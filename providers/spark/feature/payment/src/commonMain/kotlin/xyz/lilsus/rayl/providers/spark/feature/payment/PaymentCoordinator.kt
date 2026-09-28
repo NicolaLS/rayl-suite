@@ -42,6 +42,7 @@ import xyz.lilsus.raylsuite.core.model.PaymentConfirmationMode
 import xyz.lilsus.raylsuite.core.model.PaymentPreferences
 import xyz.lilsus.raylsuite.core.model.Satoshi
 import xyz.lilsus.raylsuite.core.payment.BitcoinPriceProvider
+import xyz.lilsus.raylsuite.core.payment.LightningInputParser
 import xyz.lilsus.raylsuite.core.ui.platform.HapticFeedbackManager
 import xyz.lilsus.raylsuite.feature.currencysettings.CurrencyPreferences
 import xyz.lilsus.raylsuite.feature.paymentcurrency.CurrencyManagerError
@@ -55,6 +56,7 @@ import xyz.lilsus.raylsuite.feature.paymentui.LnurlPayDisplay
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentConfirmationAmount
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentIntent
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentReceiptDetails
+import xyz.lilsus.raylsuite.feature.paymentui.PaymentToastMessage
 import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountConfig
 import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountController
 import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountKey
@@ -94,6 +96,10 @@ class PaymentCoordinator(
     private val mutableNewSessionTransactionCount = MutableStateFlow(0)
     val newSessionTransactionCount: StateFlow<Int> =
         mutableNewSessionTransactionCount.asStateFlow()
+
+    private val mutableTransactionDetailNavigationTarget = MutableStateFlow<String?>(null)
+    val transactionDetailNavigationTarget: StateFlow<String?> =
+        mutableTransactionDetailNavigationTarget.asStateFlow()
 
     private val receipts = mutableListOf<SessionReceipt>()
     private val knownSessionTransactionIds = mutableSetOf<String>()
@@ -146,12 +152,22 @@ class PaymentCoordinator(
     }
 
     fun dispatch(intent: PaymentIntent) {
-        if (!scope.isActive || mutableIsSubmitting.value) return
+        if (!scope.isActive) return
+        if (intent is PaymentIntent.TransactionDetailNavigationHandled) {
+            transactionDetailNavigationHandled(intent.id)
+            return
+        }
+        if (mutableIsSubmitting.value) return
         when (intent) {
             PaymentIntent.SessionTransactionsOpened -> sessionTransactionsOpened()
-            is PaymentIntent.TransactionDetailNavigationHandled -> Unit
+
+            is PaymentIntent.TransactionDetailNavigationHandled ->
+                transactionDetailNavigationHandled(intent.id)
+
             is PaymentIntent.ManualAmountKeyPress -> updateManualAmount(intent.key)
+
             PaymentIntent.DismissResult -> dismissResult()
+
             else -> launchAction { handleIntent(intent) }
         }
     }
@@ -190,6 +206,7 @@ class PaymentCoordinator(
         interaction.reset()
         mutableSessionTransactions.value = emptyList()
         mutableNewSessionTransactionCount.value = 0
+        mutableTransactionDetailNavigationTarget.value = null
         paymentHub.resetSession()
         mutableUiState.value = PaymentUiState.Active
     }
@@ -198,15 +215,15 @@ class PaymentCoordinator(
         when (intent) {
             PaymentIntent.DismissResult -> dismissResult()
 
-            is PaymentIntent.TransactionDetailNavigationHandled -> Unit
+            is PaymentIntent.TransactionDetailNavigationHandled ->
+                transactionDetailNavigationHandled(intent.id)
 
             PaymentIntent.SessionTransactionsOpened -> sessionTransactionsOpened()
 
             is PaymentIntent.QrCodeScanned ->
                 handlePaymentInput(
                     rawInput = intent.rawValue,
-                    origin = PaymentOrigin.DETECTED_CONTENT,
-                    notifyScan = true
+                    origin = PaymentOrigin.DETECTED_CONTENT
                 )
 
             is PaymentIntent.DeepLinkReceived ->
@@ -230,7 +247,6 @@ class PaymentCoordinator(
     private suspend fun handlePaymentInput(
         rawInput: String,
         origin: PaymentOrigin,
-        notifyScan: Boolean = false,
         targetContext: HubTargetContext? = reusableLightningAddress(rawInput)?.let {
             HubTargetContext(targetId = null, address = it, isPreset = false)
         },
@@ -239,10 +255,11 @@ class PaymentCoordinator(
     ) {
         if (mutableUiState.value != PaymentUiState.Active) return
         clearTransientPaymentState()
-        if (notifyScan && vibrateOnScan) ignoreHapticFailure(haptics::notifyScanSuccess)
         mutableUiState.value = PaymentUiState.Loading(LoadingKind.Resolving)
+        val result = engine.prepare(rawInput, origin)
+        notifyAcceptedScan(result)
         applyPrepareResult(
-            result = engine.prepare(rawInput, origin),
+            result = result,
             targetContext = targetContext,
             requestedAmountMsats = requestedAmountMsats,
             paymentQuote = paymentQuote
@@ -300,11 +317,20 @@ class PaymentCoordinator(
                     recipient = targetContext?.address?.full,
                     domain = targetContext?.address?.domain
                 )
-                showReceipt(result.receipt, wasAlreadyPaid = true)
+                requestTransactionDetailNavigation(result.receipt.id)
             }
 
-            is PreparePaymentResult.Rejected ->
-                showError(result.reason.toPaymentUiError())
+            is PreparePaymentResult.InvalidInput -> handleInvalidInput(result.reason)
+
+            is PreparePaymentResult.Rejected -> when (result.reason) {
+                PaymentRejection.ON_CHAIN_NOT_ALLOWED ->
+                    showUnsupportedInput(PaymentToastMessage.BitcoinAddressNotSupported)
+
+                PaymentRejection.UNSUPPORTED_INPUT ->
+                    showUnsupportedInput(PaymentToastMessage.PaymentLinkNotSupported)
+
+                else -> showError(result.reason.toPaymentUiError())
+            }
 
             PreparePaymentResult.WalletUnavailable ->
                 showError(PaymentUiError.Spark(SparkPaymentError.WalletUnavailable))
@@ -312,6 +338,44 @@ class PaymentCoordinator(
             PreparePaymentResult.SdkFailure ->
                 showError(PaymentUiError.Spark(SparkPaymentError.SdkUnavailable))
         }
+    }
+
+    private fun notifyAcceptedScan(result: PreparePaymentResult) {
+        if (vibrateOnScan &&
+            (result is PreparePaymentResult.AmountRequired || result is PreparePaymentResult.Ready)
+        ) {
+            ignoreHapticFailure(haptics::notifyScanSuccess)
+        }
+    }
+
+    private fun handleInvalidInput(reason: LightningInputParser.FailureReason) {
+        when (reason) {
+            LightningInputParser.FailureReason.Empty,
+            LightningInputParser.FailureReason.Unrecognized -> finishPaymentInteraction()
+
+            LightningInputParser.FailureReason.BitcoinAddress ->
+                showUnsupportedInput(PaymentToastMessage.BitcoinAddressNotSupported)
+
+            LightningInputParser.FailureReason.Bolt12 ->
+                showUnsupportedInput(PaymentToastMessage.Bolt12NotSupported)
+
+            LightningInputParser.FailureReason.UnsupportedLnurl ->
+                showUnsupportedInput(PaymentToastMessage.LnurlRequestNotSupported)
+
+            LightningInputParser.FailureReason.UnsupportedDeepLink ->
+                showUnsupportedInput(PaymentToastMessage.PaymentLinkNotSupported)
+
+            LightningInputParser.FailureReason.InvalidLnurl ->
+                showError(PaymentUiError.InvalidInvoice("Invalid LNURL request"))
+
+            is LightningInputParser.FailureReason.InvalidInvoice ->
+                showError(PaymentUiError.InvalidInvoice(reason.reason))
+        }
+    }
+
+    private fun showUnsupportedInput(message: PaymentToastMessage) {
+        finishPaymentInteraction()
+        mutableEvents.tryEmit(PaymentEvent.ShowToast(message))
     }
 
     private suspend fun handlePreparedPayment(
@@ -399,7 +463,11 @@ class PaymentCoordinator(
                         }
                     }
                 }
-                showReceipt(result.receipt, result.wasAlreadyPaid)
+                if (result.wasAlreadyPaid) {
+                    requestTransactionDetailNavigation(result.receipt.id)
+                } else {
+                    showReceipt(result.receipt)
+                }
             }
 
             ConfirmPaymentResult.OutcomeUnknown ->
@@ -588,7 +656,8 @@ class PaymentCoordinator(
                     feeSats = DisplayAmount(feeSats.value, DisplayCurrency.Satoshi),
                     createdAtMs = createdAtEpochSeconds * MILLIS_PER_SECOND,
                     recipient = recipient,
-                    domain = domain
+                    domain = domain,
+                    preimage = preimage
                 )
             } else {
                 null
@@ -601,7 +670,7 @@ class PaymentCoordinator(
             is ClaimedPaymentLink.Rejected -> {
                 activeLinkId = link.id
                 paymentLinks.consume(link.id)
-                showError(PaymentUiError.InvalidInvoice("Unsupported payment link"))
+                showUnsupportedInput(PaymentToastMessage.PaymentLinkNotSupported)
             }
 
             is ClaimedPaymentLink.Request -> {
@@ -638,8 +707,14 @@ class PaymentCoordinator(
                 )
                 return@launchAction
             }
+            val result = engine.prepare(
+                intent.address.full,
+                PaymentOrigin.DETECTED_CONTENT,
+                comment = intent.comment
+            )
+            notifyAcceptedScan(result)
             applyPrepareResult(
-                result = engine.prepare(intent.address.full, PaymentOrigin.DETECTED_CONTENT),
+                result = result,
                 targetContext = context,
                 requestedAmountMsats = quote?.amountMsats,
                 paymentQuote = quote
@@ -651,6 +726,20 @@ class PaymentCoordinator(
         newSessionTransactionIds.clear()
         knownSessionTransactionIds += mutableSessionTransactions.value.map { it.id }
         mutableNewSessionTransactionCount.value = 0
+    }
+
+    private fun requestTransactionDetailNavigation(id: String) {
+        knownSessionTransactionIds += id
+        newSessionTransactionIds -= id
+        mutableNewSessionTransactionCount.value = newSessionTransactionIds.size
+        finishPaymentInteraction()
+        mutableTransactionDetailNavigationTarget.value = id
+    }
+
+    private fun transactionDetailNavigationHandled(id: String) {
+        if (mutableTransactionDetailNavigationTarget.value == id) {
+            mutableTransactionDetailNavigationTarget.value = null
+        }
     }
 
     private fun dismissResult() {
@@ -730,6 +819,9 @@ private data class SessionReceipt(
 )
 
 private fun PaymentRejection.toPaymentUiError(): PaymentUiError = when (this) {
+    PaymentRejection.COMMENT_NOT_ALLOWED ->
+        PaymentUiError.InvalidInvoice("Description is too long for this address")
+
     PaymentRejection.UNSUPPORTED_INPUT,
     PaymentRejection.ON_CHAIN_NOT_ALLOWED,
     PaymentRejection.AMOUNT_REQUIRED,

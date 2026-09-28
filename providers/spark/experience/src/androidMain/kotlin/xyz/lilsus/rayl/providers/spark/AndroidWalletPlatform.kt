@@ -15,6 +15,7 @@ fun createAndroidAppHost(
     val bootstrapConfig = AppBootstrapConfig(environment.toAppEnvironment(), breezApiKey)
     return SparkAppHost(
         bootstrapConfig = bootstrapConfig,
+        startMode = startMode,
         walletAccess = createAndroidWalletAccess(context, bootstrapConfig, startMode)
     )
 }

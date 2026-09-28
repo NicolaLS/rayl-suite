@@ -1,4 +1,12 @@
 <resources>
     <string name="action_back">Volver</string>
     <string name="action_clear_search">Borrar búsqueda</string>
+    <string name="credential_instructions">Instrucciones de conexión</string>
+    <string name="credential_connection_notice">Al conectar, las credenciales de tu billetera se guardan en este dispositivo.</string>
+    <string name="credential_privacy">Política de privacidad</string>
+    <string name="credential_terms">Términos de uso</string>
+    <string name="credential_show">Mostrar credencial</string>
+    <string name="credential_hide">Ocultar credencial</string>
+    <string name="credential_paste">Pegar desde el portapapeles</string>
+    <string name="credential_connect">Conectar</string>
 </resources>

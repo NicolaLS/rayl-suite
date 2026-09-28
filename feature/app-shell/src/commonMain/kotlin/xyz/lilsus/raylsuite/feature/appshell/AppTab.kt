@@ -6,7 +6,6 @@ package xyz.lilsus.raylsuite.feature.appshell
  */
 enum class AppTab(val storedValue: String) {
     Scan("scan"),
-    Recent("recent"),
     Hub("hub"),
     Settings("settings");
 

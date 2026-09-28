@@ -23,10 +23,10 @@ class AppTabState {
         mutableSelectedTransactionId.value = id
     }
 
-    /** Opens one transaction's detail on the Recent tab. */
+    /** Opens one transaction's detail inside Scan. */
     fun openTransaction(id: String) {
         mutableSelectedTransactionId.value = id
-        mutableSelectedTab.value = AppTab.Recent
+        mutableSelectedTab.value = AppTab.Scan
     }
 
     /** A payment always presents on the Scan tab, wherever it was started from. */

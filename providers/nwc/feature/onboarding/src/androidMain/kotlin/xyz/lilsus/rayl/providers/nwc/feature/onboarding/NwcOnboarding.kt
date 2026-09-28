@@ -1,5 +1,6 @@
 package xyz.lilsus.rayl.providers.nwc.feature.onboarding
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -58,6 +59,12 @@ sealed interface NwcOnboardingDestination {
     data class ConfirmWallet(val fromSettings: Boolean) : NwcOnboardingDestination
 }
 
+fun nwcEducationDestination(step: String): NwcOnboardingDestination = when (step) {
+    "autoPay" -> NwcOnboardingDestination.AutoPay
+    "agreement" -> NwcOnboardingDestination.Agreement
+    else -> NwcOnboardingDestination.Features
+}
+
 fun NavGraphBuilder.nwcOnboarding(
     navController: NavController,
     nwcWallet: NwcWallet,
@@ -65,11 +72,15 @@ fun NavGraphBuilder.nwcOnboarding(
     connectionDraft: NwcConnectionDraft,
     clipboard: CredentialClipboard,
     connectionOnly: Boolean = false,
+    initialEducationStep: String = "features",
+    onEducationStepChanged: (String) -> Unit = {},
+    privacyPolicyUrl: String? = null,
+    termsUrl: String? = null,
     onWalletConnected: () -> Unit
 ) {
     composable<NwcOnboardingDestination.Features> {
+        LaunchedEffect(Unit) { onEducationStepChanged("features") }
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
-        val cameraPermission = rememberCameraPermissionState()
         FeaturesScreen(
             pages = onboardingFeaturePages(),
             currentPage = state.featuresPage,
@@ -79,11 +90,18 @@ fun NavGraphBuilder.nwcOnboarding(
             onContinue = {
                 navController.navigate(NwcOnboardingDestination.AutoPay)
             },
-            onRequestCameraPermission = cameraPermission::request,
             onBack = null
         )
     }
     composable<NwcOnboardingDestination.AutoPay> {
+        LaunchedEffect(Unit) { onEducationStepChanged("autoPay") }
+        val onBack = {
+            navController.navigate(NwcOnboardingDestination.Features) {
+                popUpTo(navController.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+        BackHandler(onBack = onBack)
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
         val formatter = rememberAmountFormatter()
         AutoPaySettingsScreen(
@@ -101,10 +119,18 @@ fun NavGraphBuilder.nwcOnboarding(
             onContinue = {
                 navController.navigate(NwcOnboardingDestination.Agreement)
             },
-            onBack = navController::navigateUp
+            onBack = onBack
         )
     }
     composable<NwcOnboardingDestination.Agreement> {
+        LaunchedEffect(Unit) { onEducationStepChanged("agreement") }
+        val onBack = {
+            navController.navigate(NwcOnboardingDestination.AutoPay) {
+                popUpTo(navController.graph.id) { inclusive = true }
+                launchSingleTop = true
+            }
+        }
+        BackHandler(onBack = onBack)
         val state by onboardingViewModel.uiState.collectAsStateWithLifecycle()
         AgreementScreen(
             body = stringResource(
@@ -117,25 +143,19 @@ fun NavGraphBuilder.nwcOnboarding(
             onAgreementChanged = onboardingViewModel::setAgreement,
             onContinue = {
                 if (nwcWallet.connection.value == null) {
-                    navController.navigate(NwcOnboardingDestination.WalletInstructions)
-                } else {
-                    onWalletConnected()
-                }
-            },
-            onBack = navController::navigateUp
-        )
-    }
-    composable<NwcOnboardingDestination.WalletInstructions> {
-        NwcWalletInstructionsScreen(
-            stepIndex = OnboardingStep.WalletInstructions.index,
-            totalSteps = ONBOARDING_STEP_COUNT,
-            onConnectWallet = {
-                if (nwcWallet.connection.value == null) {
                     navController.navigate(NwcOnboardingDestination.AddWallet)
                 } else {
                     onWalletConnected()
                 }
             },
+            onBack = onBack
+        )
+    }
+    composable<NwcOnboardingDestination.WalletInstructions> {
+        NwcWalletInstructionsScreen(
+            stepIndex = 0,
+            totalSteps = 0,
+            onConnectWallet = { navController.navigateUp() },
             onBack = navController::navigateUp
         )
     }
@@ -145,7 +165,8 @@ fun NavGraphBuilder.nwcOnboarding(
             fromSettings = false,
             connectionDraft = connectionDraft,
             clipboard = clipboard,
-            connectionOnly = connectionOnly
+            privacyPolicyUrl = privacyPolicyUrl,
+            termsUrl = termsUrl
         )
     }
     composable<NwcOnboardingDestination.AddWalletFromSettings> {
@@ -153,7 +174,9 @@ fun NavGraphBuilder.nwcOnboarding(
             navController = navController,
             fromSettings = true,
             connectionDraft = connectionDraft,
-            clipboard = clipboard
+            clipboard = clipboard,
+            privacyPolicyUrl = privacyPolicyUrl,
+            termsUrl = termsUrl
         )
     }
     dialog<NwcOnboardingDestination.ConfirmWallet> { backStackEntry ->
@@ -171,7 +194,10 @@ fun NavGraphBuilder.nwcOnboarding(
                     )
                 ) {
                     NwcWalletConnectionOutcome.ResumeOnboarding ->
-                        navController.popBackStack()
+                        navController.navigate(nwcEducationDestination(initialEducationStep)) {
+                            popUpTo(navController.graph.id) { inclusive = true }
+                            launchSingleTop = true
+                        }
 
                     NwcWalletConnectionOutcome.CompleteOnboarding,
                     NwcWalletConnectionOutcome.FinishSettings -> onWalletConnected()
@@ -191,7 +217,8 @@ private fun AddWalletDestination(
     fromSettings: Boolean,
     connectionDraft: NwcConnectionDraft,
     clipboard: CredentialClipboard,
-    connectionOnly: Boolean = false
+    privacyPolicyUrl: String?,
+    termsUrl: String?
 ) {
     val viewModel = remember { AddNwcWalletViewModel() }
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -226,7 +253,6 @@ private fun AddWalletDestination(
             when (event) {
                 is AddNwcWalletEvent.Confirm -> {
                     connectionDraft.set(event.uri)
-                    if (!connectionOnly) navController.popBackStack()
                     navController.navigate(
                         NwcOnboardingDestination.ConfirmWallet(
                             fromSettings = fromSettings
@@ -236,26 +262,26 @@ private fun AddWalletDestination(
             }
         }
     }
-    LaunchedEffect(cameraPermission.authorization) {
-        if (cameraPermission.authorization == CameraAuthorizationState.NOT_DETERMINED) {
-            cameraPermission.request()
-        }
-    }
 
     Box(modifier = Modifier.fillMaxSize()) {
         AddNwcWalletScreen(
             state = state,
-            onBack = if (connectionOnly) {
-                null
+            onBack = if (fromSettings) {
+                {
+                    viewModel.reset()
+                    clipboard.discard()
+                    navController.navigateUp()
+                }
             } else {
-                (
-                    {
-                        viewModel.reset()
-                        clipboard.discard()
-                        navController.navigateUp()
-                    }
-                    )
+                null
             },
+            onShowInstructions = {
+                viewModel.reset()
+                clipboard.discard()
+                navController.navigate(NwcOnboardingDestination.WalletInstructions)
+            },
+            privacyPolicyUrl = privacyPolicyUrl,
+            termsUrl = termsUrl,
             onUriChange = {
                 clipboard.retainFor(it)
                 viewModel.updateUri(it)
@@ -359,8 +385,7 @@ private fun onboardingFeaturePages(): List<OnboardingFeaturePage> = listOf(
 private enum class OnboardingStep(val index: Int) {
     Features(1),
     AutoPay(2),
-    Agreement(3),
-    WalletInstructions(4)
+    Agreement(3)
 }
 
-private const val ONBOARDING_STEP_COUNT = 5
+private const val ONBOARDING_STEP_COUNT = 4

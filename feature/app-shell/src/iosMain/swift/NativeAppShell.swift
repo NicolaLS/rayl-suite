@@ -19,18 +19,14 @@ final class NativeShellObserver<Value> {
 }
 
 struct NativeShellAdapter {
-    let visibleTabIds: [String]
     let initialStage: () -> NativeShellStage
     let initialSelectedTab: () -> String
     let selectTab: (String) -> Void
     let observeStage: (NativeShellObserver<NativeShellStage>) -> (() -> Void)
     let observeSelectedTab: (NativeShellObserver<String>) -> (() -> Void)
     let observeTheme: (NativeShellObserver<String>) -> (() -> Void)
-    let initialRecentBadgeCount: () -> Int
-    let observeRecentBadgeCount: (NativeShellObserver<Int>) -> (() -> Void)
     let observeTabTitles: (NativeShellObserver<[String: String]>) -> (() -> Void)
     let nativeScanView: () -> AnyView
-    let nativeRecentView: () -> AnyView
     let nativeHubView: () -> AnyView
     let nativeSettingsView: () -> AnyView
     let nativeOnboardingView: () -> AnyView
@@ -38,7 +34,6 @@ struct NativeShellAdapter {
 
 private enum AppShellTab: String, CaseIterable, Identifiable {
     case scan
-    case recent
     case hub
     case settings
 
@@ -47,7 +42,6 @@ private enum AppShellTab: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
         case .scan: return "qrcode.viewfinder"
-        case .recent: return "clock"
         case .hub: return "square.grid.2x2"
         case .settings: return "gearshape"
         }
@@ -61,7 +55,6 @@ private final class NativeShellModel: ObservableObject {
     @Published var stage: NativeShellStage
     @Published var tabTitles: [String: String] = [:]
     @Published var preferredColorScheme: ColorScheme?
-    @Published var recentBadgeCount: Int
     @Published private(set) var selectedTab: String
 
     private let adapter: NativeShellAdapter
@@ -74,13 +67,12 @@ private final class NativeShellModel: ObservableObject {
 
     init(adapter: NativeShellAdapter) {
         self.adapter = adapter
-        let visibleTabs = adapter.visibleTabIds.compactMap(AppShellTab.init(rawValue:))
+        let visibleTabs = AppShellTab.allCases
         tabs = visibleTabs
         tabViews = Dictionary(
             uniqueKeysWithValues: visibleTabs.map { tab in
                 switch tab {
                 case .scan: return (tab.id, adapter.nativeScanView())
-                case .recent: return (tab.id, adapter.nativeRecentView())
                 case .hub: return (tab.id, adapter.nativeHubView())
                 case .settings: return (tab.id, adapter.nativeSettingsView())
                 }
@@ -90,7 +82,6 @@ private final class NativeShellModel: ObservableObject {
         stage = adapter.initialStage()
         let initialTab = adapter.initialSelectedTab()
         selectedTab = tabs.contains { $0.id == initialTab } ? initialTab : AppShellTab.scan.id
-        recentBadgeCount = adapter.initialRecentBadgeCount()
 
         cancels.append(adapter.observeStage(NativeShellObserver { [weak self] stage in
             self?.stage = stage
@@ -102,11 +93,6 @@ private final class NativeShellModel: ObservableObject {
         cancels.append(adapter.observeTheme(NativeShellObserver { [weak self] value in
             self?.preferredColorScheme = Self.colorScheme(value)
         }))
-        if tabs.contains(.recent) {
-            cancels.append(adapter.observeRecentBadgeCount(NativeShellObserver { [weak self] count in
-                self?.recentBadgeCount = count
-            }))
-        }
         cancels.append(adapter.observeTabTitles(NativeShellObserver { [weak self] titles in
             self?.tabTitles = titles
         }))
@@ -170,7 +156,6 @@ struct NativeAppShell: View {
                                     \.appShellTabIsSelected,
                                     model.selectedTab == tab.id
                                 )
-                                .badge(tab == .recent ? model.recentBadgeCount : 0)
                                 .tabItem {
                                     Label(model.title(tab), systemImage: tab.symbol)
                                 }

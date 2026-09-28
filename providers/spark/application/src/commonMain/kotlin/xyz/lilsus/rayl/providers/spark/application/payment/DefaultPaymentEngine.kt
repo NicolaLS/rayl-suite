@@ -50,99 +50,118 @@ class DefaultPaymentEngine(
         preparedDraft = null
     }
 
-    override suspend fun prepare(input: String, origin: PaymentOrigin): PreparePaymentResult =
-        operationMutex.withLock {
-            clearDrafts()
-            val currentClient = client ?: return@withLock PreparePaymentResult.WalletUnavailable
-            val now = nowEpochSeconds()
-            val admitted = sdkResult(operationTimeouts.resolutionMillis) {
-                admit(currentClient.parse(input), currentClient, now)
-            } ?: return@withLock PreparePaymentResult.SdkFailure
-            if (admitted is Admission.Rejected) {
-                return@withLock PreparePaymentResult.Rejected(
-                    admitted.reason
-                )
-            }
-            admitted as Admission.Accepted
+    override suspend fun prepare(
+        input: String,
+        origin: PaymentOrigin,
+        comment: String?
+    ): PreparePaymentResult = operationMutex.withLock {
+        clearDrafts()
+        val currentClient = client ?: return@withLock PreparePaymentResult.WalletUnavailable
+        val now = nowEpochSeconds()
+        val parsed = sdkResult(operationTimeouts.resolutionMillis) {
+            currentClient.parse(input)
+        } ?: return@withLock PreparePaymentResult.SdkFailure
+        if (parsed is ParsedSdkInput.InvalidInput) {
+            return@withLock PreparePaymentResult.InvalidInput(parsed.reason)
+        }
+        val invoiceFingerprint = when (parsed) {
+            is ParsedSdkInput.Bolt11 -> InvoiceFingerprint.bolt11(parsed.paymentHash)
+            is ParsedSdkInput.SparkInvoice -> InvoiceFingerprint.spark(parsed.invoice)
+            else -> null
+        }
+        invoiceFingerprint?.let(successfulPayments::get)?.let {
+            return@withLock PreparePaymentResult.Existing(it)
+        }
+        val admitted = sdkResult(operationTimeouts.resolutionMillis) {
+            admit(parsed, currentClient, now, comment?.takeIf(String::isNotBlank))
+        } ?: return@withLock PreparePaymentResult.SdkFailure
+        if (admitted is Admission.Rejected) {
+            return@withLock PreparePaymentResult.Rejected(
+                admitted.reason
+            )
+        }
+        admitted as Admission.Accepted
 
-            successfulPayments[admitted.fingerprint]?.let {
-                return@withLock PreparePaymentResult.Existing(it)
-            }
+        successfulPayments[admitted.fingerprint]?.let {
+            return@withLock PreparePaymentResult.Existing(it)
+        }
 
-            if (admitted.amountSats == null) {
-                val handle = PaymentAmountHandle(Uuid.random().toString())
-                val projection = AmountRequiredPayment(
-                    handle = handle,
-                    method = admitted.method,
-                    expiresAtEpochSeconds = admitted.expiresAtEpochSeconds,
-                    minimumAmountSats = admitted.minimumAmountSats,
-                    maximumAmountSats = admitted.maximumAmountSats,
-                    lnurlPayDetails = admitted.lnurlRequest?.reviewDetails
-                )
-                amountDraft = AmountDraft(
-                    admission = admitted,
-                    projection = projection,
-                    origin = origin
-                )
-                return@withLock PreparePaymentResult.AmountRequired(projection)
-            }
-            val amountSats = admitted.amountSats
-
-            var verifiedAdmission = admitted
-            val preparation = sdkResult(operationTimeouts.preparationMillis) {
-                admitted.lnurlRequest?.let { currentClient.prepareLnurl(it, amountSats) }
-                    ?: currentClient.prepare(admitted.invoice, admitted.amountOverrideSats)
-            } ?: return@withLock PreparePaymentResult.SdkFailure
-            val prepared = when (preparation) {
-                is SdkPreparationResult.Prepared -> preparation.payment
-
-                SdkPreparationResult.InsufficientFunds ->
-                    return@withLock PreparePaymentResult.Rejected(
-                        PaymentRejection.INSUFFICIENT_FUNDS
-                    )
-            }
-            val rejection = if (admitted.lnurlRequest != null) {
-                verifyLnurlPreparation(admitted, prepared, nowEpochSeconds())
-            } else {
-                verifyPreparation(admitted, prepared)
-            }
-            rejection?.let {
-                return@withLock PreparePaymentResult.Rejected(rejection)
-            }
-            if (admitted.lnurlRequest != null) {
-                verifiedAdmission = admitted.copy(
-                    fingerprint = checkNotNull(prepared.resolvedInvoiceFingerprint),
-                    expiresAtEpochSeconds = checkNotNull(prepared.resolvedExpiresAtEpochSeconds)
-                        .coerceAtMost(Long.MAX_VALUE.toULong())
-                        .toLong(),
-                    lnurlRequest = null
-                )
-            }
-            val policy = mutableConfirmationPolicy.value
-
-            val handle = PaymentDraftHandle(Uuid.random().toString())
-            val projection = PreparedPayment(
+        if (admitted.amountSats == null) {
+            val handle = PaymentAmountHandle(Uuid.random().toString())
+            val projection = AmountRequiredPayment(
                 handle = handle,
-                method = verifiedAdmission.method,
-                amountSats = amountSats,
-                feeSats = prepared.feeSats,
-                expiresAtEpochSeconds = verifiedAdmission.expiresAtEpochSeconds,
-                requiresConfirmation = policy.requiresConfirmation(
-                    amountSats = amountSats,
-                    feeSats = prepared.feeSats,
-                    origin = origin,
-                    amountEnteredByUser = false
-                ),
+                method = admitted.method,
+                expiresAtEpochSeconds = admitted.expiresAtEpochSeconds,
+                minimumAmountSats = admitted.minimumAmountSats,
+                maximumAmountSats = admitted.maximumAmountSats,
                 lnurlPayDetails = admitted.lnurlRequest?.reviewDetails
             )
-            preparedDraft = VerifiedDraft(
-                admission = verifiedAdmission,
-                prepared = prepared,
+            amountDraft = AmountDraft(
+                admission = admitted,
                 projection = projection,
                 origin = origin
             )
-            PreparePaymentResult.Ready(projection)
+            return@withLock PreparePaymentResult.AmountRequired(projection)
         }
+        val amountSats = admitted.amountSats
+
+        var verifiedAdmission = admitted
+        val preparation = sdkResult(operationTimeouts.preparationMillis) {
+            admitted.lnurlRequest?.let {
+                currentClient.prepareLnurl(it, amountSats, admitted.comment)
+            }
+                ?: currentClient.prepare(admitted.invoice, admitted.amountOverrideSats)
+        } ?: return@withLock PreparePaymentResult.SdkFailure
+        val prepared = when (preparation) {
+            is SdkPreparationResult.Prepared -> preparation.payment
+
+            SdkPreparationResult.InsufficientFunds ->
+                return@withLock PreparePaymentResult.Rejected(
+                    PaymentRejection.INSUFFICIENT_FUNDS
+                )
+        }
+        val rejection = if (admitted.lnurlRequest != null) {
+            verifyLnurlPreparation(admitted, prepared, nowEpochSeconds())
+        } else {
+            verifyPreparation(admitted, prepared)
+        }
+        rejection?.let {
+            return@withLock PreparePaymentResult.Rejected(rejection)
+        }
+        if (admitted.lnurlRequest != null) {
+            verifiedAdmission = admitted.copy(
+                fingerprint = checkNotNull(prepared.resolvedInvoiceFingerprint),
+                expiresAtEpochSeconds = checkNotNull(prepared.resolvedExpiresAtEpochSeconds)
+                    .coerceAtMost(Long.MAX_VALUE.toULong())
+                    .toLong(),
+                lnurlRequest = null
+            )
+        }
+        val policy = mutableConfirmationPolicy.value
+
+        val handle = PaymentDraftHandle(Uuid.random().toString())
+        val projection = PreparedPayment(
+            handle = handle,
+            method = verifiedAdmission.method,
+            amountSats = amountSats,
+            feeSats = prepared.feeSats,
+            expiresAtEpochSeconds = verifiedAdmission.expiresAtEpochSeconds,
+            requiresConfirmation = policy.requiresConfirmation(
+                amountSats = amountSats,
+                feeSats = prepared.feeSats,
+                origin = origin,
+                amountEnteredByUser = false
+            ),
+            lnurlPayDetails = admitted.lnurlRequest?.reviewDetails
+        )
+        preparedDraft = VerifiedDraft(
+            admission = verifiedAdmission,
+            prepared = prepared,
+            projection = projection,
+            origin = origin
+        )
+        PreparePaymentResult.Ready(projection)
+    }
 
     override suspend fun prepareAmount(
         handle: PaymentAmountHandle,
@@ -165,7 +184,9 @@ class DefaultPaymentEngine(
         }
         var admitted = amountDraft.admission.copy(amountSats = amountSats)
         val preparation = sdkResult(operationTimeouts.preparationMillis) {
-            admitted.lnurlRequest?.let { currentClient.prepareLnurl(it, amountSats) }
+            admitted.lnurlRequest?.let {
+                currentClient.prepareLnurl(it, amountSats, admitted.comment)
+            }
                 ?: currentClient.prepare(admitted.invoice, amountSats)
         } ?: return@withLock PreparePaymentResult.SdkFailure
         val prepared = when (preparation) {
@@ -276,7 +297,8 @@ class DefaultPaymentEngine(
                 SdkPaymentStatus.COMPLETED -> PaymentOutcome.COMPLETED
                 SdkPaymentStatus.FAILED -> PaymentOutcome.FAILED
                 SdkPaymentStatus.PENDING -> error("A receipt requires a terminal payment")
-            }
+            },
+            preimage = payment.preimage
         )
         if (receipt.outcome == PaymentOutcome.COMPLETED) {
             successfulPayments[draft.admission.fingerprint] = receipt
@@ -315,8 +337,11 @@ class DefaultPaymentEngine(
     private suspend fun admit(
         parsed: ParsedSdkInput,
         client: SparkPaymentClient,
-        now: Long
+        now: Long,
+        comment: String?
     ): Admission = when (parsed) {
+        is ParsedSdkInput.InvalidInput -> error("Input failures are handled before admission")
+
         ParsedSdkInput.Unsupported -> Admission.Rejected(PaymentRejection.UNSUPPORTED_INPUT)
 
         ParsedSdkInput.OnChain -> Admission.Rejected(PaymentRejection.ON_CHAIN_NOT_ALLOWED)
@@ -395,6 +420,9 @@ class DefaultPaymentEngine(
         }
 
         is ParsedSdkInput.LnurlPay -> {
+            if (comment != null && comment.length > parsed.commentAllowed) {
+                return Admission.Rejected(PaymentRejection.COMMENT_NOT_ALLOWED)
+            }
             val bounds = lnurlBounds(parsed.minSendableMsat, parsed.maxSendableMsat)
                 ?: return Admission.Rejected(PaymentRejection.INVALID_AMOUNT)
             val amount = parsed.amountOverrideSats?.let {
@@ -412,7 +440,8 @@ class DefaultPaymentEngine(
                 minimumAmountSats = bounds.first,
                 maximumAmountSats = bounds.second,
                 lnurlRequest = parsed,
-                amountOverrideSats = amount
+                amountOverrideSats = amount,
+                comment = comment
             )
         }
     }

@@ -19,6 +19,7 @@ import xyz.lilsus.raylsuite.feature.appshell.nativeColorSchemeValue
 import xyz.lilsus.raylsuite.feature.paymenthub.NativePaymentHubController
 import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentRecentController
 import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentScanController
+import xyz.lilsus.raylsuite.feature.paymentui.PaymentIntent
 import xyz.lilsus.raylsuite.feature.paymentui.localizedMessage
 import xyz.lilsus.raylsuite.feature.settings.NativeSettingsController
 import xyz.lilsus.raylsuite.feature.settings.nativeSettingsAppVersionName
@@ -80,7 +81,13 @@ class SparkIosExperience(
             onboarding = runtime.onboardingViewModel,
             walletAccess = runtime.walletAccess,
             languageChanges = runtime.languageRepository.preference,
-            appName = configuration.appName
+            appName = configuration.appName,
+            connectionOnly = runtime.onboardingCompleted.value,
+            initialEducationStep = runtime.onboardingState.educationStep.value,
+            onEducationStepChanged = runtime.onboardingState::moveToEducationStep,
+            onComplete = runtime::completeOnboarding,
+            privacyPolicyUrl = configuration.legalLinks.privacyPolicyUrl,
+            termsUrl = configuration.legalLinks.termsUrl
         ).also { if (closed) it.clear() }
     }
     private val nativeOnboardingController by nativeOnboardingControllerDelegate
@@ -88,7 +95,6 @@ class SparkIosExperience(
     private val nativeWalletSettingsControllerDelegate = lazy {
         SparkNativeWalletSettingsController(
             walletAccess = runtime.walletAccess,
-            networkLabel = runtime.networkLabel,
             languageChanges = runtime.languageRepository.preference,
             isSubmitting = runtime.paymentCoordinator.isSubmitting,
             appName = configuration.appName
@@ -148,12 +154,23 @@ class SparkIosExperience(
     }
 
     /** One of `loading`, `onboarding`, or `tabs`. */
-    fun stage(): String = if (closed) "loading" else runtime.walletAccess.state.value.toStage()
+    fun stage(): String = if (closed) {
+        "loading"
+    } else {
+        runtime.walletAccess.state.value.toStage(
+            runtime.onboardingCompleted.value
+        )
+    }
 
     fun observeStage(onChange: (String) -> Unit): () -> Unit {
         val job =
             observerScope.launch {
-                runtime.walletAccess.state.collect { onChange(it.toStage()) }
+                combine(runtime.walletAccess.state, runtime.onboardingCompleted) {
+                        access,
+                        completed
+                    ->
+                    access.toStage(completed)
+                }.collect(onChange)
             }
         return { job.cancel() }
     }
@@ -174,16 +191,6 @@ class SparkIosExperience(
                 runtime.themePreferences.preference.collect {
                     onChange(it.nativeColorSchemeValue())
                 }
-            }
-        return { job.cancel() }
-    }
-
-    fun recentBadgeCount(): Int = runtime.paymentCoordinator.newSessionTransactionCount.value
-
-    fun observeRecentBadgeCount(onChange: (Int) -> Unit): () -> Unit {
-        val job =
-            observerScope.launch {
-                runtime.paymentCoordinator.newSessionTransactionCount.collect(onChange)
             }
         return { job.cancel() }
     }
@@ -225,13 +232,17 @@ class SparkIosExperience(
         observerScope.launch {
             combine(
                 runtime.paymentCoordinator.uiState,
+                runtime.paymentCoordinator.sessionTransactions,
+                runtime.paymentCoordinator.newSessionTransactionCount,
                 runtime.paymentHub.state,
                 runtime.languageRepository.preference
-            ) { payment, hubState, _ ->
+            ) { payment, transactions, newTransactionCount, hubState, _ ->
                 controller.update(
                     payment = payment.toNativePaymentScreenState(),
                     appTitle = configuration.appName,
-                    savePrompt = hubState.savePrompt
+                    savePrompt = hubState.savePrompt,
+                    recentCount = transactions.size,
+                    newRecentCount = newTransactionCount
                 )
             }.collect {}
         }
@@ -247,6 +258,15 @@ class SparkIosExperience(
                         is PaymentEvent.ShowToast -> event.message.localizedMessage()
                     }
                 controller.emitMessage(message)
+            }
+        }
+        observerScope.launch {
+            runtime.paymentCoordinator.transactionDetailNavigationTarget.collect { id ->
+                if (id == null) return@collect
+                runtime.tabState.openTransaction(id)
+                runtime.paymentCoordinator.dispatch(
+                    PaymentIntent.TransactionDetailNavigationHandled(id)
+                )
             }
         }
         return controller
@@ -275,8 +295,8 @@ class SparkIosExperience(
     }
 }
 
-private fun WalletAccessState.toStage(): String = when (this) {
-    WalletAccessState.Connected -> "tabs"
+private fun WalletAccessState.toStage(completed: Boolean): String = when (this) {
+    WalletAccessState.Connected -> if (completed) "tabs" else "onboarding"
     WalletAccessState.Loading -> "loading"
     else -> "onboarding"
 }

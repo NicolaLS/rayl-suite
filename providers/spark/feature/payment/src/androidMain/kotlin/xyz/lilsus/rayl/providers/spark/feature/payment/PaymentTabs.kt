@@ -20,6 +20,7 @@ fun rememberPaymentFlowState(coordinator: PaymentCoordinator): PaymentFlowState 
     val sessionTransactions by coordinator.sessionTransactions.collectAsStateWithLifecycle()
     val newSessionTransactionCount by
         coordinator.newSessionTransactionCount.collectAsStateWithLifecycle()
+    val detailTarget by coordinator.transactionDetailNavigationTarget.collectAsStateWithLifecycle()
     val formatter = rememberAmountFormatter()
 
     return PaymentFlowState(
@@ -31,7 +32,8 @@ fun rememberPaymentFlowState(coordinator: PaymentCoordinator): PaymentFlowState 
                     detail = transaction.toPaymentTransactionDetail()
                 )
             },
-        newSessionTransactionCount = newSessionTransactionCount
+        newSessionTransactionCount = newSessionTransactionCount,
+        transactionDetailNavigationTarget = detailTarget
     )
 }
 
