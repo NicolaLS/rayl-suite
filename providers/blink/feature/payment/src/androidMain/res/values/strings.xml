@@ -1,11 +1,4 @@
 <resources>
-    <string name="transaction_status_success">Paid</string>
-    <string name="transaction_status_already_paid">Already paid</string>
-    <string name="transaction_status_failure">Failed</string>
-    <string name="transaction_fee">Fee %1$s</string>
-    <string name="confirm_payment_funding_wallet">Pay from %1$s</string>
-    <string name="funding_wallet_bitcoin">Bitcoin</string>
-    <string name="funding_wallet_stablesats">Stablesats (USD)</string>
     <string name="error_funding_wallet_unavailable">Choose an available funding balance in Settings before paying.</string>
     <string name="error_missing_wallet_connection">Connect a wallet to continue.</string>
     <string name="error_payment_rejected_generic">Payment was rejected.</string>
@@ -24,4 +17,6 @@
     <string name="error_blink_limit_exceeded">This payment exceeds your account limits.</string>
     <string name="error_blink_rate_limited">Too many requests. Please wait a moment and try again.</string>
     <string name="error_blink_invalid_api_key">Invalid or revoked API key. Create a new key to continue.</string>
+    <string name="confirm_payment_funding_bitcoin">Pay from Bitcoin</string>
+    <string name="confirm_payment_funding_stablesats">Pay from Stablesats (USD)</string>
 </resources>

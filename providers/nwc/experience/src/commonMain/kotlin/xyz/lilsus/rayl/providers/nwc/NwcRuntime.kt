@@ -13,8 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import xyz.lilsus.rayl.providers.nwc.feature.onboarding.NwcConnectionDraft
-import xyz.lilsus.rayl.providers.nwc.feature.payment.PaymentCoordinator
-import xyz.lilsus.rayl.providers.nwc.feature.payment.PaymentUiState
+import xyz.lilsus.rayl.providers.nwc.feature.payment.NwcPaymentSettlement
 import xyz.lilsus.rayl.providers.nwc.integration.nwc.createNwcWallet
 import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.network.createNetworkConnectivity
@@ -26,6 +25,8 @@ import xyz.lilsus.raylsuite.feature.appshell.AppTabState
 import xyz.lilsus.raylsuite.feature.currencysettings.DefaultCurrencyPreferences
 import xyz.lilsus.raylsuite.feature.languagesettings.createLanguageRepository
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingViewModel
+import xyz.lilsus.raylsuite.feature.paymentflow.PaymentFlowCoordinator
+import xyz.lilsus.raylsuite.feature.paymentflow.PaymentUiState
 import xyz.lilsus.raylsuite.feature.paymenthub.DefaultPaymentHubRepository
 import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubController
 import xyz.lilsus.raylsuite.feature.paymentsettings.DefaultPaymentPreferencesRepository
@@ -99,8 +100,8 @@ internal class NwcRuntime(
 
     private val lnurlPayClient = KtorLnurlPayClient(networkConnectivity)
     val paymentCoordinator by lazy {
-        PaymentCoordinator(
-            nwcWallet = nwcWallet,
+        PaymentFlowCoordinator(
+            settlement = NwcPaymentSettlement(nwcWallet),
             lnurlPayClient = lnurlPayClient,
             bitcoinPriceProvider = bitcoinPriceProvider,
             currencyPreferences = currencyPreferences,

@@ -20,6 +20,8 @@ fun PaymentUiTextKey.androidStringResource(): Int = when (this) {
 
     PaymentUiTextKey.ErrorLnurlWithDetails -> R.string.error_lnurl_with_details
 
+    PaymentUiTextKey.ErrorNetworkUnavailable -> R.string.error_network_unavailable
+
     PaymentUiTextKey.ErrorUnexpectedGeneric -> R.string.error_unexpected_generic
 
     PaymentUiTextKey.ErrorUnexpectedWithDetails -> R.string.error_unexpected_with_details
@@ -33,4 +35,12 @@ fun PaymentUiTextKey.androidStringResource(): Int = when (this) {
 
     PaymentUiTextKey.ToastPaymentLinkNotSupported ->
         R.string.toast_payment_link_not_supported
+
+    PaymentUiTextKey.TransactionFee -> R.string.transaction_fee
+
+    PaymentUiTextKey.TransactionStatusAlreadyPaid -> R.string.transaction_status_already_paid
+
+    PaymentUiTextKey.TransactionStatusFailure -> R.string.transaction_status_failure
+
+    PaymentUiTextKey.TransactionStatusSuccess -> R.string.transaction_status_success
 }

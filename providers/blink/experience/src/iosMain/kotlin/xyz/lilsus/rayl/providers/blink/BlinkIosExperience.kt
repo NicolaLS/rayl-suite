@@ -6,10 +6,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
-import xyz.lilsus.rayl.providers.blink.feature.payment.PaymentEvent
-import xyz.lilsus.rayl.providers.blink.feature.payment.getBlinkPaymentErrorMessageFor
-import xyz.lilsus.rayl.providers.blink.feature.payment.toNativePaymentScreenState
-import xyz.lilsus.rayl.providers.blink.feature.payment.toNativeRecentItem
 import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.settings.createConnectionSettings
@@ -20,6 +16,10 @@ import xyz.lilsus.raylsuite.core.ui.resources.nativeString
 import xyz.lilsus.raylsuite.feature.appshell.AppTab
 import xyz.lilsus.raylsuite.feature.appshell.appTabTitles
 import xyz.lilsus.raylsuite.feature.appshell.nativeColorSchemeValue
+import xyz.lilsus.raylsuite.feature.paymentflow.PaymentEvent
+import xyz.lilsus.raylsuite.feature.paymentflow.paymentErrorMessage
+import xyz.lilsus.raylsuite.feature.paymentflow.toNativePaymentScreenState
+import xyz.lilsus.raylsuite.feature.paymentflow.toNativeRecentItem
 import xyz.lilsus.raylsuite.feature.paymenthub.NativePaymentHubController
 import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentRecentController
 import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentScanController
@@ -277,11 +277,7 @@ class BlinkIosExperience(
             runtime.paymentCoordinator.events.collect { event ->
                 val message =
                     when (event) {
-                        is PaymentEvent.ShowError ->
-                            getBlinkPaymentErrorMessageFor(
-                                event.error
-                            )
-
+                        is PaymentEvent.ShowError -> paymentErrorMessage(event.error)
                         is PaymentEvent.ShowToast -> event.message.localizedMessage()
                     }
                 controller.emitMessage(message)

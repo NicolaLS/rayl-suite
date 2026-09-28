@@ -11,9 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import xyz.lilsus.rayl.providers.blink.feature.blinkcontacts.BlinkContactsImporter
 import xyz.lilsus.rayl.providers.blink.feature.payment.BlinkPaymentPreferences
-import xyz.lilsus.rayl.providers.blink.feature.payment.PaymentCoordinator
+import xyz.lilsus.rayl.providers.blink.feature.payment.BlinkPaymentSettlement
 import xyz.lilsus.rayl.providers.blink.feature.payment.PaymentDeepLinkEvents
-import xyz.lilsus.rayl.providers.blink.feature.payment.PaymentUiState
 import xyz.lilsus.rayl.providers.blink.integration.blink.createBlinkWallet
 import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.network.createNetworkConnectivity
@@ -24,6 +23,8 @@ import xyz.lilsus.raylsuite.feature.appshell.AppTabState
 import xyz.lilsus.raylsuite.feature.currencysettings.DefaultCurrencyPreferences
 import xyz.lilsus.raylsuite.feature.languagesettings.createLanguageRepository
 import xyz.lilsus.raylsuite.feature.onboarding.OnboardingViewModel
+import xyz.lilsus.raylsuite.feature.paymentflow.PaymentFlowCoordinator
+import xyz.lilsus.raylsuite.feature.paymentflow.PaymentUiState
 import xyz.lilsus.raylsuite.feature.paymenthub.DefaultPaymentHubRepository
 import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubController
 import xyz.lilsus.raylsuite.feature.paymentsettings.DefaultPaymentPreferencesRepository
@@ -94,8 +95,8 @@ internal class BlinkRuntime(
     private val lnurlPayClient by lnurlPayClientDelegate
 
     private val paymentCoordinatorDelegate = lazy {
-        PaymentCoordinator(
-            blinkWallet = blinkWallet,
+        PaymentFlowCoordinator(
+            settlement = BlinkPaymentSettlement(blinkWallet, bitcoinPriceProvider),
             lnurlPayClient = lnurlPayClient,
             bitcoinPriceProvider = bitcoinPriceProvider,
             currencyPreferences = currencyPreferences,

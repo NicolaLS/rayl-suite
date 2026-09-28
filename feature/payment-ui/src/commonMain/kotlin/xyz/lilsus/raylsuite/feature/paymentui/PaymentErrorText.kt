@@ -10,12 +10,17 @@ enum class PaymentUiTextKey(override val key: String) : LocalizedTextKey {
     ErrorInvalidInvoiceWithDetails("error_invalid_invoice_with_details"),
     ErrorLnurl("error_lnurl"),
     ErrorLnurlWithDetails("error_lnurl_with_details"),
+    ErrorNetworkUnavailable("error_network_unavailable"),
     ErrorUnexpectedGeneric("error_unexpected_generic"),
     ErrorUnexpectedWithDetails("error_unexpected_with_details"),
     ToastBitcoinAddress("toast_bitcoin_address"),
     ToastBolt12NotSupported("toast_bolt12_not_supported"),
     ToastLnurlRequestNotSupported("toast_lnurl_request_not_supported"),
-    ToastPaymentLinkNotSupported("toast_payment_link_not_supported");
+    ToastPaymentLinkNotSupported("toast_payment_link_not_supported"),
+    TransactionFee("transaction_fee"),
+    TransactionStatusAlreadyPaid("transaction_status_already_paid"),
+    TransactionStatusFailure("transaction_status_failure"),
+    TransactionStatusSuccess("transaction_status_success");
 
     override val table: String = "PaymentUI"
 }
@@ -32,6 +37,9 @@ fun lnurlPaymentErrorText(reason: String?): LocalizedText = localizedTextWithOpt
     generic = PaymentUiTextKey.ErrorLnurl,
     withDetails = PaymentUiTextKey.ErrorLnurlWithDetails
 )
+
+fun networkUnavailablePaymentErrorText(): LocalizedText =
+    LocalizedText(PaymentUiTextKey.ErrorNetworkUnavailable)
 
 fun exchangeRateUnavailablePaymentErrorText(currencyCode: String): LocalizedText =
     LocalizedText(PaymentUiTextKey.ErrorExchangeRateUnavailable, currencyCode)

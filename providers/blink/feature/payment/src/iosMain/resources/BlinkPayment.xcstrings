@@ -1,29 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "confirm_payment_funding_wallet" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bezahlen mit %1$@"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pay from %1$@"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pagar con %1$@"
-          }
-        }
-      }
-    },
     "error_funding_wallet_unavailable" : {
       "extractionState" : "stale",
       "localizations" : {
@@ -43,52 +20,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Elige un saldo de pago disponible en Ajustes antes de pagar."
-          }
-        }
-      }
-    },
-    "funding_wallet_bitcoin" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bitcoin"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bitcoin"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bitcoin"
-          }
-        }
-      }
-    },
-    "funding_wallet_stablesats" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stablesats (USD)"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stablesats (USD)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stablesats (USD)"
           }
         }
       }
@@ -484,94 +415,48 @@
         }
       }
     },
-    "transaction_fee" : {
-      "extractionState" : "stale",
+    "confirm_payment_funding_bitcoin" : {
+      "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gebühr %1$@"
+            "value" : "Bezahlen mit Bitcoin"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fee %1$@"
+            "value" : "Pay from Bitcoin"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Comisión %1$@"
+            "value" : "Pagar con Bitcoin"
           }
         }
       }
     },
-    "transaction_status_already_paid" : {
-      "extractionState" : "stale",
+    "confirm_payment_funding_stablesats" : {
+      "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Bereits bezahlt"
+            "value" : "Bezahlen mit Stablesats (USD)"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Already paid"
+            "value" : "Pay from Stablesats (USD)"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ya pagado"
-          }
-        }
-      }
-    },
-    "transaction_status_failure" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fehlgeschlagen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Failed"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fallido"
-          }
-        }
-      }
-    },
-    "transaction_status_success" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bezahlt"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Paid"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pagado"
+            "value" : "Pagar con Stablesats (USD)"
           }
         }
       }

@@ -3,8 +3,8 @@
 Within [ARCH-rayl](../../specs/ARCH-rayl.md), each provider owns its
 wallet connection and payment execution. Shared `core/payment` utilities handle
 payment input; `feature/payment-ui` supplies presentation models, user intents,
-and platform UI. Provider payment features translate their own state into that
-shared presentation.
+and platform UI. Payment features translate their state into that shared
+presentation.
 
 The [provider experience requirement](../../specs/REQ-provider-experience.md)
 requires consistent UI and UX across all providers. Shared platform shells own
@@ -14,9 +14,11 @@ capability-specific controls, and execution callbacks.
 
 ## Composition and execution
 
-Blink and NWC assemble their runtimes in their `experience` modules. Each
-provider's `feature/payment` coordinator owns admission, confirmation, session
-history, and presentation, and submits payments through its own integration.
+Blink and NWC assemble their runtimes in their `experience` modules around the
+provider-neutral [`feature/payment-flow`](../../feature/payment-flow), which owns
+admission, LNURL resolution, confirmation, session history, and presentation.
+Each provider's `feature/payment` supplies a `PaymentSettlement` that chooses
+funding and submits payments through its own integration.
 [Blink](../blink/integration/blink) wraps a GraphQL API and BTC or USD funding
 wallets; [NWC](../nwc/integration/nwc) wraps the Nostr Wallet Connect client.
 Their integrations own connection credentials.

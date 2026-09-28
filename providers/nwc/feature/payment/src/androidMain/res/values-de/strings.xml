@@ -1,11 +1,7 @@
 <resources>
-    <string name="transaction_status_success">Bezahlt</string>
-    <string name="transaction_status_failure">Fehlgeschlagen</string>
-    <string name="transaction_fee">Gebühr %1$s</string>
     <string name="error_missing_wallet_connection">Verbinde zuerst eine Wallet.</string>
     <string name="error_payment_rejected_generic">Zahlung wurde abgewiesen.</string>
     <string name="error_payment_rejected_message">Zahlung wurde abgewiesen: %1$s</string>
-    <string name="error_network_unavailable">Keine Internetverbindung. Prüfe dein Netzwerk.</string>
     <string name="error_relay_connection_failed">Verbindung zum Wallet fehlgeschlagen. Bitte erneut versuchen.</string>
     <string name="error_payment_unconfirmed">Zahlungsstatus unbekannt. Die Zahlung ist möglicherweise erfolgt.</string>
     <string name="error_payment_unconfirmed_message">Zahlungsstatus unbekannt: %1$s</string>

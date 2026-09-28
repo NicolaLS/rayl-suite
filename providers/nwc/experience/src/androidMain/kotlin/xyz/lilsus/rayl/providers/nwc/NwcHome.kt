@@ -26,8 +26,7 @@ import androidx.navigationevent.compose.NavigationEventHandler
 import androidx.navigationevent.compose.rememberNavigationEventState
 import xyz.lilsus.rayl.providers.nwc.feature.onboarding.NwcOnboardingDestination
 import xyz.lilsus.rayl.providers.nwc.feature.onboarding.nwcOnboarding
-import xyz.lilsus.rayl.providers.nwc.feature.payment.rememberPaymentFlowState
-import xyz.lilsus.rayl.providers.nwc.feature.payment.rememberPaymentMessages
+import xyz.lilsus.rayl.providers.nwc.feature.payment.nwcPaymentStringResource
 import xyz.lilsus.rayl.providers.nwc.feature.walletdetails.NwcWalletDetailsScreen
 import xyz.lilsus.rayl.providers.nwc.feature.walletdetails.R as NwcDetailsR
 import xyz.lilsus.rayl.providers.nwc.integration.nwc.NwcWalletConnection
@@ -37,6 +36,8 @@ import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRowDefaults
 import xyz.lilsus.raylsuite.core.ui.platform.rememberCredentialClipboard
 import xyz.lilsus.raylsuite.feature.appshell.AppTab
 import xyz.lilsus.raylsuite.feature.appshell.AppTabScaffold
+import xyz.lilsus.raylsuite.feature.paymentflow.rememberPaymentFlowState
+import xyz.lilsus.raylsuite.feature.paymentflow.rememberPaymentMessages
 import xyz.lilsus.raylsuite.feature.paymenthub.PaymentHubTab
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentScanFlow
 import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
@@ -86,8 +87,8 @@ internal fun NwcTabContent(
     val isSubmitting by coordinator.isSubmitting.collectAsStateWithLifecycle()
     val tabState = runtime.tabState
     val selectedTransactionId by tabState.selectedTransactionId.collectAsStateWithLifecycle()
-    val flowState = rememberPaymentFlowState(coordinator)
-    val messages = rememberPaymentMessages(coordinator)
+    val flowState = rememberPaymentFlowState(coordinator, ::nwcPaymentStringResource)
+    val messages = rememberPaymentMessages(coordinator, ::nwcPaymentStringResource)
     val hubState by runtime.paymentHub.state.collectAsStateWithLifecycle()
     val currencyCode by runtime.currencyPreferences.code.collectAsStateWithLifecycle(
         CurrencyCatalog.DEFAULT_CODE

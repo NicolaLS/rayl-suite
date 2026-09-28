@@ -60,4 +60,9 @@
     <string name="resolving_payment_title">Zahlung wird vorbereitet</string>
     <string name="resolving_payment_subtitle">Es wurde noch keine Zahlung gesendet.</string>
     <string name="enter_amount_switch_currency">Zu %1$s wechseln</string>
+    <string name="transaction_status_success">Bezahlt</string>
+    <string name="transaction_status_already_paid">Bereits bezahlt</string>
+    <string name="transaction_status_failure">Fehlgeschlagen</string>
+    <string name="transaction_fee">Gebühr %1$s</string>
+    <string name="error_network_unavailable">Keine Internetverbindung. Prüfe dein Netzwerk.</string>
 </resources>

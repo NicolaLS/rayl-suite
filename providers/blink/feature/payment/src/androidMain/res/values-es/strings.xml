@@ -1,11 +1,4 @@
 <resources>
-    <string name="transaction_status_success">Pagado</string>
-    <string name="transaction_status_already_paid">Ya pagado</string>
-    <string name="transaction_status_failure">Fallido</string>
-    <string name="transaction_fee">Comisión %1$s</string>
-    <string name="confirm_payment_funding_wallet">Pagar con %1$s</string>
-    <string name="funding_wallet_bitcoin">Bitcoin</string>
-    <string name="funding_wallet_stablesats">Stablesats (USD)</string>
     <string name="error_funding_wallet_unavailable">Elige un saldo de pago disponible en Ajustes antes de pagar.</string>
     <string name="error_missing_wallet_connection">Conecta una billetera para continuar.</string>
     <string name="error_payment_rejected_generic">El pago fue rechazado.</string>
@@ -24,4 +17,6 @@
     <string name="error_blink_limit_exceeded">Este pago excede los límites de tu cuenta.</string>
     <string name="error_blink_rate_limited">Demasiadas solicitudes. Espera un momento e intenta de nuevo.</string>
     <string name="error_blink_invalid_api_key">Clave API inválida o revocada. Crea una nueva clave para continuar.</string>
+    <string name="confirm_payment_funding_bitcoin">Pagar con Bitcoin</string>
+    <string name="confirm_payment_funding_stablesats">Pagar con Stablesats (USD)</string>
 </resources>
