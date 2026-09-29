@@ -19,6 +19,7 @@ class PriceBoard(
     private val log: (String) -> Unit = ::println
 ) {
     private val snapshots = ConcurrentHashMap<String, Snapshot>()
+    private val lastErrors = ConcurrentHashMap<String, String>()
 
     suspend fun refresh() = coroutineScope {
         sources.map { source ->
@@ -31,9 +32,11 @@ class PriceBoard(
                     }
                     check(quotes.isNotEmpty()) { "no usable quotes" }
                     snapshots[source.name] = Snapshot(quotes, clock())
+                    lastErrors.remove(source.name)
                 } catch (cancellation: CancellationException) {
                     throw cancellation
                 } catch (failure: Exception) {
+                    lastErrors[source.name] = failure.message ?: failure::class.simpleName.orEmpty()
                     log("${source.name} failed: ${failure.message}")
                 }
             }
@@ -51,6 +54,16 @@ class PriceBoard(
             .mapValues { (_, quotes) -> quotes.median() }
             .toSortedMap()
         return BitcoinPrices(asOf = fresh.minOf { it.fetchedAtMs } / 1_000, prices = prices)
+    }
+
+    fun health(): List<SourceHealth> = sources.map { source ->
+        val snapshot = snapshots[source.name]
+        SourceHealth(
+            name = source.name,
+            lastSuccess = snapshot?.fetchedAtMs?.let(::isoTime),
+            currencies = snapshot?.quotes?.size ?: 0,
+            lastError = lastErrors[source.name]
+        )
     }
 
     private class Snapshot(val quotes: Map<String, Double>, val fetchedAtMs: Long)

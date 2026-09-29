@@ -1,0 +1,73 @@
+name: Backend
+
+permissions:
+  contents: read
+
+env:
+  JAVA_VERSION: '21'
+
+# hub-revamp deploys to staging, main to production. Railway project tokens are scoped to one
+# environment: RAILWAY_TOKEN_STAGING and RAILWAY_TOKEN_PRODUCTION (repository secrets).
+on:
+  push:
+    branches: [main, hub-revamp]
+    paths:
+      - backend/rayl/**
+      - core/rayl-api/**
+      - core/widget-spec/**
+      - core/model/**
+      - gradle/libs.versions.toml
+      - backend/dev-provider/**
+      - .github/workflows/backend.yml
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Railway environment
+        type: choice
+        options: [staging, production]
+        default: staging
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Test and deploy the Rayl backend
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    env:
+      TARGET: ${{ inputs.environment || (github.ref_name == 'main' && 'production' || 'staging') }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up and validate Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Test and package
+        run: ./gradlew :backend:rayl:test :backend:rayl:ktlintCheck :backend:rayl:installDist
+
+      - name: Install the Railway CLI
+        run: npm install --global @railway/cli
+
+      - name: Deploy the backend
+        env:
+          RAILWAY_TOKEN: ${{ env.TARGET == 'production' && secrets.RAILWAY_TOKEN_PRODUCTION || secrets.RAILWAY_TOKEN_STAGING }}
+        run: >
+          railway up backend/rayl --path-as-root --no-gitignore --service rayl --ci
+          --message "${{ github.sha }}"
+
+      - name: Deploy the dev provider
+        if: env.TARGET == 'staging'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN_STAGING }}
+        run: >
+          railway up backend/dev-provider --path-as-root --service dev-provider --ci
+          --message "${{ github.sha }}"

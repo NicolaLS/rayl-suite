@@ -1,0 +1,85 @@
+{
+  "entries": [
+    {
+      "id": "claro-sv-packages",
+      "section": "mobile",
+      "url": "https://claro-widget-stage.up.railway.app/rayl/claro-sv-packages.json"
+    },
+    {
+      "id": "claro-sv-topup",
+      "section": "mobile",
+      "url": "https://claro-widget-stage.up.railway.app/rayl/claro-sv-topup.json"
+    },
+    {
+      "id": "dev-packages",
+      "section": "mobile",
+      "url": "https://dev-provider-staging.up.railway.app/ok/packages.json"
+    },
+    {
+      "id": "dev-topup",
+      "section": "mobile",
+      "url": "https://dev-provider-staging.up.railway.app/ok/topup.json"
+    },
+    {
+      "id": "dev-giftcard",
+      "section": "gift_cards",
+      "url": "https://dev-provider-staging.up.railway.app/ok/giftcard.json"
+    },
+    {
+      "id": "dev-bill",
+      "section": "bills",
+      "url": "https://dev-provider-staging.up.railway.app/ok/bill.json"
+    },
+    {
+      "id": "dev-price",
+      "section": "info",
+      "url": "https://dev-provider-staging.up.railway.app/ok/price.json"
+    },
+    {
+      "id": "dev-packages-down",
+      "section": "other",
+      "url": "https://dev-provider-staging.up.railway.app/down/packages.json"
+    },
+    {
+      "id": "dev-packages-slow",
+      "section": "other",
+      "url": "https://dev-provider-staging.up.railway.app/slow/packages.json"
+    },
+    {
+      "id": "dev-packages-mismatch",
+      "section": "other",
+      "url": "https://dev-provider-staging.up.railway.app/mismatch/packages.json"
+    },
+    {
+      "id": "dev-packages-higher",
+      "section": "other",
+      "url": "https://dev-provider-staging.up.railway.app/higher/packages.json"
+    },
+    {
+      "id": "dev-packages-lower",
+      "section": "other",
+      "url": "https://dev-provider-staging.up.railway.app/lower/packages.json"
+    },
+    {
+      "id": "dev-packages-refuse",
+      "section": "other",
+      "url": "https://dev-provider-staging.up.railway.app/refuse/packages.json"
+    },
+    {
+      "id": "dev-packages-soldout",
+      "section": "other",
+      "url": "https://dev-provider-staging.up.railway.app/soldout/packages.json"
+    },
+    {
+      "id": "dev-packages-undelivered",
+      "section": "other",
+      "url": "https://dev-provider-staging.up.railway.app/undelivered/packages.json"
+    },
+    {
+      "id": "dev-bill-nothingdue",
+      "section": "other",
+      "url": "https://dev-provider-staging.up.railway.app/nothingdue/bill.json"
+    }
+  ],
+  "blocked": []
+}
