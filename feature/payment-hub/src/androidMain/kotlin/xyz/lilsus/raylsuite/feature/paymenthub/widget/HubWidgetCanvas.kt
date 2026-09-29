@@ -437,7 +437,7 @@ private fun WidgetCanvasTile(
                     })
                     variants.forEach { variant ->
                         DropdownMenuItem(
-                            text = { Text(variant.title ?: variant.label()) },
+                            text = { Text(variant.label()) },
                             enabled = variant.id != tile.variant.id,
                             onClick = {
                                 expanded = false
@@ -459,14 +459,6 @@ private fun WidgetCanvasTile(
                             text = { Text(stringResource(R.string.hub_widget_select_variant)) },
                             onClick = { choosingLayout = true }
                         )
-                    }
-                    if (tile.unavailable) {
-                        DropdownMenuItem(text = {
-                            Text(stringResource(R.string.hub_widget_retry))
-                        }, onClick = {
-                            expanded = false
-                            viewModel.refreshContent()
-                        })
                     }
                     DropdownMenuItem(text = { Text(moveUp) }, enabled = canMoveUp, onClick = {
                         expanded = false

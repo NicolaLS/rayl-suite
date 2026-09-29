@@ -2,6 +2,7 @@ package xyz.lilsus.raylsuite.feature.paymentflow
 
 import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.ui.resources.LocalizedText
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetPriceCheck
 import xyz.lilsus.raylsuite.feature.paymentui.LnurlPayDisplay
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentConfirmationAmount
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentReceiptDetails
@@ -22,7 +23,9 @@ sealed interface PaymentUiState {
         val amount: PaymentConfirmationAmount,
         val lnurlPayDisplay: LnurlPayDisplay? = null,
         /** Provider-chosen balance the payment is funded from, when the wallet has several. */
-        val fundingSource: LocalizedText? = null
+        val fundingSource: LocalizedText? = null,
+        /** A widget invoice that is plausible but not exactly the advertised price. */
+        val priceNotice: WidgetPriceCheck? = null
     ) : PaymentUiState
 
     data class Success(
@@ -49,6 +52,9 @@ sealed interface PaymentUiError {
     data object NetworkUnavailable : PaymentUiError
 
     data class ExchangeRateUnavailable(val currencyCode: String) : PaymentUiError
+
+    /** A widget checkout stopped before anything reached the wallet. */
+    data class Widget(val reason: WidgetStopReason, val detail: String? = null) : PaymentUiError
 
     data class Unexpected(val detail: String? = null) : PaymentUiError
 }
@@ -89,6 +95,12 @@ internal fun SessionTransactionItem.toDetailUiState(): PaymentUiState = when (st
 
     TransactionStatus.Failure -> PaymentUiState.Error(error ?: PaymentUiError.Unexpected())
 }
+
+internal fun xyz.lilsus.raylsuite.core.model.StoredAmount.toDisplayAmount(): DisplayAmount =
+    DisplayAmount(
+        minor,
+        xyz.lilsus.raylsuite.core.model.CurrencyCatalog.infoFor(normalizedCurrencyCode).currency
+    )
 
 internal fun TransactionStatus.labelKey(): PaymentUiTextKey = when (this) {
     TransactionStatus.Success -> PaymentUiTextKey.TransactionStatusSuccess

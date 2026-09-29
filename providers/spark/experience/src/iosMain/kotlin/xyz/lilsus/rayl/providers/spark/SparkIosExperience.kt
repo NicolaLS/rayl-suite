@@ -11,6 +11,7 @@ import xyz.lilsus.rayl.providers.spark.feature.payment.PaymentEvent
 import xyz.lilsus.rayl.providers.spark.feature.payment.getSparkPaymentErrorMessageFor
 import xyz.lilsus.rayl.providers.spark.feature.payment.toNativePaymentScreenState
 import xyz.lilsus.rayl.providers.spark.feature.payment.toNativeRecentItem
+import xyz.lilsus.raylsuite.core.raylapi.RaylBackend
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.ui.platform.createHapticFeedbackManager
 import xyz.lilsus.raylsuite.feature.appshell.AppTab
@@ -30,7 +31,8 @@ import xyz.lilsus.raylsuite.feature.settings.nativeSettingsAppVersionName
  */
 class SparkIosExperience(
     host: SparkAppHost,
-    private val configuration: SparkExperienceConfiguration
+    private val configuration: SparkExperienceConfiguration,
+    backend: RaylBackend
 ) {
     private val observerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var closed = false
@@ -40,7 +42,8 @@ class SparkIosExperience(
             host = host,
             configuration = configuration,
             appSettings = createAppSettings(),
-            haptics = createHapticFeedbackManager()
+            haptics = createHapticFeedbackManager(),
+            backend = backend
         )
 
     private val nativeSettingsControllerDelegate = lazy {
@@ -241,6 +244,7 @@ class SparkIosExperience(
                     payment = payment.toNativePaymentScreenState(),
                     appTitle = configuration.appName,
                     savePrompt = hubState.savePrompt,
+                    delivery = hubState.delivery,
                     recentCount = transactions.size,
                     newRecentCount = newTransactionCount
                 )

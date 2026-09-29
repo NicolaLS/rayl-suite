@@ -41,6 +41,7 @@ import xyz.lilsus.rayl.providers.spark.feature.onboarding.sparkOnboarding
 import xyz.lilsus.rayl.providers.spark.feature.walletconnection.WalletConnectionScreen
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.model.WalletStartMode
+import xyz.lilsus.raylsuite.core.raylapi.RaylBackend
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
 import xyz.lilsus.raylsuite.core.ui.platform.LocalProductName
 import xyz.lilsus.raylsuite.core.ui.platform.rememberHapticFeedbackManager
@@ -51,6 +52,7 @@ import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 @Composable
 fun SparkExperience(
     configuration: SparkExperienceConfiguration,
+    backend: RaylBackend,
     environment: SparkEnvironment,
     startMode: WalletStartMode,
     breezApiKey: String? = null,
@@ -71,7 +73,8 @@ fun SparkExperience(
                     host = createAndroidAppHost(context, environment, startMode, breezApiKey),
                     configuration = configuration,
                     appSettings = appSettings,
-                    haptics = haptics
+                    haptics = haptics,
+                    backend = backend
                 )
             },
             onDispose = SparkRuntime::clear,

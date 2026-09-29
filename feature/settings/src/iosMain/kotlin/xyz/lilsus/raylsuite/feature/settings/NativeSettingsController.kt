@@ -40,7 +40,8 @@ data class NativePaymentSettingsSnapshot(
     val thresholdEquivalent: NativeSettingsAmount?,
     val offerToSaveNewTargets: Boolean,
     val vibrateOnScan: Boolean,
-    val vibrateOnPayment: Boolean
+    val vibrateOnPayment: Boolean,
+    val shareUsage: Boolean
 )
 
 data class NativeSettingsText(
@@ -59,6 +60,8 @@ data class NativeSettingsText(
     val paymentAbove: String,
     val paymentHubTitle: String,
     val paymentOfferSaveTargets: String,
+    val paymentShareUsage: String,
+    val paymentShareUsageDetail: String,
     val paymentHapticsTitle: String,
     val paymentHapticsScan: String,
     val paymentHapticsPayment: String
@@ -138,7 +141,8 @@ class NativeSettingsController(
                                     },
                                 offerToSaveNewTargets = paymentState.offerToSaveNewTargets,
                                 vibrateOnScan = paymentState.vibrateOnScan,
-                                vibrateOnPayment = paymentState.vibrateOnPayment
+                                vibrateOnPayment = paymentState.vibrateOnPayment,
+                                shareUsage = paymentState.shareUsage
                             ),
                         versionText = resources.versionText,
                         legalLinks = resources.legalLinks
@@ -187,6 +191,10 @@ class NativeSettingsController(
 
     fun setVibrateOnScan(enabled: Boolean) {
         payment.setVibrateOnScan(enabled)
+    }
+
+    fun setShareUsage(enabled: Boolean) {
+        payment.setShareUsage(enabled)
     }
 
     fun setVibrateOnPayment(enabled: Boolean) {
@@ -338,6 +346,8 @@ private suspend fun loadResources(
                 paymentAbove = paymentStrings.getValue("above"),
                 paymentHubTitle = paymentStrings.getValue("hubTitle"),
                 paymentOfferSaveTargets = paymentStrings.getValue("offerSaveTargets"),
+                paymentShareUsage = paymentStrings.getValue("shareUsage"),
+                paymentShareUsageDetail = paymentStrings.getValue("shareUsageDetail"),
                 paymentHapticsTitle = paymentStrings.getValue("hapticsTitle"),
                 paymentHapticsScan = paymentStrings.getValue("hapticsScan"),
                 paymentHapticsPayment = paymentStrings.getValue("hapticsPayment")

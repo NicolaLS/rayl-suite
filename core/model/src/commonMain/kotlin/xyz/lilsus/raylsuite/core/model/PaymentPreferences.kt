@@ -11,7 +11,9 @@ data class PaymentPreferences(
     /** Offer to add an unknown Lightning Address to the payment hub after a successful payment. */
     val offerToSaveNewTargets: Boolean = true,
     val vibrateOnScan: Boolean = true,
-    val vibrateOnPayment: Boolean = true
+    val vibrateOnPayment: Boolean = true,
+    /** Count anonymously which reviewed Hub services are added, removed and paid. */
+    val shareUsage: Boolean = true
 ) {
     fun normalise(): PaymentPreferences = copy(
         thresholdSats =

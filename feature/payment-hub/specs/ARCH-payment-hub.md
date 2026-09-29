@@ -2,7 +2,22 @@
 
 The Hub is a provider-neutral feature in
 [ARCH-rayl](../../../specs/ARCH-rayl.md). Common Kotlin owns its saved
-state and behavior, with Compose and SwiftUI presentations.
+state and behavior, with Compose and SwiftUI presentations. Built-in widget
+definitions are compiled into the app; provider widgets come from rayl-widget
+definitions, either from Rayl's service catalog or added by link.
+
+## Service catalog
+
+[`RaylServices`](../src/commonMain/kotlin/xyz/lilsus/raylsuite/feature/paymenthub/RaylServices.kt)
+reads the catalog from the Rayl backend (`backend/rayl`) and keeps the last one
+on the device. Listed entries are the reviewed services: only they keep their
+brand and lose the "not reviewed" warning, and the Add widget sheet shows them
+from the backend's validated copy of their definition without contacting the
+provider. The catalog's block list disables matching widgets, including ones
+added by link, and widget checkout refreshes a catalog older than five minutes
+before paying, so a block reaches payments within minutes. When the
+backend is unreachable the last catalog applies. With the user's consent the
+Hub reports anonymous added, removed and paid counts for listed services only.
 
 ## Local state and payment handoff
 
@@ -15,16 +30,3 @@ emits payment intents to the
 [provider coordinators](../../../providers/specs/ARCH-providers.md).
 Providers own execution and report successful target payments back to update
 Hub usage history. The Hub does not submit wallet payments itself.
-
-## Remote catalog boundary
-
-The optional remote path uses [`integration/hub`](../../../integration/hub)
-and the versioned wire types in [`core/hub-api`](../../../core/hub-api).
-Remote descriptors and content are validated data for compiled native metric
-widgets, rather than downloaded executable UI.
-
-The [current build configuration](../build.gradle.kts) generates an empty
-backend URL, so Android and iOS Hub surfaces create no remote session.
-The separate [`backend/hub`](../../../backend/hub) JVM Ktor service currently
-returns an empty catalog and unavailable widget content; it has no role in
-wallet payment execution.

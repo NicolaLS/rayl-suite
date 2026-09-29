@@ -25,6 +25,7 @@ import xyz.lilsus.rayl.providers.nwc.feature.onboarding.nwcEducationDestination
 import xyz.lilsus.rayl.providers.nwc.feature.onboarding.nwcOnboarding
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.model.WalletStartMode
+import xyz.lilsus.raylsuite.core.raylapi.RaylBackend
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
 import xyz.lilsus.raylsuite.core.settings.rememberSecureSettings
 import xyz.lilsus.raylsuite.core.ui.platform.LocalProductName
@@ -39,6 +40,7 @@ import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalFailure
 @Composable
 fun NwcExperience(
     configuration: NwcExperienceConfiguration,
+    backend: RaylBackend,
     startMode: WalletStartMode,
     performanceDiagnostics: PerformanceDiagnostics? = null,
     onRemoved: () -> Unit,
@@ -58,7 +60,8 @@ fun NwcExperience(
                 configuration,
                 secureSettings,
                 haptics,
-                startMode
+                startMode,
+                backend
             )
         },
         onDispose = NwcRuntime::clear,

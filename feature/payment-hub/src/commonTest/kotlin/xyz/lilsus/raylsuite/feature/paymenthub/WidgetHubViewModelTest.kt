@@ -32,7 +32,8 @@ class WidgetHubViewModelTest {
         vm.selectVariant("single")
         assertEquals(listOf(alice.id), vm.state.value.editor?.contactIds)
         vm.selectVariant("row")
-        vm.toggleContact(bob.id)
+        // A new widget's size starts with the suggested contacts.
+        assertEquals(listOf(alice.id, bob.id), vm.state.value.editor?.contactIds)
         vm.saveWidget()
         vm.saveWidget()
         advanceUntilIdle()
@@ -41,7 +42,6 @@ class WidgetHubViewModelTest {
         for (id in listOf("local.favorites", "local.recents")) {
             vm.selectDefinition(id)
             vm.configureSelected()
-            vm.saveWidget()
             advanceUntilIdle()
         }
         val aliceAction = assertNotNull(repo.hub.value.contactTarget(alice.id)).id
@@ -72,7 +72,7 @@ class WidgetHubViewModelTest {
         }
         advanceUntilIdle()
         vm.selectDefinition("local.contacts")
-        vm.toggleContact(contacts[0].id)
+        assertEquals(listOf(contacts[0].id), vm.state.value.editor?.contactIds)
         vm.toggleContact(contacts[1].id)
         assertEquals(listOf(contacts[1].id), vm.state.value.editor?.contactIds)
         vm.addContact("New", "new@example.com")
@@ -81,7 +81,7 @@ class WidgetHubViewModelTest {
         for (variant in listOf(LocalHubWidgets.Row, LocalHubWidgets.Card)) {
             vm.selectDefinition("local.contacts")
             vm.selectVariant(variant.id)
-            contacts.take(variant.capacity).forEach { vm.toggleContact(it.id) }
+            assertEquals(variant.capacity, vm.state.value.editor?.contactIds?.size)
             vm.toggleContact(contacts[variant.capacity].id)
             assertEquals(variant.capacity, vm.state.value.editor?.contactIds?.size)
             assertEquals(HubWidgetError.TooManyContacts, vm.state.value.error)
@@ -103,8 +103,10 @@ class WidgetHubViewModelTest {
         advanceUntilIdle()
         vm.selectDefinition("local.shortcut")
         vm.configureSelected()
-        assertEquals(HubWidgetError.SelectContacts, vm.state.value.editorValidationError())
-        vm.toggleContact(alice.id)
+        // The top contact is preselected; the amount is what a shortcut still needs.
+        assertEquals(HubWidgetScreen.Configure, vm.state.value.screen)
+        assertEquals(listOf(alice.id), vm.state.value.editor?.contactIds)
+        assertEquals(HubWidgetError.InvalidAmount, vm.state.value.editorValidationError())
         vm.toggleContact(bob.id)
         assertEquals(listOf(bob.id), vm.state.value.editor?.contactIds)
         assertEquals(HubWidgetError.InvalidAmount, vm.state.value.editorValidationError())
@@ -117,6 +119,62 @@ class WidgetHubViewModelTest {
         assertEquals(HubWidgetScreen.Hub, vm.state.value.screen)
         assertEquals(HubWidgetKind.Shortcut, repo.hub.value.widgets.single().kind)
         assertEquals(1250L, vm.state.value.widgets.single().people.single().amount?.minor)
+        vm.clear()
+    }
+
+    @Test
+    fun contactsAreAddedWithMostPaidDefaultsAndResizeInPlace() = runTest {
+        val repo = DefaultPaymentHubRepository(MapSettings())
+        val host = PaymentHubController(repo, this)
+        val vm = WidgetHubViewModel(repo, host, { "USD" }, dispatcher = StandardTestDispatcher(testScheduler))
+        val contacts = (1..5).map {
+            repo.saveContact(assertNotNull(LightningAddress.parse("person$it@example.com")), "Person $it")
+        }
+        advanceUntilIdle()
+        // Pay the third contact through a widget, then start from an empty Hub.
+        repo.saveWidget(
+            HubWidgetDraft("local.contacts", HubWidgetKind.Contacts, LocalHubWidgets.Single, contactIds = listOf(contacts[2].id)),
+            null
+        )
+        repo.hub.value.widgets.forEach { repo.deleteWidget(it.id) }
+        val third = assertNotNull(repo.hub.value.contactTarget(contacts[2].id)).id
+        repo.recordSuccessfulPayment(third, 10, paidSats = 2_100)
+        advanceUntilIdle()
+
+        vm.selectDefinition("local.contacts")
+        vm.selectVariant(LocalHubWidgets.Row.id)
+        assertEquals(true, vm.state.value.editor?.addsWithDefaults())
+        vm.configureSelected()
+        advanceUntilIdle()
+        assertEquals(HubWidgetScreen.Hub, vm.state.value.screen)
+        val widget = repo.hub.value.widgets.single()
+        assertEquals(
+            listOf(contacts[2], contacts[0], contacts[1], contacts[3]).map { it.id },
+            widget.contactIds
+        )
+        val person = vm.state.value.widgets.single().people.first()
+        assertEquals(2_100L, person.lastPaid?.minor)
+
+        vm.resizeWidget(widget.id, LocalHubWidgets.Single.id)
+        advanceUntilIdle()
+        assertEquals(listOf(contacts[2].id), repo.hub.value.widget(widget.id)?.contactIds)
+        vm.resizeWidget(widget.id, LocalHubWidgets.Card.id)
+        advanceUntilIdle()
+        assertEquals(LocalHubWidgets.Card, repo.hub.value.widget(widget.id)?.variant)
+        assertEquals(contacts[2].id, repo.hub.value.widget(widget.id)?.contactIds?.first())
+        assertEquals(5, repo.hub.value.widget(widget.id)?.contactIds?.size)
+        vm.clear()
+    }
+
+    @Test
+    fun contactsWidgetAsksForAContactOnlyWhenThereIsNone() = runTest {
+        val repo = DefaultPaymentHubRepository(MapSettings())
+        val host = PaymentHubController(repo, this)
+        val vm = WidgetHubViewModel(repo, host, { "USD" }, dispatcher = StandardTestDispatcher(testScheduler))
+        advanceUntilIdle()
+        vm.selectDefinition("local.contacts")
+        vm.configureSelected()
+        assertEquals(HubWidgetScreen.Configure, vm.state.value.screen)
         vm.clear()
     }
 }

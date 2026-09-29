@@ -457,7 +457,10 @@ class PaymentCoordinator(
                     if (vibrateOnPayment) ignoreHapticFailure(haptics::notifyPaymentSuccess)
                     draft.targetContext?.let { context ->
                         if (context.targetId != null) {
-                            paymentHub.recordSuccessfulPayment(context.targetId)
+                            paymentHub.recordSuccessfulPayment(
+                                context.targetId,
+                                result.receipt.amountSats.value
+                            )
                         } else if (offerToSaveNewTargets) {
                             paymentHub.offerSave(context.address)
                         }

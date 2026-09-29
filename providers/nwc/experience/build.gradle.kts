@@ -10,6 +10,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":core:rayl-api"))
             implementation(project(":providers:nwc:feature:onboarding"))
             implementation(project(":providers:nwc:feature:payment"))
             implementation(project(":providers:nwc:integration:nwc"))

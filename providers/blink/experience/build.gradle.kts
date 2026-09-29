@@ -10,6 +10,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":core:rayl-api"))
             implementation(project(":providers:blink:feature:onboarding"))
             implementation(project(":providers:blink:feature:payment"))
             implementation(project(":providers:blink:feature:wallet-connection"))

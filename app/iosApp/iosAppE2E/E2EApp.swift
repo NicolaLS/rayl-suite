@@ -6,7 +6,7 @@ import Shared
 struct E2EApp: App {
     init() {
         seedWalletLifecycleFixture()
-        configureRaylSpark()
+        configureRaylEnvironment()
     }
 
     var body: some Scene {

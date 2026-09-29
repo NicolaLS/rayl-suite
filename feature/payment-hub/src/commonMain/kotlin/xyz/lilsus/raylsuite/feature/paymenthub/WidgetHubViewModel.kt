@@ -12,41 +12,47 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import xyz.lilsus.raylsuite.core.hubapi.HubWidgetDescriptor
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.core.model.LightningAddress
+import xyz.lilsus.raylsuite.core.model.StoredAmount
+import xyz.lilsus.raylsuite.core.raylapi.UsageEventKind
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetPurchase as WidgetOffer
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetValidateResult
 import xyz.lilsus.raylsuite.feature.paymenthub.create.cleanAmountInput
 import xyz.lilsus.raylsuite.feature.paymenthub.create.formatMinorAmount
 import xyz.lilsus.raylsuite.feature.paymenthub.create.hasFractionForWholeCurrency
 import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubController
 import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubIntent
-import xyz.lilsus.raylsuite.integration.hub.HubWidgetCatalogResult
-import xyz.lilsus.raylsuite.integration.hub.HubWidgetContentResult
-import xyz.lilsus.raylsuite.integration.hub.HubWidgetUnavailableReason
-import xyz.lilsus.raylsuite.integration.hub.KtorHubWidgetCatalogClient
+import xyz.lilsus.raylsuite.integration.widget.WidgetClient
+import xyz.lilsus.raylsuite.integration.widget.WidgetDefinitionFetch
 
 /** Shared widget presentation state. Native platforms own sheets, controls, gestures and copy. */
 class WidgetHubViewModel(
     private val repository: PaymentHubRepository,
     private val host: PaymentHubController,
     private val defaultCurrencyCode: () -> String,
-    private val locale: () -> String = { "en" },
-    private val catalog: KtorHubWidgetCatalogClient? = null,
+    private val widgets: WidgetClient = WidgetClient(),
     dispatcher: CoroutineDispatcher = Dispatchers.Main
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState =
         MutableStateFlow(WidgetHubState(gallery = LocalHubWidgets.definitions))
     val state = mutableState.asStateFlow()
-    private var remoteDefinitions = emptyList<HubWidgetDescriptor>()
-    private val remoteContent = mutableMapOf<String, RemoteContent>()
-    private var catalogJob: Job? = null
-    private var contentJob: Job? = null
-    private var contentRefreshJob: Job? = null
-    private var remoteInstances = emptyList<HubWidget>()
-    private var active = true
+    private var providerJob: Job? = null
+    private var statusJob: Job? = null
+    private val providerStatus = mutableMapOf<String, ProviderTileStatus>()
+    private var statusWidgetIds = emptySet<String>()
 
     init {
+        scope.launch { host.widgetLinks.collect(::startProviderSetup) }
+        scope.launch {
+            host.services.catalog.collect { catalog ->
+                mutableState.update {
+                    it.copy(catalog = catalog.catalogItems(), serviceCatalog = catalog)
+                }
+                rebuildTiles()
+            }
+        }
         scope.launch {
             repository.hub.collect { hub ->
                 val editor = mutableState.value.editor
@@ -55,6 +61,8 @@ class WidgetHubViewModel(
                 mutableState.update { current ->
                     current.copy(
                         contacts = hub.contacts,
+                        defaultContactIds = hub.rankedContactIds(),
+                        purchases = hub.purchases,
                         screen = if (editedWidgetRemoved) HubWidgetScreen.Hub else current.screen,
                         editor = if (editedWidgetRemoved) {
                             null
@@ -68,26 +76,16 @@ class WidgetHubViewModel(
                         }
                     )
                 }
-                val updated = hub.widgets.filter { it.kind == HubWidgetKind.Metric }
-                if (updated != remoteInstances) {
-                    val previous = remoteInstances.associateBy { it.id }
-                    updated.forEach { widget ->
-                        val old = previous[widget.id]
-                        if (old?.definitionId != widget.definitionId ||
-                            old.variant.id != widget.variant.id ||
-                            old.configuration != widget.configuration
-                        ) {
-                            remoteContent.remove(widget.id)
-                        }
-                    }
-                    remoteInstances = updated
-                    remoteContent.keys.retainAll(updated.mapTo(mutableSetOf()) { it.id })
-                    refreshContent()
+                val withStatus = hub.widgets.filter { it.provider?.definition?.statusUrl != null }
+                    .mapTo(mutableSetOf()) { it.id }
+                if (withStatus != statusWidgetIds) {
+                    statusWidgetIds = withStatus
+                    providerStatus.keys.retainAll(withStatus)
+                    refreshProviderStatus()
                 }
                 rebuildTiles()
             }
         }
-        refreshCatalog()
     }
 
     fun openGallery() {
@@ -95,16 +93,284 @@ class WidgetHubViewModel(
             it.copy(
                 screen = HubWidgetScreen.Gallery,
                 editor = null,
+                providerSetup = null,
                 query = "",
                 error = null,
                 arranging = false
             )
         }
+        // The sheet is where a newly listed service is expected, so it asks sooner than the Hub.
+        host.services.refresh(maxAgeMs = ADD_SHEET_REFRESH_MS)
     }
 
     fun close() {
+        providerJob?.cancel()
         mutableState.update {
-            it.copy(screen = HubWidgetScreen.Hub, editor = null, query = "", error = null)
+            it.copy(
+                screen = HubWidgetScreen.Hub,
+                editor = null,
+                query = "",
+                error = null,
+                providerSetup = null
+            )
+        }
+    }
+
+    /** Fetches a definition from a pasted or scanned link and opens its setup. */
+    fun startProviderSetup(link: String) {
+        val url = link.trim()
+        providerJob?.cancel()
+        mutableState.update {
+            it.copy(
+                screen = HubWidgetScreen.ProviderSetup,
+                editor = null,
+                providerSetup = ProviderSetupState(url, ProviderSetupPhase.Loading)
+            )
+        }
+        if (host.services.blocks(url)) {
+            mutableState.update {
+                it.copy(
+                    providerSetup = ProviderSetupState(
+                        url,
+                        ProviderSetupPhase.Failed(ProviderSetupFailure.Blocked)
+                    )
+                )
+            }
+            return
+        }
+        providerJob = scope.launch {
+            val phase = when (val fetch = widgets.fetchDefinition(url)) {
+                is WidgetDefinitionFetch.Loaded -> {
+                    val definition = fetch.definition
+                    ProviderSetupPhase.Families(
+                        definition = definition,
+                        body = fetch.body,
+                        etag = fetch.etag,
+                        selected = definition.supportedFamilies.first()
+                    )
+                }
+
+                is WidgetDefinitionFetch.Invalid ->
+                    ProviderSetupPhase.Failed(ProviderSetupFailure.Invalid(fetch.problems))
+
+                WidgetDefinitionFetch.Gone -> ProviderSetupPhase.Failed(ProviderSetupFailure.Gone)
+
+                WidgetDefinitionFetch.NotModified,
+                WidgetDefinitionFetch.NotResponding ->
+                    ProviderSetupPhase.Failed(ProviderSetupFailure.NotResponding)
+            }
+            mutableState.update { state ->
+                state.copy(
+                    providerSetup = state.providerSetup?.takeIf { it.url == url }
+                        ?.copy(phase = phase)
+                )
+            }
+        }
+    }
+
+    /** Opens a saved provider widget's setup to change its product, inputs or size. */
+    fun editProviderWidget(id: String) {
+        val widget = repository.hub.value.widget(id) ?: return
+        val setup = widget.provider ?: return
+        val definition = setup.definition ?: return
+        providerJob?.cancel()
+        mutableState.update {
+            it.copy(
+                screen = HubWidgetScreen.ProviderSetup,
+                editor = null,
+                providerSetup = ProviderSetupState(
+                    url = setup.definitionUrl,
+                    phase = ProviderSetupPhase.Ready(
+                        definition = definition,
+                        body = setup.definitionBody,
+                        etag = setup.etag,
+                        productIds = setup.productIds,
+                        inputs = ProviderSecrets.inputsFor(setup),
+                        size = widget.variant.providerSize()
+                    ),
+                    existingWidgetId = id
+                )
+            )
+        }
+    }
+
+    fun resizeProviderWidget(id: String, size: ProviderWidgetSize) = mutate {
+        val widget = repository.hub.value.widget(id) ?: return@mutate
+        val setup = widget.provider ?: return@mutate
+        val definition = setup.definition ?: return@mutate
+        if (size !in definition.families) return@mutate
+        // Resizing never drops the item a tap was buying; a larger tile adds the defaults.
+        val productIds = (setup.productIds.take(1) + definition.defaultProducts(size))
+            .distinct()
+            .take(size.tileCapacity())
+        val resized = setup.copy(
+            productIds = productIds,
+            pinnedPrices = productIds.mapNotNull(definition::product).associate {
+                it.id to it.price
+            }
+        )
+        repository.saveProviderWidget(resized, size.variant(), id)
+    }
+
+    /**
+     * Continues from the family chooser with that family's defaults. Setup then only asks for
+     * what the widget needs to work; a widget that needs nothing is added right away.
+     */
+    fun chooseProviderFamily(size: ProviderWidgetSize) {
+        val families = mutableState.value.providerSetup?.phase as? ProviderSetupPhase.Families
+        mutableState.update { state ->
+            val setup = state.providerSetup ?: return@update state
+            val families = setup.phase as? ProviderSetupPhase.Families ?: return@update state
+            val definition = families.definition
+            if (size !in definition.families) return@update state
+            state.copy(
+                providerSetup = setup.copy(
+                    phase = ProviderSetupPhase.Ready(
+                        definition = definition,
+                        body = families.body,
+                        etag = families.etag,
+                        productIds = definition.defaultProducts(size),
+                        inputs = definition.inputs.associate { it.id to "" },
+                        size = size
+                    )
+                )
+            )
+        }
+        val definition = families?.definition ?: return
+        val hasDefault =
+            definition.purchase !is WidgetOffer.Product ||
+                definition.defaultProducts(size).isNotEmpty()
+        if (definition.inputs.isEmpty() && definition.terms == null && hasDefault) {
+            saveProviderWidget()
+        }
+    }
+
+    /** Small widgets buy one product; larger ones show the selected products, in order. */
+    fun selectProviderProduct(id: String) = editProvider { ready ->
+        if (ready.definition.product(id)?.available != true) return@editProvider ready
+        when {
+            ready.size == ProviderWidgetSize.Small -> ready.copy(productIds = listOf(id))
+            id in ready.productIds -> ready.copy(productIds = ready.productIds - id)
+            ready.productIds.size >= ready.size.tileCapacity() -> ready
+            else -> ready.copy(productIds = ready.productIds + id)
+        }
+    }
+
+    fun updateProviderInput(id: String, value: String) =
+        editProvider { it.copy(inputs = it.inputs + (id to value.take(2_048))) }
+
+    fun selectProviderSize(size: ProviderWidgetSize) = editProvider { it.copy(size = size) }
+
+    /**
+     * Checks the inputs with the provider when it offers a read-only check, then saves. Tapping
+     * save is the user's explicit acceptance of the terms shown.
+     */
+    fun saveProviderWidget() {
+        val setup = mutableState.value.providerSetup ?: return
+        val ready = setup.phase as? ProviderSetupPhase.Ready ?: return
+        if (ready.validating) return
+        val definition = ready.definition
+        if (definition.purchase is WidgetOffer.Product && ready.productIds.isEmpty()) {
+            return editProvider { it.copy(error = ProviderSetupError.ChooseProduct) }
+        }
+        val inputs = mutableMapOf<String, String>()
+        for (input in definition.inputs) {
+            val value = input.normalize(ready.inputs[input.id].orEmpty())
+                ?: return editProvider {
+                    it.copy(error = ProviderSetupError.InvalidInput(input.id))
+                }
+            if (value.isNotEmpty()) inputs[input.id] = value
+        }
+        val products = ready.productIds.mapNotNull(definition::product)
+        editProvider { it.copy(validating = true) }
+        providerJob = scope.launch {
+            val validation = widgets.validate(definition, inputs, products.firstOrNull()?.id)
+            if (validation is WidgetValidateResult.Refused) {
+                val refused = validation.refusal
+                editProvider {
+                    it.copy(
+                        validating = false,
+                        error =
+                            refused.inputId?.takeIf { id ->
+                                definition.inputs.any { input ->
+                                    input.id ==
+                                        id
+                                }
+                            }
+                                ?.let { id -> ProviderSetupError.InvalidInput(id, refused.message) }
+                                ?: ProviderSetupError.Rejected(refused.message)
+                    )
+                }
+                return@launch
+            }
+            val secretIds = definition.inputs.filter { it.secret }.map { it.id }.toSet()
+            secretIds.forEach { id ->
+                inputs[id]?.let { ProviderSecrets.put(definition.source.value, id, it) }
+            }
+            val providerSetup = ProviderWidgetSetup(
+                definitionUrl = definition.source.value,
+                definitionBody = ready.body,
+                etag = ready.etag,
+                productIds = products.map { it.id },
+                pinnedPrices = products.associate { it.id to it.price },
+                inputs = inputs.filterKeys { it !in secretIds },
+                acceptedTermsVersion = definition.terms?.version,
+                accountHint = (validation as? WidgetValidateResult.Valid)?.message
+            )
+            if (repository.saveProviderWidget(
+                    providerSetup,
+                    ready.size.variant(),
+                    setup.existingWidgetId
+                ) == null
+            ) {
+                editProvider { it.copy(validating = false, error = ProviderSetupError.SaveFailed) }
+            } else {
+                if (setup.existingWidgetId == null) {
+                    host.services.report(providerSetup.definitionUrl, UsageEventKind.Added)
+                }
+                close()
+            }
+        }
+    }
+
+    fun payProvider(widgetId: String, productId: String? = null, amount: StoredAmount? = null) {
+        if (mutableState.value.arranging) return
+        host.dispatch(PaymentHubIntent.PayWidget(widgetId, productId, amount))
+    }
+
+    /** Refreshes provider status values now, for example on pull to refresh. */
+    fun refreshProviderStatus() {
+        statusJob?.cancel()
+        statusJob = scope.launch {
+            val widgetsWithStatus = repository.hub.value.widgets.filter {
+                it.provider?.definition?.statusUrl != null
+            }
+            if (widgetsWithStatus.isEmpty()) return@launch
+            var next = 900
+            for (widget in widgetsWithStatus) {
+                val setup = widget.provider ?: continue
+                val definition = setup.definition ?: continue
+                providerStatus[widget.id] =
+                    (providerStatus[widget.id] ?: ProviderTileStatus(null, false, false))
+                        .copy(loading = true)
+                rebuildTiles()
+                val value = widgets.fetchStatus(definition, ProviderSecrets.inputsFor(setup))
+                val previous = providerStatus[widget.id]?.value
+                providerStatus[widget.id] =
+                    ProviderTileStatus(value ?: previous, loading = false, stale = value == null)
+                value?.let { next = minOf(next, it.refreshAfterSeconds) }
+                rebuildTiles()
+            }
+            delay(next.coerceAtLeast(MIN_STATUS_REFRESH_SECONDS) * 1_000L)
+            refreshProviderStatus()
+        }
+    }
+
+    private fun editProvider(transform: (ProviderSetupPhase.Ready) -> ProviderSetupPhase.Ready) {
+        mutableState.update { state ->
+            val setup = state.providerSetup ?: return@update state
+            val ready = setup.phase as? ProviderSetupPhase.Ready ?: return@update state
+            state.copy(providerSetup = setup.copy(phase = transform(ready.copy(error = null))))
         }
     }
 
@@ -124,6 +390,29 @@ class WidgetHubViewModel(
             HubWidgetScreen.Configure -> mutableState.update {
                 it.copy(screen = HubWidgetScreen.Variants, error = null)
             }
+
+            HubWidgetScreen.ProviderSetup -> {
+                val setup = mutableState.value.providerSetup
+                val ready = setup?.phase as? ProviderSetupPhase.Ready
+                if (setup?.existingWidgetId == null && ready != null) {
+                    mutableState.update {
+                        it.copy(
+                            providerSetup = setup.copy(
+                                phase = ProviderSetupPhase.Families(
+                                    ready.definition,
+                                    ready.body,
+                                    ready.etag,
+                                    ready.size
+                                )
+                            )
+                        )
+                    }
+                } else if (setup?.existingWidgetId != null) {
+                    close()
+                } else {
+                    openGallery()
+                }
+            }
         }
         return true
     }
@@ -139,6 +428,7 @@ class WidgetHubViewModel(
                     id,
                     definition.kind,
                     definition.variants.first().id,
+                    contactIds = it.defaultContacts(definition.kind, definition.variants.first()),
                     currencyCode = defaultCurrencyCode()
                 )
             )
@@ -148,20 +438,50 @@ class WidgetHubViewModel(
     fun selectVariant(id: String) {
         val definition = mutableState.value.selectedDefinition ?: return
         val variant = definition.variants.firstOrNull { it.id == id } ?: return
-        edit { it.copy(variantId = id, contactIds = it.contactIds.take(variant.capacity)) }
+        edit {
+            it.copy(
+                variantId = id,
+                contactIds = if (it.existingWidgetId == null) {
+                    mutableState.value.defaultContacts(it.kind, variant)
+                } else {
+                    it.contactIds.take(variant.capacity)
+                }
+            )
+        }
     }
 
+    /**
+     * Continues from the size carousel. Like provider widgets, a widget that already has what it
+     * needs goes straight onto the Hub with its defaults; setup only asks for what is missing.
+     */
     fun configureSelected() {
-        if (mutableState.value.editor == null) return
+        val editor = mutableState.value.editor ?: return
+        if (editor.addsWithDefaults()) return saveWidget()
         mutableState.update {
             it.copy(screen = HubWidgetScreen.Configure, query = "", error = null)
         }
     }
 
+    /** Resizes in place, like provider widgets: a larger contacts tile fills up with suggestions. */
+    fun resizeWidget(id: String, variantId: String) {
+        val hub = repository.hub.value
+        val widget = hub.widget(id) ?: return
+        if (widget.kind == HubWidgetKind.Provider || widget.kind == HubWidgetKind.Shortcut) return
+        val definition =
+            LocalHubWidgets.definitions.firstOrNull { it.id == widget.definitionId } ?: return
+        val variant = definition.variants.firstOrNull { it.id == variantId } ?: return
+        val contactIds = if (widget.kind == HubWidgetKind.Contacts) {
+            (widget.contactIds + hub.rankedContactIds()).distinct().take(variant.capacity)
+        } else {
+            emptyList()
+        }
+        val draft = HubWidgetDraft(widget.definitionId, widget.kind, variant, contactIds)
+        mutate { if (repository.saveWidget(draft, id) == null) fail(HubWidgetError.SaveFailed) }
+    }
+
     fun updateQuery(value: String) {
         mutableState.update { it.copy(query = value) }
     }
-    fun updateTitle(value: String) = edit { it.copy(title = value.take(120)) }
     fun updateComment(value: String) = edit { it.copy(comment = value.take(500)) }
 
     fun toggleContact(id: String) {
@@ -221,17 +541,6 @@ class WidgetHubViewModel(
         edit { it.copy(currencyCode = code, amountInput = "") }
     }
 
-    fun updateConfiguration(key: String, value: String) {
-        val field =
-            mutableState.value.selectedDefinition?.fields?.firstOrNull { it.key == key } ?: return
-        edit {
-            it.copy(
-                configuration =
-                    it.configuration + (key to value.take(field.maxLength ?: 256))
-            )
-        }
-    }
-
     fun addContact(title: String, address: String) {
         if (mutableState.value.busy) return
         val name = title.trim()
@@ -271,7 +580,6 @@ class WidgetHubViewModel(
     fun saveWidget() {
         val snapshot = mutableState.value
         val editor = snapshot.editor ?: return
-        val definition = snapshot.selectedDefinition ?: return fail(HubWidgetError.Unavailable)
         val variant = snapshot.selectedVariant ?: return fail(HubWidgetError.Unavailable)
         snapshot.editorValidationError()?.let { return fail(it) }
         val amount = if (editor.kind == HubWidgetKind.Shortcut) {
@@ -283,11 +591,9 @@ class WidgetHubViewModel(
             editor.definitionId,
             editor.kind,
             variant,
-            editor.title,
             editor.contactIds,
             amount,
-            editor.comment,
-            editor.configuration.filterKeys { key -> definition.fields.any { it.key == key } }
+            editor.comment
         )
         mutate {
             if (repository.saveWidget(draft, editor.existingWidgetId) == null) {
@@ -316,21 +622,25 @@ class WidgetHubViewModel(
                 query = "",
                 error = null,
                 editor = HubWidgetEditor(
-                    widget.definitionId, widget.kind, variant.id, widget.id,
+                    widget.definitionId,
+                    widget.kind,
+                    variant.id,
+                    widget.id,
                     contactIds = target?.let { listOf(it.contactId) } ?: widget.contactIds,
-                    title = widget.title.orEmpty(),
                     amountInput = amount?.minor?.formatMinorAmount(
                         CurrencyCatalog.infoFor(amount.normalizedCurrencyCode).fractionDigits
                     ).orEmpty(),
                     currencyCode = amount?.normalizedCurrencyCode ?: defaultCurrencyCode(),
-                    comment = target?.comment.orEmpty(), configuration = widget.configuration
+                    comment = target?.comment.orEmpty()
                 )
             )
         }
     }
 
     fun removeWidget(id: String) = mutate {
+        val definitionUrl = repository.hub.value.widget(id)?.provider?.definitionUrl
         repository.deleteWidget(id)
+        definitionUrl?.let { host.services.report(it, UsageEventKind.Removed) }
         if (mutableState.value.editor?.existingWidgetId == id) close()
     }
     fun moveWidget(id: String, targetId: String) {
@@ -347,111 +657,6 @@ class WidgetHubViewModel(
     fun pay(actionId: String) {
         if (!mutableState.value.arranging && actionId.isNotBlank()) {
             host.dispatch(PaymentHubIntent.SelectItem(HubItemId(actionId)))
-        }
-    }
-
-    fun refreshCatalog() {
-        if (!active) return
-        val client = catalog ?: return
-        catalogJob?.cancel()
-        catalogJob = scope.launch {
-            mutableState.update { it.copy(catalogLoading = true) }
-            val result = client.fetchCatalog(locale())
-            when (result) {
-                is HubWidgetCatalogResult.Available -> {
-                    remoteDefinitions = result.widgets
-                    mutableState.update {
-                        it.copy(
-                            gallery =
-                                LocalHubWidgets.definitions + result.widgets.map(::definition),
-                            catalogUnavailable = false,
-                            catalogLoading = false
-                        )
-                    }
-                }
-
-                is HubWidgetCatalogResult.Unavailable -> mutableState.update {
-                    it.copy(
-                        catalogLoading = false,
-                        catalogUnavailable =
-                            result.reason != HubWidgetUnavailableReason.NotConfigured
-                    )
-                }
-            }
-            rebuildTiles()
-            refreshContent()
-        }
-    }
-
-    fun refreshContent() {
-        if (!active) return
-        val client = catalog ?: return
-        contentJob?.cancel()
-        contentRefreshJob?.cancel()
-        contentJob = scope.launch {
-            val widgets = repository.hub.value.widgets.filter { it.kind == HubWidgetKind.Metric }
-            var nextRefresh = 300
-            for (widget in widgets) {
-                if (remoteDefinitions.none { descriptor ->
-                        descriptor.id == widget.definitionId &&
-                            descriptor.variants.any { it.id == widget.variant.id }
-                    }
-                ) {
-                    continue
-                }
-                remoteContent[widget.id] =
-                    (remoteContent[widget.id] ?: RemoteContent()).copy(loading = true)
-                rebuildTiles()
-                val response = client.fetchContent(
-                    widget.definitionId,
-                    widget.variant.id,
-                    widget.configuration,
-                    locale()
-                )
-                if (repository.hub.value.widget(widget.id) != widget) continue
-                remoteContent[widget.id] = when (response) {
-                    is HubWidgetContentResult.Available -> {
-                        nextRefresh =
-                            minOf(nextRefresh, response.content.refreshAfterSeconds ?: 300)
-                        RemoteContent(
-                            HubWidgetMetric(
-                                response.content.value,
-                                response.content.unit,
-                                response.content.label,
-                                response.content.asOf
-                            )
-                        )
-                    }
-
-                    is HubWidgetContentResult.Unavailable -> RemoteContent(
-                        metric = remoteContent[widget.id]?.metric,
-                        unavailable = true
-                    )
-                }
-                rebuildTiles()
-            }
-            if (widgets.isNotEmpty()) {
-                contentRefreshJob = scope.launch {
-                    delay(nextRefresh.coerceAtLeast(30) * 1000L)
-                    refreshContent()
-                }
-            }
-        }
-    }
-
-    /** Native visibility and app lifecycle own remote refresh activity. */
-    fun setActive(value: Boolean) {
-        if (active == value) return
-        active = value
-        if (value) {
-            refreshCatalog()
-        } else {
-            catalogJob?.cancel()
-            contentJob?.cancel()
-            contentRefreshJob?.cancel()
-            remoteContent.entries.forEach { it.setValue(it.value.copy(loading = false)) }
-            mutableState.update { it.copy(catalogLoading = false) }
-            rebuildTiles()
         }
     }
 
@@ -482,31 +687,6 @@ class WidgetHubViewModel(
         }
     }
 
-    private fun definition(remote: HubWidgetDescriptor) = HubWidgetDefinition(
-        id = remote.id,
-        kind = HubWidgetKind.Metric,
-        title = remote.title,
-        description = remote.description,
-        variants = remote.variants.map { variant ->
-            val size = when (variant.size) {
-                "wide" -> LocalHubWidgets.Row
-                "large" -> LocalHubWidgets.Card
-                else -> LocalHubWidgets.Single
-            }
-            size.copy(id = variant.id, title = variant.title)
-        },
-        fields = remote.fields.map { field ->
-            HubWidgetField(
-                field.id,
-                field.type,
-                field.label,
-                field.required,
-                field.options.map { HubWidgetChoice(it.id, it.label) },
-                field.maxLength
-            )
-        }
-    )
-
     private fun rebuildTiles() {
         val hub = repository.hub.value
         val paid = hub.targets.filter { it.stats.successfulPaymentCount > 0 }
@@ -529,46 +709,59 @@ class WidgetHubViewModel(
                 HubWidgetKind.Shortcut -> listOfNotNull(widget.targetId?.let(hub::target))
                 HubWidgetKind.Favorites -> favorites.take(widget.variant.capacity)
                 HubWidgetKind.Recents -> recents.take(widget.variant.capacity)
-                HubWidgetKind.Metric -> emptyList()
-            }
-            val remote = remoteContent[widget.id]
-            val available = remoteDefinitions.any { descriptor ->
-                descriptor.id ==
-                    widget.definitionId &&
-                    descriptor.variants.any { it.id == widget.variant.id }
+                HubWidgetKind.Provider -> emptyList()
             }
             HubWidgetTile(
-                widget.id, widget.definitionId, widget.kind, widget.variant,
-                widget.title
-                    ?: mutableState.value.gallery.firstOrNull {
-                        it.id == widget.definitionId
-                    }?.title,
+                id = widget.id,
+                definitionId = widget.definitionId,
+                kind = widget.kind,
+                variant = widget.variant,
+                provider = widget.providerTile(
+                    hub.purchases,
+                    providerStatus[widget.id],
+                    host.services.catalog.value
+                ),
                 people = targets.mapNotNull { target ->
                     hub.contact(target.contactId)?.let { contact ->
                         HubWidgetPerson(
                             target.id.value,
                             contact.id,
-                            if (target.amountRule is DirectTargetAmountRule.Preset) {
-                                target.title
-                            } else {
-                                contact.title
-                            },
+                            // A shortcut is labelled by what it is for, when its note says so.
+                            target.comment?.takeIf { widget.kind == HubWidgetKind.Shortcut }
+                                ?: contact.title,
                             contact.address.full,
-                            (target.amountRule as? DirectTargetAmountRule.Preset)?.amount
+                            (target.amountRule as? DirectTargetAmountRule.Preset)?.amount,
+                            target.stats.lastPaidSats.takeIf {
+                                widget.kind == HubWidgetKind.Contacts
+                            }
+                                ?.let { StoredAmount(it, "SAT") }
                         )
                     }
-                },
-                metric = remote?.metric, loading = available && remote?.loading == true,
-                unavailable = widget.kind == HubWidgetKind.Metric &&
-                    (remote?.unavailable == true || !available)
+                }
             )
         }
         mutableState.update { it.copy(widgets = tiles) }
     }
 
-    private data class RemoteContent(
-        val metric: HubWidgetMetric? = null,
-        val loading: Boolean = false,
-        val unavailable: Boolean = false
-    )
+    private companion object {
+        const val MIN_STATUS_REFRESH_SECONDS = 30
+        const val ADD_SHEET_REFRESH_MS = 30_000L
+    }
+}
+
+/** New contacts widgets start with the best suggestions; a shortcut preselects the top one. */
+private fun WidgetHubState.defaultContacts(
+    kind: HubWidgetKind,
+    variant: HubWidgetVariant
+): List<String> = when (kind) {
+    HubWidgetKind.Contacts -> defaultContactIds.take(variant.capacity)
+    HubWidgetKind.Shortcut -> defaultContactIds.take(1)
+    else -> emptyList()
+}
+
+/** Contacts need nothing more than their defaults; a shortcut still needs its amount. */
+internal fun HubWidgetEditor.addsWithDefaults(): Boolean = existingWidgetId == null && when (kind) {
+    HubWidgetKind.Contacts -> contactIds.isNotEmpty()
+    HubWidgetKind.Favorites, HubWidgetKind.Recents -> true
+    else -> false
 }

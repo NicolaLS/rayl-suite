@@ -4,7 +4,7 @@ import Shared
 @main
 struct iOSApp: App {
     init() {
-        configureRaylSpark()
+        configureRaylEnvironment()
     }
 
     var body: some Scene {

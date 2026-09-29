@@ -20,6 +20,7 @@ import xyz.lilsus.rayl.providers.spark.SparkIosExperience
 import xyz.lilsus.rayl.providers.spark.createIOSAppHost
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.model.WalletStartMode
+import xyz.lilsus.raylsuite.core.raylapi.RaylBackend
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
 import xyz.lilsus.raylsuite.core.ui.resources.nativeString
@@ -63,6 +64,7 @@ object RaylIosApp {
     private var nwc: NwcIosExperience? = null
     private var spark: SparkIosExperience? = null
     private var sparkHostFactory: ((WalletStartMode) -> SparkAppHost)? = null
+    private var backend: RaylBackend? = null
     private var cancellations = emptyList<() -> Unit>()
 
     init {
@@ -99,6 +101,17 @@ object RaylIosApp {
             }
         }
     }
+
+    /** Debug and E2E builds use staging; releases use production. */
+    fun configureBackend(backend: RaylBackend) {
+        check(blink == null && nwc == null && spark == null) {
+            "Configure the backend before mounting an experience"
+        }
+        this.backend = backend
+    }
+
+    private fun requireBackend(): RaylBackend =
+        checkNotNull(backend) { "Configure the backend before observing Rayl" }
 
     fun configureSpark(environment: SparkEnvironment, breezApiKey: String?) {
         check(spark == null) { "Configure Spark before mounting its experience" }
@@ -228,60 +241,70 @@ object RaylIosApp {
     private fun blinkExperience(): BlinkIosExperience? {
         // combine can still deliver a prior selection while the latest state propagates.
         if (selection.wallet.value != RaylWallet.Blink) return null
-        return blink ?: BlinkIosExperience(RAYL_BLINK, selection.startMode).also { experience ->
-            blink = experience
-            cancellations =
-                listOf(
-                    experience.observeConnected { connected ->
-                        if (blink === experience) {
-                            if (connected) selection.connected(RaylWallet.Blink)
-                            experienceState.update { it.copy(connected = connected) }
+        return blink
+            ?: BlinkIosExperience(
+                RAYL_BLINK,
+                selection.startMode,
+                requireBackend()
+            ).also { experience ->
+                blink = experience
+                cancellations =
+                    listOf(
+                        experience.observeConnected { connected ->
+                            if (blink === experience) {
+                                if (connected) selection.connected(RaylWallet.Blink)
+                                experienceState.update { it.copy(connected = connected) }
+                            }
+                        },
+                        experience.observeCanCancelSetup { canCancel ->
+                            if (blink === experience) {
+                                experienceState.update { it.copy(canCancelSetup = canCancel) }
+                            }
+                        },
+                        experience.observeTheme { colorScheme ->
+                            if (blink === experience) {
+                                experienceState.update { it.copy(colorScheme = colorScheme) }
+                            }
+                        },
+                        experience.observeRemoved {
+                            if (it) scope.launch { if (blink === experience) leave() }
                         }
-                    },
-                    experience.observeCanCancelSetup { canCancel ->
-                        if (blink === experience) {
-                            experienceState.update { it.copy(canCancelSetup = canCancel) }
-                        }
-                    },
-                    experience.observeTheme { colorScheme ->
-                        if (blink === experience) {
-                            experienceState.update { it.copy(colorScheme = colorScheme) }
-                        }
-                    },
-                    experience.observeRemoved {
-                        if (it) scope.launch { if (blink === experience) leave() }
-                    }
-                )
-        }
+                    )
+            }
     }
 
     private fun nwcExperience(): NwcIosExperience? {
         if (selection.wallet.value != RaylWallet.Nwc) return null
-        return nwc ?: NwcIosExperience(RAYL_NWC, selection.startMode).also { experience ->
-            nwc = experience
-            cancellations =
-                listOf(
-                    experience.observeConnected { connected ->
-                        if (nwc === experience) {
-                            if (connected) selection.connected(RaylWallet.Nwc)
-                            experienceState.update { it.copy(connected = connected) }
+        return nwc
+            ?: NwcIosExperience(
+                RAYL_NWC,
+                selection.startMode,
+                requireBackend()
+            ).also { experience ->
+                nwc = experience
+                cancellations =
+                    listOf(
+                        experience.observeConnected { connected ->
+                            if (nwc === experience) {
+                                if (connected) selection.connected(RaylWallet.Nwc)
+                                experienceState.update { it.copy(connected = connected) }
+                            }
+                        },
+                        experience.observeCanCancelSetup { canCancel ->
+                            if (nwc === experience) {
+                                experienceState.update { it.copy(canCancelSetup = canCancel) }
+                            }
+                        },
+                        experience.observeTheme { colorScheme ->
+                            if (nwc === experience) {
+                                experienceState.update { it.copy(colorScheme = colorScheme) }
+                            }
+                        },
+                        experience.observeRemoved {
+                            if (it) scope.launch { if (nwc === experience) leave() }
                         }
-                    },
-                    experience.observeCanCancelSetup { canCancel ->
-                        if (nwc === experience) {
-                            experienceState.update { it.copy(canCancelSetup = canCancel) }
-                        }
-                    },
-                    experience.observeTheme { colorScheme ->
-                        if (nwc === experience) {
-                            experienceState.update { it.copy(colorScheme = colorScheme) }
-                        }
-                    },
-                    experience.observeRemoved {
-                        if (it) scope.launch { if (nwc === experience) leave() }
-                    }
-                )
-        }
+                    )
+            }
     }
 
     private fun sparkExperience(): SparkIosExperience? {
@@ -290,7 +313,8 @@ object RaylIosApp {
             host = checkNotNull(sparkHostFactory) {
                 "Configure Spark before observing Rayl"
             }(selection.startMode),
-            configuration = RAYL_SPARK
+            configuration = RAYL_SPARK,
+            backend = requireBackend()
         ).also { experience ->
             spark = experience
             cancellations =

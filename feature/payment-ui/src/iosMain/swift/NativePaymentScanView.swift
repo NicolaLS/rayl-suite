@@ -322,6 +322,7 @@ struct NativePaymentScanView: View {
         switch kind {
         case "confirmation": model.controller.dismissConfirmation()
         case "saveTarget": model.controller.dismissSaveTarget()
+        case "delivery": model.controller.dismissDelivery()
         default: break
         }
     }
@@ -675,6 +676,7 @@ private struct NativePaymentScanSheetView: View {
                 switch sheet.kind {
                 case "confirmation": confirmationContent
                 case "saveTarget": saveTargetContent
+                case "delivery": deliveryContent
                 default: EmptyView()
                 }
 
@@ -692,7 +694,7 @@ private struct NativePaymentScanSheetView: View {
         // Measure the content, not the scroll viewport, so longer copy and Dynamic Type can
         // grow the sheet. The scroll view remains usable when the content exceeds the screen.
         .presentationDetents(
-            sheet.kind == "confirmation" || sheet.kind == "repeatPayment"
+            sheet.kind == "confirmation" || sheet.kind == "repeatPayment" || sheet.kind == "delivery"
                 ? [.height(contentHeight)] : [.large]
         )
         .scrollBounceBehavior(.basedOnSize)
@@ -713,6 +715,62 @@ private struct NativePaymentScanSheetView: View {
             Text(fundingSource)
                 .font(.body)
                 .foregroundStyle(.secondary)
+        }
+        if let notice = sheet.notice {
+            Label(notice, systemImage: "exclamationmark.triangle.fill")
+                .font(.footnote.weight(.medium))
+                .foregroundStyle(.red)
+                .multilineTextAlignment(.leading)
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color.red.opacity(0.08), in: RoundedRectangle(cornerRadius: 12))
+        }
+    }
+
+    @ViewBuilder
+    private var deliveryContent: some View {
+        if sheet.inProgress {
+            ProgressView()
+        }
+        if let item = sheet.exactAmount {
+            Text(item).font(.headline)
+        }
+        // A voucher is drawn natively when the provider sent its credentials, and its hosted page
+        // is shown in place otherwise: the user never leaves Rayl to see what they bought.
+        if let voucher = sheet.voucher {
+            VoucherCard(card: voucher)
+        }
+        ForEach(Array(sheet.items.filter(\.page).enumerated()), id: \.offset) { _, item in
+            RedemptionPage(url: item.value, title: item.label, height: 460)
+        }
+        let rows = sheet.items.filter { !$0.page }
+        if !rows.isEmpty {
+            VStack(spacing: 0) {
+                ForEach(Array(rows.enumerated()), id: \.offset) { index, item in
+                    if index > 0 { Divider() }
+                    HStack(spacing: 12) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(item.label).font(.caption).foregroundStyle(.secondary)
+                            Text(item.value)
+                                .font(item.copyable ? .body.monospaced() : .body)
+                                .textSelection(.enabled)
+                        }
+                        Spacer(minLength: 0)
+                        if item.copyable {
+                            Button {
+                                UIPasteboard.general.string = item.value
+                            } label: {
+                                Image(systemName: "doc.on.doc")
+                            }
+                            .buttonStyle(.bordered)
+                            .accessibilityLabel(item.label)
+                        }
+                    }
+                    .padding(.vertical, 10)
+                }
+            }
+            .padding(.horizontal, 14)
+            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14))
         }
     }
 
@@ -754,6 +812,7 @@ private struct NativePaymentScanSheetView: View {
         switch sheet.kind {
         case "confirmation": controller.submitConfirmation()
         case "saveTarget": controller.saveTarget()
+        case "delivery": controller.dismissDelivery()
         default: break
         }
     }

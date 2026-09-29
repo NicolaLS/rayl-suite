@@ -2,8 +2,10 @@ package xyz.lilsus.raylsuite.feature.paymentflow
 
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.model.DisplayCurrency
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetPriceVerdict
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentAmountQuote
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentCurrencyManager
 import xyz.lilsus.raylsuite.feature.paymentsettings.PaymentConfirmationPolicy
@@ -37,24 +39,38 @@ internal class PaymentConfirmationPhase<P : SettleablePayment>(
                 }
             }
         currentCoroutineContext().ensureActive()
-        val requiresConfirmation = !request.isManualEntry && (
-            request.source == PaymentRequestSource.DeepLink || (
-                amountMsats != null && confirmationPolicy.shouldConfirm(
-                    amountMsats = amountMsats,
-                    isManualEntry = false,
-                    isPresetTarget = request.targetContext?.isPreset == true
-                )
+        // Widget orders always confirm: the provider's host must be seen before paying.
+        val requiresConfirmation = request.widget != null || (
+            !request.isManualEntry && (
+                request.source == PaymentRequestSource.DeepLink || (
+                    amountMsats != null && confirmationPolicy.shouldConfirm(
+                        amountMsats = amountMsats,
+                        isManualEntry = false,
+                        isPresetTarget = request.targetContext?.isPreset == true
+                    )
+                    )
                 )
             )
         if (!requiresConfirmation) return ConfirmationResult.Execute(prepared.payment)
 
-        val display = confirmationAmount(amountMsats ?: 0L, request.paymentQuote)
+        val display = request.widget?.let { widget ->
+            confirmationAmount(amountMsats ?: 0L, null).copy(
+                primary = DisplayAmount(
+                    widget.advertised.minor,
+                    CurrencyCatalog.infoFor(widget.advertised.normalizedCurrencyCode).currency
+                ),
+                primaryIsEstimate = false
+            )
+        } ?: confirmationAmount(amountMsats ?: 0L, request.paymentQuote)
         currentCoroutineContext().ensureActive()
         awaitingConfirmation = prepared.payment
         presentation.showConfirmation(
             amount = display,
             lnurlPayDisplay = request.lnurlPayDisplay,
-            fundingSource = prepared.fundingSource
+            fundingSource = prepared.fundingSource,
+            priceNotice = request.widget?.priceCheck?.takeIf {
+                it.verdict != WidgetPriceVerdict.Matches
+            }
         )
         return ConfirmationResult.Presented
     }

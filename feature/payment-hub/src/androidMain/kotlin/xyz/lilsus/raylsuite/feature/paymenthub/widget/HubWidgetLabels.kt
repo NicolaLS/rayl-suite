@@ -12,23 +12,28 @@ import xyz.lilsus.raylsuite.feature.paymenthub.R
 internal fun HubWidgetKind.label(): String = stringResource(
     when (this) {
         HubWidgetKind.Contacts -> R.string.hub_widget_contacts
+
         HubWidgetKind.Shortcut -> R.string.hub_widget_shortcut
+
         HubWidgetKind.Favorites -> R.string.hub_widget_favorites
+
         HubWidgetKind.Recents -> R.string.hub_widget_recents
-        HubWidgetKind.Metric -> R.string.hub_widget_metric
+
+        // Android renders provider widgets after the iOS spike settles the design.
+        HubWidgetKind.Provider -> R.string.hub_widget_shortcut
     }
 )
 
 @Composable
-internal fun HubWidgetDefinition.label(): String = title ?: kind.label()
+internal fun HubWidgetDefinition.label(): String = kind.label()
 
 @Composable
-internal fun HubWidgetDefinition.body(): String = description ?: when (kind) {
+internal fun HubWidgetDefinition.body(): String = when (kind) {
     HubWidgetKind.Contacts -> stringResource(R.string.hub_widget_contacts_body)
     HubWidgetKind.Shortcut -> stringResource(R.string.hub_widget_shortcut_body)
     HubWidgetKind.Favorites -> stringResource(R.string.hub_widget_favorites_body)
     HubWidgetKind.Recents -> stringResource(R.string.hub_widget_recents_body)
-    HubWidgetKind.Metric -> ""
+    HubWidgetKind.Provider -> ""
 }
 
 @Composable
@@ -56,7 +61,6 @@ internal fun HubWidgetError.label(capacity: Int): String = when (this) {
     HubWidgetError.SelectContacts -> stringResource(R.string.hub_widget_select_contacts_error)
     HubWidgetError.TooManyContacts -> stringResource(R.string.hub_widget_choose_contacts, capacity)
     HubWidgetError.InvalidAmount -> stringResource(R.string.hub_error_enter_amount)
-    HubWidgetError.RequiredConfiguration -> stringResource(R.string.hub_widget_required_fields)
     HubWidgetError.Unavailable -> stringResource(R.string.hub_widget_unavailable)
     HubWidgetError.SaveFailed -> stringResource(R.string.hub_widget_error_save)
 }

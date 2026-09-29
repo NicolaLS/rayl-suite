@@ -11,6 +11,10 @@ import kotlinx.serialization.json.Json
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.core.model.LightningAddress
 import xyz.lilsus.raylsuite.core.model.StoredAmount
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetBrand
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetDeliveryItem
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetDeliveryItemKind
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetDeliveryState
 
 /** One app-scoped document keeps contacts, widget instances and action history consistent. */
 class DefaultPaymentHubRepository(
@@ -46,17 +50,7 @@ class DefaultPaymentHubRepository(
             if (id != null && current.widget(id) == null) return@mutate current
             val contacts = draft.contactIds.distinct()
             val local = LocalHubWidgets.definitions.firstOrNull { it.id == draft.definitionId }
-            if (draft.kind != HubWidgetKind.Metric &&
-                (local == null || local.kind != draft.kind || draft.variant !in local.variants)
-            ) {
-                return@mutate current
-            }
-            if (draft.kind == HubWidgetKind.Metric &&
-                (
-                    draft.definitionId.startsWith("local.") || draft.definitionId.isBlank() ||
-                        draft.variant.columns !in 1..2 || draft.variant.rows !in 1..2
-                    )
-            ) {
+            if (local == null || local.kind != draft.kind || draft.variant !in local.variants) {
                 return@mutate current
             }
             if (draft.kind == HubWidgetKind.Contacts || draft.kind == HubWidgetKind.Shortcut) {
@@ -90,8 +84,7 @@ class DefaultPaymentHubRepository(
                     }
                     val target = existing ?: DirectPaymentTarget(
                         id = HubItemId("preset:${idGenerator()}"),
-                        title = draft.title?.trim()?.takeIf(String::isNotEmpty)
-                            ?: current.contact(contacts.single())!!.title,
+                        title = current.contact(contacts.single())!!.title,
                         contactId = contacts.single(),
                         amountRule = DirectTargetAmountRule.Preset(normalizedAmount),
                         comment = comment
@@ -102,27 +95,20 @@ class DefaultPaymentHubRepository(
 
                 else -> Unit
             }
-            result = HubWidget(
+            val widget = HubWidget(
                 id = id ?: "widget:${idGenerator()}",
                 definitionId = draft.definitionId,
                 kind = draft.kind,
                 variant = draft.variant,
-                title = draft.title?.trim()?.takeIf(String::isNotEmpty),
                 contactIds = if (draft.kind == HubWidgetKind.Contacts) contacts else emptyList(),
-                targetId = targetId,
-                configuration = if (draft.kind ==
-                    HubWidgetKind.Metric
-                ) {
-                    draft.configuration
-                } else {
-                    emptyMap()
-                }
+                targetId = targetId
             )
+            result = widget
             updated.copy(
                 widgets = if (id == null) {
-                    updated.widgets + result!!
+                    updated.widgets + widget
                 } else {
-                    updated.widgets.map { if (it.id == id) result!! else it }
+                    updated.widgets.map { if (it.id == id) widget else it }
                 }
             )
         }
@@ -174,7 +160,7 @@ class DefaultPaymentHubRepository(
         return saved
     }
 
-    override suspend fun recordSuccessfulPayment(id: HubItemId, paidAtMs: Long) {
+    override suspend fun recordSuccessfulPayment(id: HubItemId, paidAtMs: Long, paidSats: Long?) {
         mutate { current ->
             current.copy(
                 targets = current.targets.map { target ->
@@ -186,9 +172,62 @@ class DefaultPaymentHubRepository(
                                 successfulPaymentCount =
                                     (target.stats.successfulPaymentCount + 1)
                                         .coerceAtLeast(target.stats.successfulPaymentCount),
-                                lastSuccessfulPaymentAtMs = paidAtMs
+                                lastSuccessfulPaymentAtMs = paidAtMs,
+                                lastPaidSats =
+                                    paidSats?.takeIf { it > 0 } ?: target.stats.lastPaidSats
                             )
                         )
+                    }
+                }
+            )
+        }
+    }
+
+    override suspend fun saveProviderWidget(
+        setup: ProviderWidgetSetup,
+        variant: HubWidgetVariant,
+        id: String?
+    ): HubWidget? {
+        var result: HubWidget? = null
+        mutate { current ->
+            if (id != null && current.widget(id) == null) return@mutate current
+            if (setup.definition == null) return@mutate current
+            val widget = HubWidget(
+                id = id ?: "widget:${idGenerator()}",
+                definitionId = setup.definitionUrl,
+                kind = HubWidgetKind.Provider,
+                variant = variant,
+                provider = setup
+            )
+            result = widget
+            current.copy(
+                widgets = if (id == null) {
+                    current.widgets + widget
+                } else {
+                    current.widgets.map { if (it.id == id) widget else it }
+                }
+            )
+        }
+        return result
+    }
+
+    override suspend fun recordPurchase(purchase: WidgetPurchase) {
+        mutate { current ->
+            if (current.purchase(purchase.id) != null) return@mutate current
+            current.copy(purchases = listOf(purchase) + current.purchases)
+        }
+    }
+
+    override suspend fun updatePurchase(id: String, transform: (WidgetPurchase) -> WidgetPurchase) {
+        mutate { current ->
+            current.copy(
+                purchases = current.purchases.map {
+                    if (it.id ==
+                        id
+                    ) {
+                        transform(it)
+                    } else {
+                        it
                     }
                 }
             )
@@ -247,7 +286,8 @@ private data class HubRecord(
     val schemaVersion: Int = 1,
     val contacts: List<ContactRecord>,
     val actions: List<ActionRecord>,
-    val widgets: List<WidgetRecord>
+    val widgets: List<WidgetRecord>,
+    val purchases: List<PurchaseRecord> = emptyList()
 )
 
 @Serializable
@@ -262,7 +302,8 @@ private data class ActionRecord(
     val currency: String? = null,
     val comment: String? = null,
     val count: Long = 0,
-    val lastPaid: Long? = null
+    val lastPaid: Long? = null,
+    val lastSats: Long? = null
 )
 
 @Serializable
@@ -274,10 +315,160 @@ private data class WidgetRecord(
     val columns: Int,
     val rows: Int,
     val capacity: Int,
-    val title: String? = null,
     val contactIds: List<String> = emptyList(),
     val actionId: String? = null,
-    val configuration: Map<String, String> = emptyMap()
+    val provider: ProviderRecord? = null
+)
+
+@Serializable
+private data class AmountRecord(val minor: Long, val currency: String)
+
+@Serializable
+private data class ProviderRecord(
+    val definitionUrl: String,
+    val definitionBody: String,
+    val etag: String? = null,
+    val productIds: List<String> = emptyList(),
+    val pinnedPrices: Map<String, AmountRecord> = emptyMap(),
+    val inputs: Map<String, String> = emptyMap(),
+    val acceptedTermsVersion: String? = null,
+    val accountHint: String? = null
+)
+
+@Serializable
+private data class DeliveryItemRecord(
+    val kind: String,
+    val label: String,
+    val value: String,
+    val format: String? = null
+)
+
+@Serializable
+private data class PurchaseRecord(
+    val id: String,
+    val widgetId: String? = null,
+    val definitionUrl: String,
+    val definitionId: String,
+    val deliveryUrl: String,
+    val host: String,
+    val providerName: String,
+    val itemName: String,
+    val advertised: AmountRecord? = null,
+    val paidSats: Long,
+    val orderId: String,
+    val orderToken: String? = null,
+    val paymentHash: String,
+    val preimage: String? = null,
+    val paidAtMs: Long,
+    val deliveryState: String,
+    val deliveryMessage: String? = null,
+    val deliveryItems: List<DeliveryItemRecord> = emptyList(),
+    val deliveryPresentation: String? = null,
+    val brandName: String? = null,
+    val brandIcon: String? = null,
+    val brandTint: String? = null,
+    val checkedAtMs: Long? = null,
+    val lost: Boolean = false
+)
+
+private fun StoredAmount.toRecord() = AmountRecord(minor, normalizedCurrencyCode)
+
+private fun AmountRecord.toAmount() = StoredAmount(minor, currency)
+
+private fun ProviderWidgetSetup.toRecord() = ProviderRecord(
+    definitionUrl,
+    definitionBody,
+    etag,
+    productIds,
+    pinnedPrices.mapValues { it.value.toRecord() },
+    inputs,
+    acceptedTermsVersion,
+    accountHint
+)
+
+private fun ProviderRecord.toSetup() = ProviderWidgetSetup(
+    definitionUrl,
+    definitionBody,
+    etag,
+    productIds,
+    pinnedPrices.mapValues { it.value.toAmount() },
+    inputs,
+    acceptedTermsVersion,
+    accountHint
+)
+
+private fun WidgetPurchase.toRecord() = PurchaseRecord(
+    id = id,
+    widgetId = widgetId,
+    definitionUrl = definitionUrl,
+    definitionId = definitionId,
+    deliveryUrl = deliveryUrl,
+    host = host,
+    providerName = providerName,
+    itemName = itemName,
+    advertised = advertised?.toRecord(),
+    paidSats = paidSats,
+    orderId = orderId,
+    orderToken = orderToken,
+    paymentHash = paymentHash,
+    preimage = preimage,
+    paidAtMs = paidAtMs,
+    deliveryState = delivery.state.wireName,
+    deliveryMessage = delivery.message,
+    deliveryItems = delivery.items.map {
+        DeliveryItemRecord(it.kind.wireName, it.label, it.value, it.format?.wireName)
+    },
+    deliveryPresentation = delivery.presentation.wireName,
+    brandName = brand?.name,
+    brandIcon = brand?.iconPng,
+    brandTint = brand?.tint,
+    checkedAtMs = delivery.checkedAtMs,
+    lost = delivery.lost
+)
+
+private fun PurchaseRecord.toPurchase() = WidgetPurchase(
+    id = id,
+    widgetId = widgetId,
+    definitionUrl = definitionUrl,
+    definitionId = definitionId,
+    deliveryUrl = deliveryUrl,
+    host = host,
+    providerName = providerName,
+    itemName = itemName,
+    advertised = advertised?.toAmount(),
+    paidSats = paidSats,
+    orderId = orderId,
+    orderToken = orderToken,
+    paymentHash = paymentHash,
+    preimage = preimage,
+    paidAtMs = paidAtMs,
+    brand = if (brandIcon == null && brandTint == null &&
+        brandName == null
+    ) {
+        null
+    } else {
+        WidgetBrand(brandName, brandIcon, brandTint)
+    },
+    delivery = WidgetPurchaseDelivery(
+        state = WidgetDeliveryState.entries.firstOrNull { it.wireName == deliveryState }
+            ?: WidgetDeliveryState.Pending,
+        message = deliveryMessage,
+        items = deliveryItems.map { item ->
+            WidgetDeliveryItem(
+                WidgetDeliveryItemKind.entries.firstOrNull { it.wireName == item.kind }
+                    ?: WidgetDeliveryItemKind.Text,
+                item.label,
+                item.value,
+                xyz.lilsus.raylsuite.core.widgetspec.WidgetBarcodeFormat.entries
+                    .firstOrNull { it.wireName == item.format }
+            )
+        },
+        presentation = xyz.lilsus.raylsuite.core.widgetspec.WidgetDeliveryPresentation.entries
+            .firstOrNull { it.wireName == deliveryPresentation }
+            ?: xyz.lilsus.raylsuite.core.widgetspec.WidgetDeliveryPresentation.Receipt,
+        checkedAtMs = checkedAtMs,
+        lost = lost
+    )
 )
 
 private fun PaymentHub.toRecord() = HubRecord(
@@ -292,16 +483,18 @@ private fun PaymentHub.toRecord() = HubRecord(
             amount?.normalizedCurrencyCode,
             target.comment,
             target.stats.successfulPaymentCount,
-            target.stats.lastSuccessfulPaymentAtMs
+            target.stats.lastSuccessfulPaymentAtMs,
+            target.stats.lastPaidSats
         )
     },
     widgets = widgets.map { widget ->
         WidgetRecord(
             widget.id, widget.definitionId, widget.kind.name,
             widget.variant.id, widget.variant.columns, widget.variant.rows, widget.variant.capacity,
-            widget.title, widget.contactIds, widget.targetId?.value, widget.configuration
+            widget.contactIds, widget.targetId?.value, widget.provider?.toRecord()
         )
-    }
+    },
+    purchases = purchases.map { it.toRecord() }
 )
 
 private fun HubRecord.toHub() = PaymentHub(
@@ -327,7 +520,7 @@ private fun HubRecord.toHub() = PaymentHub(
             record.contactId,
             amount,
             record.comment,
-            HubItemStats(record.count.coerceAtLeast(0), record.lastPaid)
+            HubItemStats(record.count.coerceAtLeast(0), record.lastPaid, record.lastSats)
         )
     },
     widgets = widgets.mapNotNull { record ->
@@ -339,10 +532,10 @@ private fun HubRecord.toHub() = PaymentHub(
             record.definitionId,
             kind,
             HubWidgetVariant(record.variantId, record.columns, record.rows, record.capacity),
-            record.title,
             record.contactIds,
             record.actionId?.let(::HubItemId),
-            record.configuration
+            record.provider?.toSetup()
         )
-    }
+    },
+    purchases = purchases.map { it.toPurchase() }
 )

@@ -9,4 +9,6 @@
     <string name="settings_payments_haptics_payment">Vibrate on successful payment</string>
     <string name="settings_payments_hub_title">Payment hub</string>
     <string name="settings_payments_offer_save_targets">Offer to save a contact and add a Contacts widget after paying</string>
+    <string name="settings_payments_share_usage">Share anonymous usage</string>
+    <string name="settings_payments_share_usage_detail">Counts which recommended services are added and paid. No account, amount or number is sent.</string>
 </resources>

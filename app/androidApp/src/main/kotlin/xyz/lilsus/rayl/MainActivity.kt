@@ -21,6 +21,7 @@ open class MainActivity : AppCompatActivity() {
         val configuration = androidRaylConfiguration()
         setContent {
             App(
+                raylBackend = configuration.backend,
                 sparkEnvironment = configuration.environment,
                 breezApiKey = configuration.breezApiKey
             )

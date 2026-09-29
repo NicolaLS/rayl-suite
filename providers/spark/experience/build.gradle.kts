@@ -10,6 +10,7 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
+            api(project(":core:rayl-api"))
             implementation(project(":providers:spark:application"))
             implementation(project(":providers:spark:feature:onboarding"))
             implementation(project(":providers:spark:feature:payment"))

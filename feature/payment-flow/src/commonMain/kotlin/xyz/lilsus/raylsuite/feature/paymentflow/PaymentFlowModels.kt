@@ -10,6 +10,9 @@ interface SettleablePayment {
     val amountOverrideMsats: Long?
     val targetContext: HubTargetContext?
     val lnurlPayDisplay: LnurlPayDisplay?
+
+    /** Set for third-party widget orders, which are always confirmed and recorded by the Hub. */
+    val widget: WidgetPaymentContext?
 }
 
 /** An admitted invoice, before any wallet-specific funding decision. */
@@ -20,7 +23,8 @@ data class PreparedPayment(
     val isManualEntry: Boolean = false,
     override val targetContext: HubTargetContext? = null,
     override val lnurlPayDisplay: LnurlPayDisplay? = null,
-    val paymentQuote: PaymentAmountQuote? = null
+    val paymentQuote: PaymentAmountQuote? = null,
+    override val widget: WidgetPaymentContext? = null
 ) : SettleablePayment
 
 data class CompletedPayment(

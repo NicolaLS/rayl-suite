@@ -16,9 +16,11 @@ import xyz.lilsus.rayl.providers.blink.feature.payment.PaymentDeepLinkEvents
 import xyz.lilsus.rayl.providers.blink.integration.blink.createBlinkWallet
 import xyz.lilsus.raylsuite.core.model.WalletStartMode
 import xyz.lilsus.raylsuite.core.network.createNetworkConnectivity
+import xyz.lilsus.raylsuite.core.raylapi.RaylBackend
 import xyz.lilsus.raylsuite.core.settings.ConnectionStorageReset
 import xyz.lilsus.raylsuite.core.settings.SecureStringStore
 import xyz.lilsus.raylsuite.core.ui.platform.HapticFeedbackManager
+import xyz.lilsus.raylsuite.feature.appshell.AppTab
 import xyz.lilsus.raylsuite.feature.appshell.AppTabState
 import xyz.lilsus.raylsuite.feature.currencysettings.DefaultCurrencyPreferences
 import xyz.lilsus.raylsuite.feature.languagesettings.createLanguageRepository
@@ -26,12 +28,14 @@ import xyz.lilsus.raylsuite.feature.onboarding.OnboardingViewModel
 import xyz.lilsus.raylsuite.feature.paymentflow.PaymentFlowCoordinator
 import xyz.lilsus.raylsuite.feature.paymentflow.PaymentUiState
 import xyz.lilsus.raylsuite.feature.paymenthub.DefaultPaymentHubRepository
+import xyz.lilsus.raylsuite.feature.paymenthub.RaylServices
 import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubController
 import xyz.lilsus.raylsuite.feature.paymentsettings.DefaultPaymentPreferencesRepository
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentIntent
 import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
 import xyz.lilsus.raylsuite.integration.exchangerate.RaylBitcoinPriceProvider
 import xyz.lilsus.raylsuite.integration.lnurl.KtorLnurlPayClient
+import xyz.lilsus.raylsuite.integration.widget.RaylServiceClient
 
 internal class BlinkRuntime(
     private val appSettings: Settings,
@@ -39,7 +43,8 @@ internal class BlinkRuntime(
     val configuration: BlinkExperienceConfiguration,
     secureSettings: SecureStringStore,
     haptics: HapticFeedbackManager,
-    startMode: WalletStartMode
+    startMode: WalletStartMode,
+    backend: RaylBackend
 ) {
     private val storageReset = ConnectionStorageReset(
         appSettings,
@@ -77,7 +82,16 @@ internal class BlinkRuntime(
     val blinkPaymentPreferences = BlinkPaymentPreferences(appSettings)
     val paymentHubRepository = DefaultPaymentHubRepository(appSettings)
     val tabState = AppTabState()
-    val paymentHub = PaymentHubController(paymentHubRepository, scope)
+    val paymentHub = PaymentHubController(
+        paymentHubRepository,
+        scope,
+        services = RaylServices(
+            api = RaylServiceClient(backend),
+            settings = appSettings,
+            scope = scope,
+            shareUsage = { paymentPreferences.current().shareUsage }
+        )
+    )
 
     private val networkConnectivity by lazy { createNetworkConnectivity() }
     private val blinkWalletDelegate = lazy {
@@ -89,7 +103,8 @@ internal class BlinkRuntime(
     }
     val blinkWallet by blinkWalletDelegate
 
-    private val bitcoinPriceProviderDelegate = lazy { RaylBitcoinPriceProvider() }
+    private val bitcoinPriceProviderDelegate =
+        lazy { RaylBitcoinPriceProvider(baseUrl = backend.baseUrl) }
     val bitcoinPriceProvider by bitcoinPriceProviderDelegate
     private val lnurlPayClientDelegate = lazy { KtorLnurlPayClient(networkConnectivity) }
     private val lnurlPayClient by lnurlPayClientDelegate
@@ -147,6 +162,10 @@ internal class BlinkRuntime(
                 tabState.requestScan()
                 paymentCoordinator.dispatch(PaymentIntent.DeepLinkReceived(uri))
             }
+        }
+        scope.launch {
+            // A widget link opened from Scan continues on the Hub.
+            paymentHub.widgetLinks.collect { tabState.select(AppTab.Hub) }
         }
         scope.launch {
             // A payment always presents on the Scan tab, wherever it was started from.

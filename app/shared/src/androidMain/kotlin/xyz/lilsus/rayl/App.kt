@@ -42,6 +42,7 @@ import xyz.lilsus.rayl.providers.spark.SparkEnvironment
 import xyz.lilsus.rayl.providers.spark.SparkExperience
 import xyz.lilsus.rayl.shared.R
 import xyz.lilsus.raylsuite.core.model.ThemePreference
+import xyz.lilsus.raylsuite.core.raylapi.RaylBackend
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
 import xyz.lilsus.raylsuite.core.ui.platform.rememberRetainedInstance
 import xyz.lilsus.raylsuite.core.ui.theme.RaylSuiteTheme
@@ -51,6 +52,7 @@ import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
 
 @Composable
 fun App(
+    raylBackend: RaylBackend,
     sparkEnvironment: SparkEnvironment,
     breezApiKey: String? = null,
     performanceDiagnostics: PerformanceDiagnostics? = null
@@ -136,6 +138,7 @@ fun App(
             when (wallet) {
                 RaylWallet.Blink -> BlinkExperience(
                     configuration = RAYL_BLINK,
+                    backend = raylBackend,
                     startMode = selection.startMode,
                     performanceDiagnostics = performanceDiagnostics,
                     onRemoved = leave,
@@ -149,6 +152,7 @@ fun App(
 
                 RaylWallet.Nwc -> NwcExperience(
                     configuration = RAYL_NWC,
+                    backend = raylBackend,
                     startMode = selection.startMode,
                     performanceDiagnostics = performanceDiagnostics,
                     onRemoved = leave,
@@ -162,6 +166,7 @@ fun App(
 
                 RaylWallet.Spark -> SparkExperience(
                     configuration = RAYL_SPARK,
+                    backend = raylBackend,
                     startMode = selection.startMode,
                     environment = sparkEnvironment,
                     breezApiKey = breezApiKey,

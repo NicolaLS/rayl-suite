@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import xyz.lilsus.raylsuite.core.model.WalletStartMode
+import xyz.lilsus.raylsuite.core.raylapi.RaylBackend
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.settings.createConnectionSettings
 import xyz.lilsus.raylsuite.core.settings.createSecureSettings
@@ -35,7 +36,8 @@ import xyz.lilsus.raylsuite.feature.settings.nativeSettingsAppVersionName
  */
 class NwcIosExperience(
     private val configuration: NwcExperienceConfiguration,
-    private val startMode: WalletStartMode
+    private val startMode: WalletStartMode,
+    private val backend: RaylBackend
 ) {
     private val observerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -46,7 +48,8 @@ class NwcIosExperience(
             walletSettings = createConnectionSettings(configuration.walletPreferencesName),
             configuration = configuration,
             startMode = startMode,
-            haptics = createHapticFeedbackManager()
+            haptics = createHapticFeedbackManager(),
+            backend = backend
         )
     }
     private val runtime: NwcRuntime
@@ -260,6 +263,7 @@ class NwcIosExperience(
                     payment = payment.toNativePaymentScreenState(),
                     appTitle = configuration.appName,
                     savePrompt = hubState.savePrompt,
+                    delivery = hubState.delivery,
                     recentCount = transactions.size,
                     newRecentCount = newTransactionCount
                 )

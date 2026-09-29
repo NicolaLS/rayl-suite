@@ -43,7 +43,8 @@ class PaymentSettingsViewModel(
                         thresholdSats = preferences.thresholdSats,
                         offerToSaveNewTargets = preferences.offerToSaveNewTargets,
                         vibrateOnScan = preferences.vibrateOnScan,
-                        vibrateOnPayment = preferences.vibrateOnPayment
+                        vibrateOnPayment = preferences.vibrateOnPayment,
+                        shareUsage = preferences.shareUsage
                     )
                 publishThresholdPreview()
             }
@@ -80,6 +81,12 @@ class PaymentSettingsViewModel(
     fun setVibrateOnPayment(enabled: Boolean) {
         scope.launch {
             paymentPreferences.setVibrateOnPayment(enabled)
+        }
+    }
+
+    fun setShareUsage(enabled: Boolean) {
+        scope.launch {
+            paymentPreferences.setShareUsage(enabled)
         }
     }
 
@@ -121,6 +128,7 @@ data class PaymentSettingsUiState(
     val offerToSaveNewTargets: Boolean = PaymentPreferences().offerToSaveNewTargets,
     val vibrateOnScan: Boolean = PaymentPreferences().vibrateOnScan,
     val vibrateOnPayment: Boolean = PaymentPreferences().vibrateOnPayment,
+    val shareUsage: Boolean = PaymentPreferences().shareUsage,
     val thresholdCurrencyEquivalent: DisplayAmount? = null
 )
 

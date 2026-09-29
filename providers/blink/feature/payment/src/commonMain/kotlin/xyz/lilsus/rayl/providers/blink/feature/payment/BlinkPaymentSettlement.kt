@@ -25,6 +25,7 @@ import xyz.lilsus.raylsuite.feature.paymentflow.PreparedPayment
 import xyz.lilsus.raylsuite.feature.paymentflow.SettleablePayment
 import xyz.lilsus.raylsuite.feature.paymentflow.SettlementOutcome
 import xyz.lilsus.raylsuite.feature.paymentflow.SettlementPreparation
+import xyz.lilsus.raylsuite.feature.paymentflow.WidgetPaymentContext
 import xyz.lilsus.raylsuite.feature.paymentui.LnurlPayDisplay
 
 /** Pays admitted invoices from the Blink balance selected in wallet settings. */
@@ -61,6 +62,7 @@ class BlinkPaymentSettlement(
                 amountOverrideMsats = request.amountOverrideMsats,
                 targetContext = request.targetContext,
                 lnurlPayDisplay = request.lnurlPayDisplay,
+                widget = request.widget,
                 fundingWallet = fundingWallet,
                 fundingAmountCents = fundingAmountCents
             ),
@@ -151,6 +153,7 @@ data class BlinkPayment(
     override val amountOverrideMsats: Long?,
     override val targetContext: HubTargetContext?,
     override val lnurlPayDisplay: LnurlPayDisplay?,
+    override val widget: WidgetPaymentContext?,
     val fundingWallet: BlinkFundingWallet,
     val fundingAmountCents: Long?
 ) : SettleablePayment

@@ -3,7 +3,9 @@ package xyz.lilsus.raylsuite.feature.paymentflow
 import xyz.lilsus.raylsuite.core.payment.LnurlError
 import xyz.lilsus.raylsuite.core.payment.LnurlInvoiceResolutionError
 import xyz.lilsus.raylsuite.core.ui.resources.LocalizedText
+import xyz.lilsus.raylsuite.core.ui.resources.localizedTextWithOptionalDetail
 import xyz.lilsus.raylsuite.feature.paymentcurrency.CurrencyManagerError
+import xyz.lilsus.raylsuite.feature.paymentui.PaymentUiTextKey
 import xyz.lilsus.raylsuite.feature.paymentui.exchangeRateUnavailablePaymentErrorText
 import xyz.lilsus.raylsuite.feature.paymentui.invalidInvoicePaymentErrorText
 import xyz.lilsus.raylsuite.feature.paymentui.lnurlPaymentErrorText
@@ -23,6 +25,43 @@ fun PaymentUiError.toLocalizedText(): LocalizedText = when (this) {
         exchangeRateUnavailablePaymentErrorText(currencyCode)
 
     is PaymentUiError.Unexpected -> unexpectedPaymentErrorText(detail)
+
+    is PaymentUiError.Widget -> when (reason) {
+        WidgetStopReason.NotResponding ->
+            LocalizedText(PaymentUiTextKey.WidgetNotResponding, detail ?: "")
+
+        WidgetStopReason.Unavailable -> LocalizedText(PaymentUiTextKey.WidgetUnavailable)
+
+        WidgetStopReason.TermsChanged -> LocalizedText(PaymentUiTextKey.WidgetTermsChanged)
+
+        WidgetStopReason.PriceChanged -> LocalizedText(PaymentUiTextKey.WidgetPriceChanged)
+
+        WidgetStopReason.ProductUnavailable ->
+            LocalizedText(PaymentUiTextKey.WidgetProductUnavailable)
+
+        WidgetStopReason.Refused -> localizedTextWithOptionalDetail(
+            detail,
+            PaymentUiTextKey.WidgetRefused,
+            PaymentUiTextKey.WidgetRefusedWithDetails
+        )
+
+        WidgetStopReason.InvalidInvoice -> LocalizedText(PaymentUiTextKey.WidgetInvalidInvoice)
+
+        WidgetStopReason.PriceMismatch -> LocalizedText(PaymentUiTextKey.WidgetPriceMismatch)
+
+        WidgetStopReason.PriceUnverifiable ->
+            LocalizedText(PaymentUiTextKey.WidgetPriceUnverifiable)
+
+        WidgetStopReason.NothingDue -> localizedTextWithOptionalDetail(
+            detail,
+            PaymentUiTextKey.WidgetNothingDue,
+            PaymentUiTextKey.WidgetNothingDueWithDetails
+        )
+
+        WidgetStopReason.Blocked -> LocalizedText(PaymentUiTextKey.WidgetBlocked)
+
+        WidgetStopReason.Uncertain -> LocalizedText(PaymentUiTextKey.WidgetUncertain)
+    }
 }
 
 internal fun CurrencyManagerError.toPaymentUiError(): PaymentUiError = when (this) {

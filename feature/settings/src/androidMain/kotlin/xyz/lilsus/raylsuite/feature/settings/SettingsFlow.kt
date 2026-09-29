@@ -163,6 +163,7 @@ fun SettingsFlow(
                 onVibrateOnScanChanged = paymentSettingsViewModel::setVibrateOnScan,
                 onVibrateOnPaymentChanged =
                     paymentSettingsViewModel::setVibrateOnPayment,
+                onShareUsageChanged = paymentSettingsViewModel::setShareUsage,
                 modifier = modifier
             )
         }

@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.launch
-import platform.Foundation.NSBundle
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.core.model.DisplayAmount
+import xyz.lilsus.raylsuite.core.model.StoredAmount
 import xyz.lilsus.raylsuite.core.ui.format.currentAmountFormatter
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
 import xyz.lilsus.raylsuite.core.ui.resources.nativeString
@@ -21,31 +21,25 @@ import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubController
 
 /** Localized values and explicit intents for the native SwiftUI widget hub. */
 class NativePaymentHubController(
-    repository: PaymentHubRepository,
-    host: PaymentHubController,
+    private val repository: PaymentHubRepository,
+    private val host: PaymentHubController,
     languageChanges: Flow<*>,
     currencyCodes: Flow<String>
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var currencyCode = CurrencyCatalog.DEFAULT_CODE
     private var canvasColumns = 2
-    private val remote = createHubRemoteSession()
     private val viewModel = WidgetHubViewModel(
         repository = repository,
         host = host,
-        defaultCurrencyCode = { currencyCode },
-        locale = { NSBundle.mainBundle.preferredLocalizations.firstOrNull()?.toString() ?: "en" },
-        catalog = remote?.catalog
+        defaultCurrencyCode = { currencyCode }
     )
     private val snapshot = MutableStateFlow<NativePaymentHubSnapshot?>(null)
 
     init {
         scope.launch { viewModel.state.collect { publish() } }
         scope.launch {
-            languageChanges.collect {
-                publish()
-                viewModel.refreshCatalog()
-            }
+            languageChanges.collect { publish() }
         }
         scope.launch { currencyCodes.collect { currencyCode = it } }
     }
@@ -75,15 +69,11 @@ class NativePaymentHubController(
 
     fun moveContact(id: String, offset: Int) = viewModel.moveContact(id, offset)
 
-    fun updateTitle(value: String) = viewModel.updateTitle(value)
-
     fun updateAmount(value: String) = viewModel.updateAmount(value)
 
     fun selectCurrency(code: String) = viewModel.selectCurrency(code)
 
     fun updateComment(value: String) = viewModel.updateComment(value)
-
-    fun updateConfiguration(key: String, value: String) = viewModel.updateConfiguration(key, value)
 
     fun addContact(title: String, address: String) = viewModel.addContact(title, address)
 
@@ -91,7 +81,16 @@ class NativePaymentHubController(
 
     fun saveWidget() = viewModel.saveWidget()
 
-    fun editWidget(id: String) = viewModel.editWidget(id)
+    fun editWidget(id: String) {
+        if (viewModel.state.value.widgets.firstOrNull { it.id == id }?.provider != null) {
+            viewModel.editProviderWidget(id)
+        } else {
+            viewModel.editWidget(id)
+        }
+    }
+
+    /** Reopens a purchase's delivery status with the provider. */
+    fun checkPurchase(id: String) = host.showPurchase(id)
 
     fun removeWidget(id: String) = viewModel.removeWidget(id)
 
@@ -101,19 +100,60 @@ class NativePaymentHubController(
 
     fun setArranging(value: Boolean) = viewModel.setArranging(value)
 
-    fun setActive(value: Boolean) = viewModel.setActive(value)
-
     fun pay(actionId: String) = viewModel.pay(actionId)
 
-    fun refreshCatalog() = viewModel.refreshCatalog()
+    fun startProviderSetup(link: String) = viewModel.startProviderSetup(link)
 
-    fun refreshContent() = viewModel.refreshContent()
+    fun selectProviderProduct(id: String) = viewModel.selectProviderProduct(id)
+
+    fun updateProviderInput(id: String, value: String) = viewModel.updateProviderInput(id, value)
+
+    fun selectProviderSize(id: String) {
+        ProviderWidgetSize.entries.firstOrNull {
+            it.wireName == id
+        }?.let(viewModel::selectProviderSize)
+    }
+
+    fun saveProviderWidget() = viewModel.saveProviderWidget()
+
+    fun chooseProviderFamily(id: String) {
+        ProviderWidgetSize.entries.firstOrNull {
+            it.wireName == id
+        }?.let(viewModel::chooseProviderFamily)
+    }
+
+    private fun providerFamilies(widgetId: String): List<ProviderWidgetSize> =
+        repository.hub.value.widget(widgetId)?.provider?.definition?.supportedFamilies.orEmpty()
+
+    /** [actionId] comes from a provider tile's `pay` actions. */
+    fun payProvider(widgetId: String, actionId: String) {
+        val (productId, amount) = providerActionPayment(actionId)
+        viewModel.payProvider(widgetId, productId, amount)
+    }
+
+    /** Pays an amount the user typed; returns why it cannot be paid, or null when started. */
+    fun payProviderAmount(widgetId: String, text: String): String? {
+        val tile = viewModel.state.value.widgets.firstOrNull { it.id == widgetId }?.provider
+        val range = tile?.amountRange ?: return null
+        val amount = typedAmount(text, range.currencyCode)?.takeIf { it in range }
+        if (amount == null) {
+            val native = tile.toNative().amountEntry
+            return nativeString(resource("provider_amount_invalid"), native?.range.orEmpty())
+        }
+        viewModel.payProvider(widgetId, amount = amount)
+        return null
+    }
+
+    fun refreshProviderStatus() = viewModel.refreshProviderStatus()
 
     fun resizeWidget(id: String, variantId: String) {
-        viewModel.editWidget(id)
-        if (viewModel.state.value.editor?.existingWidgetId != id) return
-        viewModel.selectVariant(variantId)
-        viewModel.configureSelected()
+        ProviderWidgetSize.entries.firstOrNull { it.wireName == variantId }?.let { size ->
+            if (viewModel.state.value.widgets.firstOrNull { it.id == id }?.provider != null) {
+                viewModel.resizeProviderWidget(id, size)
+                return
+            }
+        }
+        viewModel.resizeWidget(id, variantId)
     }
 
     fun setCanvasColumns(value: Int) {
@@ -125,14 +165,20 @@ class NativePaymentHubController(
 
     fun clear() {
         viewModel.clear()
-        remote?.close()
         scope.cancel()
     }
 
     private fun publish() {
         val state = viewModel.state.value
         val copy = loadCopy()
-        val definitions = state.gallery.map { it.toNative(state.contacts) }
+        // Previews show the contacts a new widget would actually start with.
+        val suggested = state.defaultContactIds.mapNotNull { id ->
+            state.contacts.firstOrNull {
+                it.id ==
+                    id
+            }
+        }
+        val definitions = state.gallery.map { it.toNative(suggested) }
         val placements = packHubGrid(state.widgets, canvasColumns) {
             HubGridSpan(it.variant.columns, it.variant.rows)
         }
@@ -157,9 +203,9 @@ class NativePaymentHubController(
                 val query = state.query.trim()
                 NativeHubEditor(
                     isEditing = editor.existingWidgetId != null,
+                    addsDirectly = editor.addsWithDefaults(),
                     kind = editor.kind.name.lowercase(),
                     variantId = editor.variantId,
-                    title = editor.title,
                     amount = editor.amountInput,
                     fiatAmountHint = if (
                         editor.kind == HubWidgetKind.Shortcut && editor.currencyCode != "SAT"
@@ -208,31 +254,18 @@ class NativePaymentHubController(
 
                         HubWidgetError.InvalidAmount -> localized("hub_error_enter_amount")
 
-                        HubWidgetError.RequiredConfiguration -> localized(
-                            "hub_widget_required_fields"
-                        )
-
                         null -> null
 
                         else -> copy.unavailable
-                    },
-                    fields = state.selectedDefinition?.fields.orEmpty().map { field ->
-                        NativeHubField(
-                            key = field.key,
-                            label = field.label,
-                            type = field.type,
-                            required = field.required,
-                            options = field.options.map { NativeHubChoice(it.id, it.label) },
-                            value = editor.configuration[field.key].orEmpty()
-                        )
                     }
                 )
             },
             query = state.query,
             contactsEmpty = state.contacts.isEmpty(),
             busy = state.busy,
-            catalogLoading = state.catalogLoading,
-            catalogUnavailable = state.catalogUnavailable,
+            providerSetup = state.providerSetup?.toNative(state.serviceCatalog),
+            catalog = catalogSections(state.catalog, state.serviceCatalog),
+            purchases = state.purchases.map { it.toNativePurchase() },
             error = state.error?.let { error ->
                 when (error) {
                     HubWidgetError.ContactNameRequired -> localized("hub_error_enter_title")
@@ -248,8 +281,6 @@ class NativePaymentHubController(
 
                     HubWidgetError.InvalidAmount -> localized("hub_error_enter_amount")
 
-                    HubWidgetError.RequiredConfiguration -> localized("hub_widget_required_fields")
-
                     HubWidgetError.Unavailable -> copy.unavailable
 
                     HubWidgetError.SaveFailed -> localized("hub_widget_error_save")
@@ -263,55 +294,55 @@ class NativePaymentHubController(
         NativeHubDefinition(
             id = id,
             kind = kind.name.lowercase(),
-            title = title ?: localized(kind.titleKey()),
-            detail = description ?: localized(kind.descriptionKey()),
+            title = localized(kind.titleKey()),
+            detail = localized(kind.descriptionKey()),
             symbol = kind.symbol(),
             variants = variants.map { variant ->
                 NativeHubVariant(
                     id = variant.id,
-                    title = variant.title ?: localized(variant.titleKey()),
-                    detail = if (kind == HubWidgetKind.Metric) {
-                        description.orEmpty()
-                    } else {
-                        localized(variant.descriptionKey())
-                    },
+                    title = localized(variant.titleKey()),
+                    detail = localized(variant.descriptionKey()),
                     columns = variant.columns,
                     rows = variant.rows,
                     capacity = variant.capacity,
                     preview = NativeHubTile(
                         id = "preview:$id:${variant.id}",
                         kind = kind.name.lowercase(),
-                        title = title ?: localized(kind.titleKey()),
+                        title = localized(kind.titleKey()),
                         variantId = variant.id,
                         column = 0,
                         row = 0,
                         columns = variant.columns,
                         rows = variant.rows,
-                        people = if (kind == HubWidgetKind.Metric) {
-                            emptyList()
-                        } else {
-                            (0 until variant.capacity).map { index ->
-                                val contact = contacts.getOrNull(index)
-                                NativeHubPerson(
-                                    id = "preview:$index",
-                                    actionId = "",
-                                    title =
-                                        contact?.title
-                                            ?: localized("hub_widget_contact_placeholder"),
-                                    initials = contact?.title?.initials().orEmpty(),
-                                    address = "",
-                                    amount = if (kind == HubWidgetKind.Shortcut) {
-                                        localized("hub_widget_shortcut_amount")
-                                    } else {
-                                        null
-                                    }
-                                )
-                            }
+                        // What the widget will be added with; placeholders only without contacts.
+                        people = (
+                            0 until
+                                if (contacts.isEmpty()) {
+                                    variant.capacity
+                                } else {
+                                    minOf(
+                                        variant.capacity,
+                                        contacts.size
+                                    )
+                                }
+                            ).map { index ->
+                            val contact = contacts.getOrNull(index)
+                            NativeHubPerson(
+                                id = "preview:$index",
+                                actionId = "",
+                                title =
+                                    contact?.title
+                                        ?: localized("hub_widget_contact_placeholder"),
+                                initials = contact?.title?.initials().orEmpty(),
+                                address = "",
+                                amount = if (kind == HubWidgetKind.Shortcut) {
+                                    localized("hub_widget_shortcut_amount")
+                                } else {
+                                    null
+                                }
+                            )
                         },
                         sizes = emptyList(),
-                        metric = null,
-                        loading = false,
-                        unavailable = false,
                         emptyText = ""
                     )
                 )
@@ -322,9 +353,8 @@ class NativePaymentHubController(
         NativeHubTile(
             id = id,
             kind = kind.name.lowercase(),
-            title = title?.takeIf { it.isNotBlank() }
-                ?: definitions.firstOrNull { it.id == definitionId }?.title
-                ?: localized(kind.titleKey()),
+            // Tiles have no names; the title is for accessibility and menus.
+            title = provider?.title ?: localized(kind.titleKey()),
             variantId = variant.id,
             column = 0,
             row = 0,
@@ -337,30 +367,27 @@ class NativePaymentHubController(
                     title = person.title,
                     initials = person.title.initials(),
                     address = person.address,
-                    amount = person.amount?.let { amount ->
-                        currentAmountFormatter().format(
-                            DisplayAmount(
-                                amount.minor,
-                                CurrencyCatalog.infoFor(amount.currencyCode).currency
-                            )
-                        )
+                    amount = person.amount?.let(::formatAmount),
+                    lastPaid = person.lastPaid?.let {
+                        localized("hub_widget_last_paid", formatAmount(it))
                     }
                 )
             },
-            sizes = definitions.firstOrNull { it.id == definitionId }?.variants.orEmpty().map {
-                NativeHubSizeChoice(it.id, it.title ?: localized(it.titleKey()))
+            sizes = if (provider != null) {
+                providerSizeChoices(providerFamilies(id))
+            } else {
+                definitions.firstOrNull { it.id == definitionId }?.variants.orEmpty().map {
+                    NativeHubSizeChoice(it.id, localized(it.titleKey()))
+                }
             },
-            metric = metric?.let { NativeHubMetric(it.value, it.unit, it.label, it.asOf) },
-            loading = loading,
-            unavailable = unavailable,
             emptyText = localized(
                 when (kind) {
                     HubWidgetKind.Favorites -> "hub_widget_favorites_empty"
                     HubWidgetKind.Recents -> "hub_widget_recent_empty"
-                    HubWidgetKind.Metric -> "hub_widget_unavailable"
                     else -> "hub_widget_contacts_empty"
                 }
-            )
+            ),
+            provider = provider?.toNative()
         )
 }
 
@@ -374,8 +401,9 @@ data class NativePaymentHubSnapshot(
     val query: String,
     val contactsEmpty: Boolean,
     val busy: Boolean,
-    val catalogLoading: Boolean,
-    val catalogUnavailable: Boolean,
+    val providerSetup: NativeProviderSetup?,
+    val catalog: List<NativeCatalogSection>,
+    val purchases: List<NativePurchase>,
     val error: String?,
     val contactSavedSerial: Int
 )
@@ -417,10 +445,8 @@ data class NativeHubTile(
     val rows: Int,
     val people: List<NativeHubPerson>,
     val sizes: List<NativeHubSizeChoice>,
-    val metric: NativeHubMetric?,
-    val loading: Boolean,
-    val unavailable: Boolean,
-    val emptyText: String
+    val emptyText: String,
+    val provider: NativeProviderTile? = null
 )
 
 data class NativeHubSizeChoice(val id: String, val title: String)
@@ -431,14 +457,9 @@ data class NativeHubPerson(
     val title: String,
     val initials: String,
     val address: String,
-    val amount: String?
-)
-
-data class NativeHubMetric(
-    val value: String,
-    val unit: String,
-    val label: String,
-    val asOf: String?
+    val amount: String?,
+    /** Context for large contacts tiles; never what a tap pays. */
+    val lastPaid: String? = null
 )
 
 data class NativeHubContact(
@@ -448,22 +469,12 @@ data class NativeHubContact(
     val initials: String
 )
 
-data class NativeHubField(
-    val key: String,
-    val label: String,
-    val type: String,
-    val required: Boolean,
-    val options: List<NativeHubChoice>,
-    val value: String
-)
-
-data class NativeHubChoice(val id: String, val label: String)
-
 data class NativeHubEditor(
     val isEditing: Boolean,
+    /** The size carousel adds the widget with its defaults instead of opening setup. */
+    val addsDirectly: Boolean,
     val kind: String,
     val variantId: String,
-    val title: String,
     val amount: String,
     val fiatAmountHint: String?,
     val currencyCode: String,
@@ -477,8 +488,7 @@ data class NativeHubEditor(
     val selectionLimit: String,
     val capacity: Int,
     val canSave: Boolean,
-    val validationMessage: String?,
-    val fields: List<NativeHubField>
+    val validationMessage: String?
 )
 
 data class NativePaymentHubCopy(
@@ -489,7 +499,6 @@ data class NativePaymentHubCopy(
     val widgetOptions: String,
     val chooseLayout: String,
     val continueTitle: String,
-    val widgetName: String,
     val edit: String,
     val done: String,
     val back: String,
@@ -502,6 +511,7 @@ data class NativePaymentHubCopy(
     val address: String,
     val amount: String,
     val comment: String,
+    val commentHint: String,
     val search: String,
     val addContact: String,
     val saveContact: String,
@@ -512,12 +522,19 @@ data class NativePaymentHubCopy(
     val noMatches: String,
     val emptyTitle: String,
     val emptyBody: String,
-    val loading: String,
     val unavailable: String,
-    val retry: String,
-    val catalogUnavailable: String,
     val contactsTitle: String,
-    val automaticHint: String
+    val automaticHint: String,
+    val addByLink: String,
+    val addByLinkBody: String,
+    val paste: String,
+    val sectionPeople: String,
+    val sectionCollections: String,
+    val editHub: String,
+    val buySomethingElse: String,
+    val purchases: String,
+    val purchasesEmpty: String,
+    val checkAgain: String
 )
 
 private fun loadCopy() = NativePaymentHubCopy(
@@ -528,7 +545,6 @@ private fun loadCopy() = NativePaymentHubCopy(
     widgetOptions = localized("hub_widget_options"),
     chooseLayout = localized("hub_widget_select_variant"),
     continueTitle = localized("hub_widget_continue"),
-    widgetName = localized("hub_widget_name"),
     edit = localized("hub_canvas_edit"),
     done = localized("hub_canvas_done"),
     back = localized("hub_new_back"),
@@ -541,6 +557,7 @@ private fun loadCopy() = NativePaymentHubCopy(
     address = localized("hub_target_address_label"),
     amount = localized("hub_widget_shortcut_amount"),
     comment = localized("hub_target_comment_label"),
+    commentHint = localized("hub_target_comment_hint"),
     search = localized("hub_new_search"),
     addContact = localized("hub_widget_add_contact"),
     saveContact = localized("hub_widget_save_contact"),
@@ -551,12 +568,19 @@ private fun loadCopy() = NativePaymentHubCopy(
     noMatches = localized("hub_new_no_matches"),
     emptyTitle = localized("hub_widget_empty_title"),
     emptyBody = localized("hub_widget_empty_body"),
-    loading = localized("hub_widget_loading"),
     unavailable = localized("hub_widget_unavailable"),
-    retry = localized("hub_widget_retry"),
-    catalogUnavailable = localized("hub_widget_catalog_unavailable"),
     contactsTitle = localized("hub_widget_contacts"),
-    automaticHint = localized("hub_widget_recents_hint")
+    automaticHint = localized("hub_widget_recents_hint"),
+    addByLink = localized("provider_add_link"),
+    addByLinkBody = localized("provider_add_link_body"),
+    paste = localized("provider_paste"),
+    sectionPeople = localized("hub_section_people"),
+    sectionCollections = localized("hub_section_collections"),
+    editHub = localized("hub_edit_hub"),
+    buySomethingElse = localized("hub_buy_something_else"),
+    purchases = localized("purchases_title"),
+    purchasesEmpty = localized("purchases_empty"),
+    checkAgain = localized("purchase_check_again")
 )
 
 private fun HubContact.toNative() = NativeHubContact(id, title, address.full, title.initials())
@@ -566,31 +590,26 @@ private fun String.initials(): String = trim().split(Regex("\\s+"))
 
 private fun HubWidgetKind.titleKey(): String = "hub_widget_${name.lowercase()}"
 
-private fun HubWidgetKind.descriptionKey(): String = when (this) {
-    HubWidgetKind.Metric -> "hub_widget_metric"
-    else -> "hub_widget_${name.lowercase()}_body"
-}
+private fun HubWidgetKind.descriptionKey(): String = "hub_widget_${name.lowercase()}_body"
 
 private fun HubWidgetKind.symbol(): String = when (this) {
     HubWidgetKind.Contacts -> "person.crop.circle"
     HubWidgetKind.Shortcut -> "bolt.fill"
     HubWidgetKind.Favorites -> "star.fill"
     HubWidgetKind.Recents -> "clock.fill"
-    HubWidgetKind.Metric -> "chart.line.uptrend.xyaxis"
+    HubWidgetKind.Provider -> "bag.fill"
 }
 
 private fun HubWidgetVariant.titleKey(): String = when (id) {
     "single" -> "hub_widget_single"
     "row" -> "hub_widget_row"
-    "card" -> "hub_widget_card"
-    else -> "hub_widget_metric"
+    else -> "hub_widget_card"
 }
 
 private fun HubWidgetVariant.descriptionKey(): String = when (id) {
     "single" -> "hub_widget_single_body"
     "row" -> "hub_widget_row_body"
-    "card" -> "hub_widget_card_body"
-    else -> "hub_widget_metric"
+    else -> "hub_widget_card_body"
 }
 
 private fun resource(key: String) = NativeStringResource("PaymentHub", key)
@@ -599,5 +618,11 @@ private fun localized(key: String): String = nativeString(resource(key))
 
 private fun localized(key: String, value: Int): String = nativeString(resource(key), value)
 
+private fun localized(key: String, value: String): String = nativeString(resource(key), value)
+
 private fun localized(key: String, first: Int, second: Int): String =
     nativeString(resource(key), first, second)
+
+private fun formatAmount(amount: StoredAmount): String = currentAmountFormatter().format(
+    DisplayAmount(amount.minor, CurrencyCatalog.infoFor(amount.normalizedCurrencyCode).currency)
+)

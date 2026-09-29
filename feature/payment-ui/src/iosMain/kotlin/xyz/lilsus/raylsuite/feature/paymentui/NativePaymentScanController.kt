@@ -15,6 +15,7 @@ import xyz.lilsus.raylsuite.core.camera.CameraAuthorizationState
 import xyz.lilsus.raylsuite.core.camera.createNativeQrScannerController
 import xyz.lilsus.raylsuite.core.camera.nativeCameraAuthorizationState
 import xyz.lilsus.raylsuite.core.camera.requestNativeCameraPermission
+import xyz.lilsus.raylsuite.feature.paymenthub.WidgetPurchase
 import xyz.lilsus.raylsuite.feature.paymenthub.host.HubSavePrompt
 import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubIntent
 import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountKey
@@ -58,7 +59,8 @@ class NativePaymentScanController(
         appTitle: String,
         savePrompt: HubSavePrompt?,
         recentCount: Int = 0,
-        newRecentCount: Int = 0
+        newRecentCount: Int = 0,
+        delivery: WidgetPurchase? = null
     ) {
         val previousPayment = input?.payment
         val wasResolving = previousPayment.isResolving()
@@ -85,7 +87,8 @@ class NativePaymentScanController(
                 appTitle = appTitle,
                 savePrompt = savePrompt,
                 recentCount = recentCount,
-                newRecentCount = newRecentCount
+                newRecentCount = newRecentCount,
+                delivery = delivery
             )
         publishSnapshot()
         reconcileScanner()
@@ -164,6 +167,10 @@ class NativePaymentScanController(
         onHubIntent(PaymentHubIntent.SavePromptDismiss)
     }
 
+    fun dismissDelivery() {
+        onHubIntent(PaymentHubIntent.DeliveryDismiss)
+    }
+
     fun clear() {
         screenActive = false
         scannerRestartJob?.cancel()
@@ -182,6 +189,7 @@ class NativePaymentScanController(
                 payment = current.payment,
                 appTitle = current.appTitle,
                 savePrompt = current.savePrompt,
+                delivery = current.delivery,
                 showResolvingContent = showResolvingContent,
                 recentCount = current.recentCount,
                 newRecentCount = current.newRecentCount,
@@ -203,6 +211,7 @@ class NativePaymentScanController(
             screenActive &&
                 current?.payment == PaymentScreenState.Active &&
                 current.savePrompt == null &&
+                current.delivery == null &&
                 !scannerUnavailable
         if (!shouldRun) {
             scannerRestartJob?.cancel()
@@ -276,7 +285,8 @@ private data class NativePaymentScanInput(
     val appTitle: String,
     val savePrompt: HubSavePrompt?,
     val recentCount: Int,
-    val newRecentCount: Int
+    val newRecentCount: Int,
+    val delivery: WidgetPurchase?
 )
 
 private fun PaymentScreenState?.isResolving(): Boolean =

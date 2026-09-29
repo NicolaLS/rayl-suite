@@ -4,6 +4,7 @@ import xyz.lilsus.raylsuite.core.ui.format.AmountFormatter
 import xyz.lilsus.raylsuite.core.ui.format.currentAmountFormatter
 import xyz.lilsus.raylsuite.core.ui.resources.LocalizedText
 import xyz.lilsus.raylsuite.core.ui.resources.resolveNative
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetPriceVerdict
 import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentRecentItem
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentLoadingKind
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentScreenState
@@ -28,7 +29,19 @@ fun PaymentUiState.toNativePaymentScreenState(): PaymentScreenState = when (this
         PaymentScreenState.Confirm(
             amount = amount,
             lnurlPayDisplay = lnurlPayDisplay,
-            fundingSource = fundingSource?.resolveNative()
+            fundingSource = fundingSource?.resolveNative(),
+            notice = priceNotice?.let { check ->
+                check.invoiced?.let { invoiced ->
+                    LocalizedText(
+                        if (check.verdict == WidgetPriceVerdict.Higher) {
+                            PaymentUiTextKey.WidgetPriceHigher
+                        } else {
+                            PaymentUiTextKey.WidgetPriceLower
+                        },
+                        currentAmountFormatter().format(invoiced.toDisplayAmount())
+                    ).resolveNative()
+                }
+            }
         )
 
     is PaymentUiState.Success ->

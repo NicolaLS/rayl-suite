@@ -20,9 +20,10 @@ private final class NativePaymentHubModel: ObservableObject {
 private enum HubRoute: Hashable {
     case variants
     case configure
+    case providerSetup
 }
 
-private enum HubGeometry {
+enum HubGeometry {
     static let gap: CGFloat = 12
     static let gutter: CGFloat = 16
 
@@ -34,9 +35,9 @@ private enum HubGeometry {
 /// The app owns payment behavior; the Hub presents independently configured native widgets.
 struct NativePaymentHubView: View {
     @StateObject private var model: NativePaymentHubModel
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var isVisible = false
     @State private var hoveredId: String?
+    @State private var providerSheet: ProviderSheetRequest?
+    @State private var showingPurchases = false
     init(controller: NativePaymentHubController) {
         _model = StateObject(wrappedValue: NativePaymentHubModel(controller: controller))
     }
@@ -55,16 +56,33 @@ struct NativePaymentHubView: View {
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled(model.snapshot?.busy == true)
         }
-        .onAppear {
-            isVisible = true
-            model.controller.setActive(value: scenePhase == .active)
+        .sheet(item: $providerSheet) { request in
+            if let provider = model.snapshot?.canvas.tiles.first(where: { $0.id == request.tileId })?.provider {
+                ProviderSheet(
+                    provider: provider,
+                    kind: request.kind,
+                    pay: { action in
+                        providerSheet = nil
+                        model.controller.payProvider(widgetId: request.tileId, actionId: action)
+                    },
+                    payAmount: { text in
+                        let error = model.controller.payProviderAmount(widgetId: request.tileId, text: text)
+                        if error == nil { providerSheet = nil }
+                        return error
+                    }
+                )
+            }
         }
-        .onDisappear {
-            isVisible = false
-            model.controller.setActive(value: false)
-        }
-        .onChange(of: scenePhase) { _, phase in
-            model.controller.setActive(value: isVisible && phase == .active)
+        .sheet(isPresented: $showingPurchases) {
+            if let state = model.snapshot {
+                PurchasesView(
+                    title: state.text.purchases,
+                    empty: state.text.purchasesEmpty,
+                    checkAgain: state.text.checkAgain,
+                    purchases: state.purchases,
+                    check: { model.controller.checkPurchase(id: $0) }
+                )
+            }
         }
     }
 
@@ -76,41 +94,68 @@ struct NativePaymentHubView: View {
     }
 
     private func canvas(_ state: NativePaymentHubSnapshot) -> some View {
-        VStack(spacing: 0) {
-            if let error = state.error, state.screen == "hub" {
-                Text(error)
-                    .font(.footnote)
-                    .foregroundStyle(.red)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, HubGeometry.gutter)
-                    .padding(.bottom, 12)
+        GeometryReader { viewport in
+            let columns = viewport.size.width >= 700 ? 4 : 2
+            let width = viewport.size.width - HubGeometry.gutter * 2
+            let unit = (width - HubGeometry.gap * CGFloat(columns - 1)) / CGFloat(columns)
+            ScrollView {
+                Group {
+                    if state.canvas.tiles.isEmpty {
+                        // A lone dashed square on an empty screen reads as a loading failure,
+                        // so the first run says what the canvas is for.
+                        emptyCanvas(state, unit: min(unit, 180))
+                            .frame(minHeight: viewport.size.height)
+                    } else {
+                        widgetGrid(state, unit: unit)
+                            .padding(.top, HubGeometry.gutter)
+                            .padding(.bottom, 24)
+                    }
+                }
+                .padding(.horizontal, HubGeometry.gutter)
+                .disabled(state.busy)
             }
-
-            GeometryReader { viewport in
-                let columns = viewport.size.width >= 700 ? 4 : 2
-                let width = viewport.size.width - HubGeometry.gutter * 2
-                let unit = (width - HubGeometry.gap * CGFloat(columns - 1)) / CGFloat(columns)
-                ScrollView {
-                    Group {
-                        if state.canvas.tiles.isEmpty {
-                            // A lone dashed square on an empty screen reads as a loading failure,
-                            // so the first run says what the canvas is for.
-                            emptyCanvas(state, unit: min(unit, 180))
-                                .frame(minHeight: viewport.size.height)
-                        } else {
-                            widgetGrid(state, unit: unit)
-                                .padding(.top, HubGeometry.gutter)
-                                .padding(.bottom, 24)
+            // The header floats: tiles scroll underneath the purchases button, not up to an edge.
+            .safeAreaInset(edge: .top, spacing: 0) {
+                VStack(spacing: 0) {
+                    HStack {
+                        if state.canvas.arranging {
+                            Text(state.text.editHub).font(.headline)
+                        }
+                        Spacer()
+                        if state.canvas.arranging {
+                            Button(state.text.done) { model.controller.setArranging(value: false) }
+                                .buttonStyle(.borderedProminent)
+                        } else if !state.purchases.isEmpty {
+                            Button { showingPurchases = true } label: {
+                                Image(systemName: "bag")
+                                    .font(.title3)
+                                    .overlay(alignment: .topTrailing) {
+                                        if state.purchases.contains(where: { $0.tone != "success" }) {
+                                            Circle().fill(Color.orange).frame(width: 9, height: 9).offset(x: 4, y: -2)
+                                        }
+                                    }
+                            }
+                            .floatingButton()
+                            .accessibilityLabel(state.text.purchases)
                         }
                     }
                     .padding(.horizontal, HubGeometry.gutter)
-                    .disabled(state.busy)
+                    .padding(.top, 8)
+                    if let error = state.error, state.screen == "hub" {
+                        Text(error)
+                            .font(.footnote)
+                            .foregroundStyle(.red)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal, HubGeometry.gutter)
+                            .padding(.bottom, 12)
+                    }
                 }
-                .refreshable { model.controller.refreshContent() }
-                .onAppear { model.controller.setCanvasColumns(value: Int32(columns)) }
-                .onChange(of: columns) { _, value in
-                    model.controller.setCanvasColumns(value: Int32(value))
-                }
+            }
+            .softTopEdge()
+            .refreshable { model.controller.refreshProviderStatus() }
+            .onAppear { model.controller.setCanvasColumns(value: Int32(columns)) }
+            .onChange(of: columns) { _, value in
+                model.controller.setCanvasColumns(value: Int32(value))
             }
         }
         .background(Color(uiColor: .systemGroupedBackground))
@@ -123,9 +168,23 @@ struct NativePaymentHubView: View {
                 WidgetContent(
                     tile: tile,
                     copy: state.text,
-                    interactive: true,
-                    pay: { model.controller.pay(actionId: $0) }
+                    interactive: !state.canvas.arranging,
+                    pay: { model.controller.pay(actionId: $0) },
+                    payProvider: { model.controller.payProvider(widgetId: tile.id, actionId: $0) },
+                    openProviderSheet: { providerSheet = ProviderSheetRequest(tileId: tile.id, kind: $0) }
                 )
+                .overlay(alignment: .topLeading) {
+                    if state.canvas.arranging {
+                        Button { model.controller.removeWidget(id: tile.id) } label: {
+                            Image(systemName: "minus.circle.fill")
+                                .font(.title2)
+                                .symbolRenderingMode(.palette)
+                                .foregroundStyle(.white, .red)
+                        }
+                        .offset(x: -8, y: -8)
+                        .accessibilityLabel(state.text.remove)
+                    }
+                }
                 .frame(
                     width: HubGeometry.span(unit, tile.columns),
                     height: HubGeometry.span(unit, tile.rows)
@@ -248,6 +307,9 @@ struct NativePaymentHubView: View {
         Button(state.text.editWidget, systemImage: "slider.horizontal.3") {
             model.controller.editWidget(id: tile.id)
         }
+        Button(state.text.editHub, systemImage: "square.grid.2x2") {
+            model.controller.setArranging(value: true)
+        }
         if tile.sizes.count > 1 {
             Menu(state.text.chooseLayout) {
                 ForEach(tile.sizes, id: \.id) { size in
@@ -293,6 +355,7 @@ struct NativePaymentHubView: View {
 
 private struct HubEditorSheet: View {
     @ObservedObject var model: NativePaymentHubModel
+    @State private var providerLink = ""
 
     var body: some View {
         NavigationStack(path: navigationPath) {
@@ -314,6 +377,7 @@ private struct HubEditorSheet: View {
         switch state.screen {
         case "variants": return [.variants]
         case "configure": return [.variants, .configure]
+        case "providersetup": return [.providerSetup]
         default: return []
         }
     }
@@ -337,6 +401,16 @@ private struct HubEditorSheet: View {
             case .variants:
                 if let definition = state.selectedDefinition {
                     VariantGallery(state: state, definition: definition, controller: model.controller)
+                } else {
+                    unavailable(state)
+                }
+            case .providerSetup:
+                if let setup = state.providerSetup {
+                    ProviderSetupView(
+                        controller: model.controller,
+                        setup: setup,
+                        dismissTitle: state.text.cancel
+                    )
                 } else {
                     unavailable(state)
                 }
@@ -366,40 +440,33 @@ private struct HubEditorSheet: View {
                     .font(.title3.weight(.medium))
                     .foregroundStyle(.secondary)
                     .padding(.top, 8)
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 145), spacing: 16)], spacing: 24) {
-                    ForEach(state.gallery, id: \.id) { definition in
-                        Button {
-                            model.controller.selectDefinition(id: definition.id)
-                        } label: {
-                            VStack(alignment: .leading, spacing: 8) {
-                                GalleryIllustration(kind: definition.kind, symbol: definition.symbol)
-                                    .frame(height: 126)
-                                    .frame(maxWidth: .infinity)
-                                    .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22))
-                                Text(definition.title)
-                                    .font(.headline)
-                                    .foregroundStyle(.primary)
-                                Text(definition.detail)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(3)
-                                    .multilineTextAlignment(.leading)
+                builtInSection(state, title: state.text.sectionPeople, kinds: ["contacts", "shortcut"])
+                // Collections (favorites, recents) are hidden while the provider widgets' UX is
+                // settled; they keep working on existing Hubs. Restore with:
+                // builtInSection(state, title: state.text.sectionCollections, kinds: ["favorites", "recents"])
+                ForEach(state.catalog, id: \.title) { section in
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text(section.title).font(.title3.weight(.bold))
+                        LazyVGrid(columns: galleryColumns, spacing: 20) {
+                            ForEach(section.entries, id: \.url) { entry in
+                                galleryCell(title: entry.title, detail: entry.subtitle) {
+                                    model.controller.startProviderSetup(link: entry.url)
+                                } preview: {
+                                    if let preview = entry.preview {
+                                        ProviderTileFace(provider: preview, interactive: false, pay: { _ in })
+                                            .allowsHitTesting(false)
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 24)
+                                            .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                                            .overlay { if entry.loading { ProgressView() } }
+                                    }
+                                }
                             }
-                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .buttonStyle(.plain)
+                        if section.endsWithLink { addByLink(state) }
                     }
                 }
-                if state.catalogLoading {
-                    ProgressView(state.text.loading).frame(maxWidth: .infinity)
-                }
-                if state.catalogUnavailable {
-                    VStack(spacing: 8) {
-                        Text(state.text.catalogUnavailable).font(.footnote).foregroundStyle(.secondary)
-                        Button(state.text.retry) { model.controller.refreshCatalog() }
-                    }
-                    .frame(maxWidth: .infinity)
-                }
+                if !state.catalog.contains(where: { $0.endsWithLink }) { addByLink(state) }
             }
             .padding(20)
             .frame(maxWidth: 700)
@@ -409,6 +476,90 @@ private struct HubEditorSheet: View {
         .navigationTitle(state.text.galleryTitle)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar { dismissButton(state.text.cancel) }
+    }
+
+    private var galleryColumns: [GridItem] {
+        [GridItem(.flexible(), spacing: 14), GridItem(.flexible(), spacing: 14)]
+    }
+
+    @ViewBuilder
+    private func builtInSection(_ state: NativePaymentHubSnapshot, title: String, kinds: [String]) -> some View {
+        let definitions = state.gallery.filter { kinds.contains($0.kind) }
+        if !definitions.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(title).font(.title3.weight(.bold))
+                LazyVGrid(columns: galleryColumns, spacing: 20) {
+                    ForEach(definitions, id: \.id) { definition in
+                        galleryCell(title: definition.title, detail: definition.detail) {
+                            model.controller.selectDefinition(id: definition.id)
+                        } preview: {
+                            if let variant = definition.variants.first {
+                                WidgetContent(tile: variant.preview, copy: state.text, interactive: false, pay: { _ in })
+                                    .allowsHitTesting(false)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func galleryCell<Preview: View>(
+        title: String,
+        detail: String?,
+        action: @escaping () -> Void,
+        @ViewBuilder preview: () -> Preview
+    ) -> some View {
+        // A tap anywhere on the cell, preview included, chooses the widget. The preview is only a
+        // picture, so it takes no touches of its own.
+        VStack(alignment: .leading, spacing: 6) {
+            preview().frame(height: 150).allowsHitTesting(false)
+            Text(title).font(.subheadline.weight(.semibold)).foregroundStyle(.primary).lineLimit(1)
+            if let detail {
+                Text(detail).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                    .multilineTextAlignment(.leading)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .contentShape(Rectangle())
+        .onTapGesture(perform: action)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private func addByLink(_ state: NativePaymentHubSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(state.text.addByLink, systemImage: "link")
+                .font(.headline)
+            Text(state.text.addByLinkBody)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                TextField("https://", text: $providerLink)
+                    .textFieldStyle(.roundedBorder)
+                    .keyboardType(.URL)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.go)
+                    .onSubmit(openProviderLink)
+                Button(state.text.paste) {
+                    if let text = UIPasteboard.general.string { providerLink = text }
+                }
+                .buttonStyle(.bordered)
+            }
+            Button(state.text.continueTitle, action: openProviderLink)
+                .buttonStyle(.borderedProminent)
+                .disabled(providerLink.trimmingCharacters(in: .whitespaces).isEmpty)
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 22))
+    }
+
+    private func openProviderLink() {
+        let link = providerLink.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !link.isEmpty else { return }
+        model.controller.startProviderSetup(link: link)
     }
 
     @ToolbarContentBuilder
@@ -512,7 +663,10 @@ private struct VariantGallery: View {
             }
         }
         .safeAreaInset(edge: .bottom) {
-            HubPrimaryButton(title: state.text.continueTitle, busy: false) {
+            HubPrimaryButton(
+                title: state.editor?.addsDirectly == true ? state.text.addWidget : state.text.continueTitle,
+                busy: state.busy
+            ) {
                 controller.configureSelected()
             }
         }
@@ -535,14 +689,6 @@ private struct WidgetConfigurationView: View {
         Group {
             if let state = model.snapshot {
                 Form {
-                    Section {
-                        TextField(
-                            state.text.widgetName,
-                            text: Binding(
-                                get: { editor.title },
-                                set: { controller.updateTitle(value: $0) }
-                            ))
-                    }
                     if isPersonal {
                         contacts(state)
                     } else if editor.kind == "favorites" || editor.kind == "recents" {
@@ -580,19 +726,17 @@ private struct WidgetConfigurationView: View {
                                     .font(.footnote)
                                     .foregroundStyle(.secondary)
                             }
+                        }
+                        // The note is the shortcut's label ("Rent"); there is no separate name.
+                        Section {
                             TextField(
                                 state.text.comment,
                                 text: Binding(
                                     get: { editor.comment },
                                     set: { controller.updateComment(value: $0) }
                                 ))
-                        }
-                    }
-                    if !editor.fields.isEmpty {
-                        Section {
-                            ForEach(editor.fields, id: \.key) { field in
-                                configurationField(field)
-                            }
+                        } footer: {
+                            Text(state.text.commentHint)
                         }
                     }
                 }
@@ -663,25 +807,6 @@ private struct WidgetConfigurationView: View {
             }
         }
     }
-
-    @ViewBuilder
-    private func configurationField(_ field: NativeHubField) -> some View {
-        let binding = Binding(
-            get: { field.value },
-            set: { controller.updateConfiguration(key: field.key, value: $0) }
-        )
-        if field.type == "choice" {
-            Picker(field.label, selection: binding) {
-                if !field.required || field.value.isEmpty { Text("—").tag("") }
-                ForEach(field.options, id: \.id) { option in
-                    Text(option.label).tag(option.id)
-                }
-            }
-        } else {
-            TextField(field.label, text: binding)
-        }
-    }
-
 }
 
 private struct HubContactPicker: View {
@@ -882,7 +1007,7 @@ private struct AddHubContactSheet: View {
     }
 }
 
-private struct HubPrimaryButton: View {
+struct HubPrimaryButton: View {
     let title: String
     let busy: Bool
     let action: () -> Void
@@ -908,150 +1033,141 @@ private struct WidgetContent: View {
     let copy: NativePaymentHubCopy
     let interactive: Bool
     let pay: (String) -> Void
+    var payProvider: (String) -> Void = { _ in }
+    var openProviderSheet: (String) -> Void = { _ in }
 
     var body: some View {
-        GeometryReader { proxy in
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 5) {
-                    if tile.kind == "shortcut" { Image(systemName: "bolt.fill") }
-                    Text(tile.title).lineLimit(1)
-                    Spacer(minLength: 0)
-                }
-                .font(.caption.weight(.semibold))
+        if let provider = tile.provider {
+            ProviderTileFace(
+                provider: provider,
+                interactive: interactive,
+                pay: payProvider,
+                openSheet: openProviderSheet
+            )
+        } else {
+            peopleBody
+        }
+    }
+
+    private var palette: TilePalette { .neutral }
+
+    @ViewBuilder
+    private var peopleBody: some View {
+        if tile.people.isEmpty {
+            Text(tile.emptyText)
+                .font(.footnote)
                 .foregroundStyle(.secondary)
-                if tile.kind == "metric" {
-                    metric
-                } else if tile.people.isEmpty {
-                    Text(tile.emptyText)
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-                        .multilineTextAlignment(.center)
-                } else {
-                    people(size: proxy.size)
+                .multilineTextAlignment(.center)
+                .padding(HubTileStyle.padding)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .tileSurface(palette)
+        } else if tile.kind == "shortcut", let person = tile.people.first {
+            shortcut(person)
+        } else if tile.columns == 1, let person = tile.people.first {
+            single(person)
+        } else {
+            group
+        }
+    }
+
+    /// One person and one amount, laid out like a provider's one-tap tile: who in the corner,
+    /// the amount as the hero, and what it is for underneath.
+    private func shortcut(_ person: NativeHubPerson) -> some View {
+        Button { if !person.actionId.isEmpty { pay(person.actionId) } } label: {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 8) {
+                    HubAvatar(initials: person.initials, size: HubTileStyle.glyph)
+                    Text(person.title)
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(palette.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.85)
+                    Spacer(minLength: 4)
+                    TapBadge(symbol: "bolt.fill", palette: palette)
+                }
+                if let amount = person.amount {
+                    Text(amount).font(HubTileStyle.hero(30)).lineLimit(1).minimumScaleFactor(0.5)
+                        .padding(.top, 8)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(HubTileStyle.padding)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .tileSurface(palette)
+            .contentShape(RoundedRectangle(cornerRadius: HubTileStyle.corner, style: .continuous))
+        }
+        .buttonStyle(TilePressStyle())
+        .disabled(!interactive)
+        .accessibilityLabel(person.title + (person.amount.map { ", " + $0 } ?? ""))
+    }
+
+    /// A single contact is a face: large enough to find at a glance, the whole tile to tap.
+    private func single(_ person: NativeHubPerson) -> some View {
+        GeometryReader { proxy in
+            Button { if !person.actionId.isEmpty { pay(person.actionId) } } label: {
+                VStack(spacing: 8) {
+                    HubAvatar(initials: person.initials, size: min(proxy.size.width, proxy.size.height) * 0.5)
+                    Text(person.title).font(.subheadline.weight(.semibold)).lineLimit(1).minimumScaleFactor(0.8)
+                }
+                .padding(HubTileStyle.padding)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .tileSurface(palette)
+                .contentShape(RoundedRectangle(cornerRadius: HubTileStyle.corner, style: .continuous))
+            }
+            .buttonStyle(TilePressStyle())
+            .disabled(!interactive)
+            .accessibilityLabel(person.title)
+        }
+    }
+
+    /// A few people in a row, or on a large tile a grid with what each was last paid.
+    private var group: some View {
+        GeometryReader { proxy in
+            let columns = tile.rows >= 2 ? 3 : min(max(tile.people.count, 1), 4)
+            let rows = tile.rows >= 2 ? 2 : 1
+            let cellWidth = (proxy.size.width - HubTileStyle.padding * 2) / CGFloat(columns)
+            let cellHeight = (proxy.size.height - HubTileStyle.padding * 2) / CGFloat(rows)
+            let avatar = max(28, min(cellWidth - 14, cellHeight - (tile.rows >= 2 ? 44 : 30)))
+            LazyVGrid(
+                columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: columns),
+                spacing: 0
+            ) {
+                ForEach(Array(tile.people.enumerated()), id: \.element.id) { index, person in
+                    personButton(person, avatarSize: avatar, seed: index)
+                        .frame(height: cellHeight)
                 }
             }
-            .padding(14)
+            .padding(HubTileStyle.padding)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
+            .tileSurface(palette)
         }
         .accessibilityElement(children: .contain)
     }
 
-    @ViewBuilder
-    private var metric: some View {
-        if tile.metric == nil && tile.loading {
-            ProgressView(copy.loading).frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if tile.metric == nil && tile.unavailable {
-            Text(copy.unavailable).foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            VStack(alignment: .leading, spacing: 4) {
-                Spacer(minLength: 0)
-                HStack(alignment: .firstTextBaseline, spacing: 5) {
-                    Text(tile.metric?.value ?? "—")
-                        .font(.system(.title, design: .rounded, weight: .semibold))
-                        .minimumScaleFactor(0.5)
-                        .lineLimit(1)
-                    if let metric = tile.metric, !metric.unit.isEmpty {
-                        Text(metric.unit).font(.caption).foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                if let metric = tile.metric {
-                    if !metric.label.isEmpty {
-                        Text(metric.label).font(.caption).lineLimit(tile.rows > 1 ? 2 : 1)
-                    }
-                    if let asOf = metric.asOf, let date = metricDate(asOf) {
-                        Text(date, format: .relative(presentation: .named))
-                            .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                    }
-                    if tile.loading {
-                        ProgressView().controlSize(.mini).accessibilityLabel(copy.loading)
-                    } else if tile.unavailable {
-                        Label(copy.unavailable, systemImage: "exclamationmark.circle")
-                            .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private func metricDate(_ value: String) -> Date? {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: value) { return date }
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: value)
-    }
-
-    @ViewBuilder
-    private func people(size: CGSize) -> some View {
-        let columns = tile.columns == 1 ? 1 : (tile.rows >= 2 ? 3 : 4)
-        // A contact and a shortcut often sit side by side, so the portrait always budgets for an
-        // amount line. Sizing it from the content gave neighbouring tiles different circles.
-        let singleHeightAllowance: CGFloat = 108
-        let avatarSize = min(
-            tile.columns == 1 ? 66 : (tile.rows >= 2 ? 72 : 50),
-            (size.width - 40) / CGFloat(columns) - 10,
-            tile.columns == 1 ? size.height - singleHeightAllowance : size.height
-        )
-        if tile.columns == 1 {
-            if let person = tile.people.first {
-                personButton(person, avatarSize: max(32, avatarSize))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        } else {
-            LazyVGrid(
-                columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: columns),
-                spacing: tile.rows >= 2 ? 20 : 8
-            ) {
-                ForEach(Array(tile.people.enumerated()), id: \.element.id) { index, person in
-                    personButton(person, avatarSize: max(28, avatarSize), seed: index)
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
-        }
-    }
-
-    /// A single face always budgets the line so neighbouring tiles line up. A multi-contact tile
-    /// only needs its own cells to agree, so one with no amounts at all keeps the space.
-    private var reservesAmount: Bool {
-        tile.columns == 1 || tile.people.contains { $0.amount != nil }
-    }
-
-    private func personButton(_ person: NativeHubPerson, avatarSize: CGFloat, seed: Int = 0) -> some View {
-        Button {
-            if !person.actionId.isEmpty { pay(person.actionId) }
-        } label: {
-            VStack(spacing: 6) {
+    private func personButton(_ person: NativeHubPerson, avatarSize: CGFloat, seed: Int) -> some View {
+        Button { if !person.actionId.isEmpty { pay(person.actionId) } } label: {
+            VStack(spacing: 5) {
                 HubAvatar(initials: person.initials, size: avatarSize, seed: seed)
                 Text(person.title)
-                    .font(tile.columns == 1 ? .subheadline.weight(.semibold) : .caption.weight(.medium))
-                    .foregroundStyle(.primary)
+                    .font(.caption.weight(.semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                // The line is kept even without an amount so that portraits and names sit at the
-                // same height across neighbouring tiles.
-                if reservesAmount {
-                    Text(person.amount ?? " ")
-                        .font(tile.columns == 1 ? .subheadline.weight(.semibold) : .caption2)
-                        .foregroundStyle(Color.accentColor)
-                        .monospacedDigit()
+                // Large tiles add context: what was last paid, never what a tap pays.
+                if tile.rows >= 2 {
+                    Text(person.lastPaid ?? " ")
+                        .font(HubTileStyle.hero(11).weight(.medium))
+                        .foregroundStyle(.secondary)
                         .lineLimit(1)
-                        .minimumScaleFactor(0.65)
-                        .opacity(person.amount == nil ? 0 : 1)
-                        .accessibilityHidden(person.amount == nil)
+                        .minimumScaleFactor(0.7)
+                        .accessibilityHidden(person.lastPaid == nil)
                 }
             }
             .frame(maxWidth: .infinity)
             .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(TilePressStyle())
         .allowsHitTesting(interactive)
-        .accessibilityLabel(person.title + (person.amount.map { ", " + $0 } ?? ""))
+        .accessibilityLabel(person.title + (person.lastPaid.map { ", " + $0 } ?? ""))
     }
 }
 
@@ -1078,5 +1194,27 @@ private struct HubAvatar: View {
         .foregroundStyle(.white)
         .frame(width: size, height: size)
         .accessibilityHidden(true)
+    }
+}
+
+private extension View {
+    /// Liquid Glass where available, so the button reads as floating over the tiles.
+    @ViewBuilder
+    func floatingButton() -> some View {
+        if #available(iOS 26, *) {
+            buttonStyle(.glass).buttonBorderShape(.circle)
+        } else {
+            buttonStyle(.bordered).buttonBorderShape(.circle)
+        }
+    }
+
+    /// Tiles fade softly under the floating header instead of ending at a hard edge.
+    @ViewBuilder
+    func softTopEdge() -> some View {
+        if #available(iOS 26, *) {
+            scrollEdgeEffectStyle(.soft, for: .top)
+        } else {
+            self
+        }
     }
 }

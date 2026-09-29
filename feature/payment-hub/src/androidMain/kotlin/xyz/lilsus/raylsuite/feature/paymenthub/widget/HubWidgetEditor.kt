@@ -28,7 +28,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -52,7 +51,6 @@ import androidx.compose.ui.unit.dp
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.feature.paymenthub.HubContact
 import xyz.lilsus.raylsuite.feature.paymenthub.HubWidgetEditor
-import xyz.lilsus.raylsuite.feature.paymenthub.HubWidgetField
 import xyz.lilsus.raylsuite.feature.paymenthub.HubWidgetKind
 import xyz.lilsus.raylsuite.feature.paymenthub.R
 import xyz.lilsus.raylsuite.feature.paymenthub.WidgetHubState
@@ -86,14 +84,6 @@ internal fun HubWidgetEditorScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 20.dp)
             ) {
-                OutlinedTextField(
-                    value = editor.title,
-                    onValueChange = viewModel::updateTitle,
-                    enabled = !state.busy,
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.hub_widget_name)) },
-                    modifier = Modifier.fillMaxWidth()
-                )
                 if (choosesContacts) {
                     EditorSection(stringResource(R.string.hub_widget_contacts)) {
                         selectedContacts.forEach { contact ->
@@ -148,17 +138,6 @@ internal fun HubWidgetEditorScreen(
                 }
                 if (editor.kind == HubWidgetKind.Shortcut) {
                     ShortcutFields(editor, viewModel, enabled = !state.busy)
-                }
-                if (definition.fields.isNotEmpty()) {
-                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                        definition.fields.forEach { field ->
-                            RemoteConfigurationField(
-                                field,
-                                editor.configuration[field.key].orEmpty(),
-                                enabled = !state.busy
-                            ) { viewModel.updateConfiguration(field.key, it) }
-                        }
-                    }
                 }
                 editor.existingWidgetId?.let { widgetId ->
                     TextButton(
@@ -369,48 +348,4 @@ private fun ShortcutFields(
         label = { Text(stringResource(R.string.hub_target_comment_label)) },
         modifier = Modifier.fillMaxWidth()
     )
-}
-
-@Composable
-private fun RemoteConfigurationField(
-    field: HubWidgetField,
-    value: String,
-    enabled: Boolean,
-    onChange: (String) -> Unit
-) {
-    if (field.type == "choice") {
-        var expanded by remember { mutableStateOf(false) }
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text(field.label, style = MaterialTheme.typography.labelLarge)
-            Box {
-                OutlinedButton(
-                    onClick = { expanded = true },
-                    enabled = enabled,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(field.options.firstOrNull { it.id == value }?.label ?: field.label)
-                }
-                DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                    field.options.forEach { option ->
-                        DropdownMenuItem(text = { Text(option.label) }, onClick = {
-                            expanded = false
-                            onChange(option.id)
-                        })
-                    }
-                }
-            }
-        }
-    } else {
-        OutlinedTextField(
-            value = value,
-            enabled = enabled,
-            onValueChange = { onChange(field.maxLength?.let(it::take) ?: it) },
-            label = { Text(field.label) },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = if (field.type == "phone") KeyboardType.Phone else KeyboardType.Text
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-    }
 }

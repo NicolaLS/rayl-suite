@@ -17,6 +17,8 @@ kotlin {
             api(project(":feature:payment-currency"))
             api(project(":feature:payment-settings"))
             api(project(":feature:payment-ui"))
+            api(project(":core:widget-spec"))
+            implementation(project(":integration:widget"))
             implementation(libs.bitcoin.kmp)
             api(libs.lightning.kmp.core)
             implementation(libs.kotlinx.coroutines.core)

@@ -17,7 +17,9 @@ sealed interface PaymentScreenState {
     data class Confirm(
         val amount: PaymentConfirmationAmount,
         val lnurlPayDisplay: LnurlPayDisplay? = null,
-        val fundingSource: String? = null
+        val fundingSource: String? = null,
+        /** Shown prominently, e.g. an invoice that differs from the advertised price. */
+        val notice: String? = null
     ) : PaymentScreenState
 
     data class Success(

@@ -1,6 +1,29 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "widget_blocked" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl unterstützt diesen Dienst nicht mehr. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl no longer supports this service. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl ya no admite este servicio. No se pagó nada."
+          }
+        }
+      }
+    },
     "enter_amount_backspace" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1515,6 +1538,627 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sin conexión a internet. Verifica tu red."
+          }
+        }
+      }
+    },
+    "widget_not_responding" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ antwortet nicht. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ isn’t responding. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ no responde. No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Widget ist nicht mehr verfügbar. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This widget isn’t available anymore. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este widget ya no está disponible. No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_terms_changed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Anbieter hat seine Bedingungen geändert. Prüfe das Widget vor dem Bezahlen. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The provider updated its terms. Review the widget before paying. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El proveedor actualizó sus términos. Revisa el widget antes de pagar. No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_price_changed" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Preis hat sich seit dem Hinzufügen geändert. Prüfe das Widget vor dem Bezahlen. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The price changed since you added this widget. Review it before paying. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El precio cambió desde que agregaste este widget. Revísalo antes de pagar. No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_product_unavailable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das kann gerade nicht gekauft werden. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This can’t be bought right now. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto no se puede comprar ahora. No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_refused" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Anbieter hat die Bestellung abgelehnt. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The provider declined the order. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El proveedor rechazó el pedido. No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_refused_with_details" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Anbieter hat die Bestellung abgelehnt: %1$@ Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The provider declined the order: %1$@ Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El proveedor rechazó el pedido: %1$@ No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_invalid_invoice" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Anbieter hat eine Rechnung geschickt, die Rayl nicht bezahlen kann. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The provider sent an invoice Rayl can’t pay. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El proveedor envió una factura que Rayl no puede pagar. No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_price_mismatch" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Die Rechnung passt nicht zum angegebenen Preis, deshalb hat Rayl abgebrochen. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The invoice doesn’t match the advertised price, so Rayl stopped. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La factura no coincide con el precio anunciado, así que Rayl se detuvo. No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_price_unverifiable" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl konnte den Preis gerade nicht prüfen. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl couldn’t check the price right now. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl no pudo verificar el precio ahora. No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_price_higher" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Rechnung beträgt %1$@, mehr als angegeben. Wechselkurse weichen je nach Quelle leicht ab."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This invoice is %1$@, more than advertised. Exchange rates differ slightly between sources."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta factura es de %1$@, más de lo anunciado. Los tipos de cambio varían un poco entre fuentes."
+          }
+        }
+      }
+    },
+    "widget_price_lower" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Rechnung beträgt %1$@, weniger als angegeben."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This invoice is %1$@, less than advertised."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta factura es de %1$@, menos de lo anunciado."
+          }
+        }
+      }
+    },
+    "delivery_checking_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lieferung wird geprüft"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Checking delivery"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Verificando la entrega"
+          }
+        }
+      }
+    },
+    "delivery_checking_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Zahlung ist abgeschlossen. %1$@ wird gefragt, ob geliefert wurde…"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your payment is complete. Asking %1$@ whether it was delivered…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu pago está completo. Consultando a %1$@ si se entregó…"
+          }
+        }
+      }
+    },
+    "delivery_processing_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "In Bearbeitung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Processing"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Procesando"
+          }
+        }
+      }
+    },
+    "delivery_processing_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Zahlung ist eingegangen. %1$@ arbeitet noch daran."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your payment went through. %1$@ is still working on it."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu pago se realizó. %1$@ todavía lo está procesando."
+          }
+        }
+      }
+    },
+    "delivery_delivered_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Geliefert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Delivered"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entregado"
+          }
+        }
+      }
+    },
+    "delivery_failed_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezahlt, nicht geliefert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paid, not delivered"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagado, no entregado"
+          }
+        }
+      }
+    },
+    "delivery_failed_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Wallet hat bezahlt, aber %1$@ konnte nicht liefern. Kontaktiere den Anbieter mit der Bestellnummer."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your wallet paid, but %1$@ couldn’t deliver. Contact them with the order number."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu billetera pagó, pero %1$@ no pudo entregar. Contáctalos con el número de pedido."
+          }
+        }
+      }
+    },
+    "delivery_lost_body" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ kennt diese Bestellung nicht. Kontaktiere den Anbieter mit der Bestellnummer."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ doesn’t recognize this order. Contact them with the order number."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ no reconoce este pedido. Contáctalos con el número de pedido."
+          }
+        }
+      }
+    },
+    "delivery_order" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bestellung %1$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Order %1$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pedido %1$@"
+          }
+        }
+      }
+    },
+    "delivery_close_hint" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du kannst das schließen. Rayl prüft weiter."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You can close this. Rayl keeps checking."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Puedes cerrar esto. Rayl sigue verificando."
+          }
+        }
+      }
+    },
+    "delivery_copy" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kopieren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copy"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Copiar"
+          }
+        }
+      }
+    },
+    "delivery_done" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fertig"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Done"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Listo"
+          }
+        }
+      }
+    },
+    "widget_nothing_due" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Derzeit ist nichts fällig. Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nothing is due right now. Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No hay nada pendiente ahora. No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_nothing_due_with_details" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ Es wurde nichts bezahlt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ Nothing was paid."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ No se pagó nada."
+          }
+        }
+      }
+    },
+    "widget_uncertain" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der Anbieter konnte die Bestellung noch nicht bestätigen. Es wurde nichts bezahlt; versuche es gleich noch einmal."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The provider couldn’t confirm the order yet. Nothing was paid; try again in a moment."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El proveedor aún no pudo confirmar el pedido. No se pagó nada; inténtalo de nuevo en un momento."
           }
         }
       }

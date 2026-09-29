@@ -52,6 +52,7 @@ fun PaymentSettingsScreen(
     onOfferToSaveNewTargetsChanged: (Boolean) -> Unit,
     onVibrateOnScanChanged: (Boolean) -> Unit,
     onVibrateOnPaymentChanged: (Boolean) -> Unit,
+    onShareUsageChanged: (Boolean) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
@@ -98,6 +99,16 @@ fun PaymentSettingsScreen(
                     checked = state.offerToSaveNewTargets,
                     onCheckedChange = onOfferToSaveNewTargetsChanged,
                     modifier = Modifier.testTag(PaymentSettingsTestTags.OFFER_TO_SAVE_TARGETS)
+                )
+                SettingsToggle(
+                    label = stringResource(R.string.settings_payments_share_usage),
+                    checked = state.shareUsage,
+                    onCheckedChange = onShareUsageChanged
+                )
+                Text(
+                    text = stringResource(R.string.settings_payments_share_usage_detail),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
             SettingsSection(

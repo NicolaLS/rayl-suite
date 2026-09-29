@@ -14,6 +14,7 @@ import xyz.lilsus.raylsuite.core.ui.format.rememberAmountFormatter
 import xyz.lilsus.raylsuite.core.ui.resources.LocalizedText
 import xyz.lilsus.raylsuite.core.ui.resources.LocalizedTextKey
 import xyz.lilsus.raylsuite.core.ui.resources.resolve
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetPriceVerdict
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentFlowState
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentLoadingKind
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentScreenState
@@ -97,7 +98,19 @@ private fun PaymentUiState.toPaymentScreenState(
         PaymentScreenState.Confirm(
             amount = amount,
             lnurlPayDisplay = lnurlPayDisplay,
-            fundingSource = fundingSource?.resolveText(providerStrings)
+            fundingSource = fundingSource?.resolveText(providerStrings),
+            notice = priceNotice?.let { check ->
+                check.invoiced?.let { invoiced ->
+                    LocalizedText(
+                        if (check.verdict == WidgetPriceVerdict.Higher) {
+                            PaymentUiTextKey.WidgetPriceHigher
+                        } else {
+                            PaymentUiTextKey.WidgetPriceLower
+                        },
+                        rememberAmountFormatter().format(invoiced.toDisplayAmount())
+                    ).resolveText(providerStrings)
+                }
+            }
         )
 
     is PaymentUiState.Success ->

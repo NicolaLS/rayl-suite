@@ -15,6 +15,7 @@ kotlin {
             export(project(":feature:payment-hub"))
             export(project(":feature:payment-ui"))
             export(project(":feature:settings"))
+            export(project(":core:rayl-api"))
         }
     }
     sourceSets {
@@ -44,6 +45,7 @@ kotlin {
             api(project(":feature:payment-hub"))
             api(project(":feature:payment-ui"))
             api(project(":feature:settings"))
+            api(project(":core:rayl-api"))
             implementation(libs.compose.runtime)
         }
     }

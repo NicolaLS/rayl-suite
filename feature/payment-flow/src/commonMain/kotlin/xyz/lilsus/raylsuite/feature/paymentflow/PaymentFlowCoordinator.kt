@@ -19,9 +19,11 @@ import xyz.lilsus.raylsuite.core.ui.platform.HapticFeedbackManager
 import xyz.lilsus.raylsuite.feature.currencysettings.CurrencyPreferences
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentCurrencyManager
 import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubController
+import xyz.lilsus.raylsuite.feature.paymenthub.host.WidgetPaidOrder
 import xyz.lilsus.raylsuite.feature.paymentsettings.PaymentConfirmationPolicy
 import xyz.lilsus.raylsuite.feature.paymentsettings.PaymentPreferencesRepository
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentIntent
+import xyz.lilsus.raylsuite.integration.widget.WidgetClient
 
 /**
  * Lightning payment flow for wallets that pay BOLT11 invoices resolved on the device: admission,
@@ -57,8 +59,14 @@ class PaymentFlowCoordinator<P : SettleablePayment>(
             currencyManager = currencyManager,
             history = history,
             presentation = presentation,
-            notifyScanSuccess = ::notifyScanSuccess
+            notifyScanSuccess = ::notifyScanSuccess,
+            openWidgetLink = { link ->
+                paymentHub.openWidgetLink(link)
+                true
+            }
         )
+    private val widgetCheckout =
+        WidgetCheckoutPhase(WidgetClient(), bitcoinPriceProvider, presentation, paymentHub.services)
     val uiState: StateFlow<PaymentUiState> = presentation.uiState
     val events: SharedFlow<PaymentEvent> = presentation.events
     val sessionTransactions: StateFlow<List<SessionTransactionItem>> =
@@ -82,6 +90,14 @@ class PaymentFlowCoordinator<P : SettleablePayment>(
         scope.launch {
             paymentHub.paymentRequests.collect { intent ->
                 launchOperation { handleAdmissionResult(admission.payTarget(intent)) }
+            }
+        }
+        scope.launch {
+            paymentHub.widgetPaymentRequests.collect { intent ->
+                launchOperation {
+                    notifyScanSuccess()
+                    handleAdmissionResult(widgetCheckout.prepare(intent))
+                }
             }
         }
         scope.launch {
@@ -232,6 +248,21 @@ class PaymentFlowCoordinator<P : SettleablePayment>(
                 )
                 if (!outcome.wasAlreadyPaid) {
                     reportPaymentSuccess(payment.targetContext, amountMsats)
+                    payment.widget?.let { widget ->
+                        paymentHub.recordWidgetPurchase(
+                            WidgetPaidOrder(
+                                intent = widget.intent,
+                                definition = widget.definition,
+                                itemName = widget.itemName,
+                                advertised = widget.advertised,
+                                orderId = widget.orderId,
+                                orderToken = widget.orderToken,
+                                paymentHash = paymentHash,
+                                preimage = outcome.preimage,
+                                paidMsats = amountMsats
+                            )
+                        )
+                    }
                 }
                 if (runtimePreferences.vibrateOnPayment) haptics.notifyPaymentSuccess()
                 presentation.showPaymentSuccess(result)
@@ -250,7 +281,7 @@ class PaymentFlowCoordinator<P : SettleablePayment>(
         if (context == null || paidMsats <= 0L) return
         val targetId = context.targetId
         if (targetId != null) {
-            paymentHub.recordSuccessfulPayment(targetId)
+            paymentHub.recordSuccessfulPayment(targetId, paidMsats / 1_000)
         } else if (runtimePreferences.offerToSaveNewTargets) {
             paymentHub.offerSave(context.address)
         }

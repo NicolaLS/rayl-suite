@@ -41,5 +41,16 @@ suspend fun nativePaymentSettingsStrings(): Map<String, String> = mapOf(
                 table = "PaymentSettings",
                 key = "settings_payments_offer_save_targets"
             )
+        ),
+    "shareUsage" to
+        nativeString(
+            NativeStringResource(table = "PaymentSettings", key = "settings_payments_share_usage")
+        ),
+    "shareUsageDetail" to
+        nativeString(
+            NativeStringResource(
+                table = "PaymentSettings",
+                key = "settings_payments_share_usage_detail"
+            )
         )
 )

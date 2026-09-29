@@ -15,8 +15,9 @@ import xyz.lilsus.raylsuite.core.raylapi.RaylApi
 
 /** Reads bitcoin prices from the Rayl backend, which aggregates several public sources. */
 class RaylBitcoinPriceProvider(
+    /** [xyz.lilsus.raylsuite.core.raylapi.RaylBackend.baseUrl] for the build's environment. */
+    private val baseUrl: String,
     private val client: HttpClient = createHttpClient(),
-    private val baseUrl: String = RaylApi.BASE_URL,
     private val clock: () -> Long = ::platformCurrentTimeMillis
 ) : BitcoinPriceProvider {
     fun close() = client.close()

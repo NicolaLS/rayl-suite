@@ -7,6 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import xyz.lilsus.raylsuite.core.model.WalletStartMode
+import xyz.lilsus.raylsuite.core.raylapi.RaylBackend
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.settings.createConnectionSettings
 import xyz.lilsus.raylsuite.core.settings.createSecureSettings
@@ -34,7 +35,8 @@ import xyz.lilsus.raylsuite.feature.settings.nativeSettingsAppVersionName
  */
 class BlinkIosExperience(
     private val configuration: BlinkExperienceConfiguration,
-    private val startMode: WalletStartMode
+    private val startMode: WalletStartMode,
+    private val backend: RaylBackend
 ) {
     private val observerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -45,7 +47,8 @@ class BlinkIosExperience(
             walletSettings = createConnectionSettings(configuration.walletPreferencesName),
             configuration = configuration,
             startMode = startMode,
-            haptics = createHapticFeedbackManager()
+            haptics = createHapticFeedbackManager(),
+            backend = backend
         )
     }
 
@@ -268,6 +271,7 @@ class BlinkIosExperience(
                     payment = payment.toNativePaymentScreenState(),
                     appTitle = configuration.appName,
                     savePrompt = hubState.savePrompt,
+                    delivery = hubState.delivery,
                     recentCount = transactions.size,
                     newRecentCount = newTransactionCount
                 )

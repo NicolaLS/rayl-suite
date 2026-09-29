@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import xyz.lilsus.raylsuite.core.ui.resources.LocalizedText
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetPriceCheck
 import xyz.lilsus.raylsuite.feature.paymentcurrency.PaymentCurrencyManager
 import xyz.lilsus.raylsuite.feature.paymentui.LnurlPayDisplay
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentConfirmationAmount
@@ -47,13 +48,15 @@ internal class PaymentPresentationPhase(private val currencyManager: PaymentCurr
     fun showConfirmation(
         amount: PaymentConfirmationAmount,
         lnurlPayDisplay: LnurlPayDisplay? = null,
-        fundingSource: LocalizedText? = null
+        fundingSource: LocalizedText? = null,
+        priceNotice: WidgetPriceCheck? = null
     ) {
         mutableUiState.value =
             PaymentUiState.Confirm(
                 amount = amount,
                 lnurlPayDisplay = lnurlPayDisplay,
-                fundingSource = fundingSource
+                fundingSource = fundingSource,
+                priceNotice = priceNotice
             )
     }
 

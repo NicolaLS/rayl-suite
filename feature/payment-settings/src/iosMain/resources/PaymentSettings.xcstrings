@@ -1,6 +1,52 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "settings_payments_share_usage" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anonyme Nutzung teilen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Share anonymous usage"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Compartir uso anónimo"
+          }
+        }
+      }
+    },
+    "settings_payments_share_usage_detail" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zählt, welche empfohlenen Dienste hinzugefügt und bezahlt werden. Konto, Betrag und Nummer werden nie gesendet."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Counts which recommended services are added and paid. No account, amount or number is sent."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cuenta qué servicios recomendados se agregan y se pagan. Nunca se envía la cuenta, el monto ni el número."
+          }
+        }
+      }
+    },
     "settings_payments" : {
       "extractionState" : "stale",
       "localizations" : {

@@ -2,55 +2,31 @@ package xyz.lilsus.raylsuite.feature.paymenthub
 
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.core.model.StoredAmount
+import xyz.lilsus.raylsuite.core.raylapi.ServiceCatalog
 import xyz.lilsus.raylsuite.feature.paymenthub.create.hasFractionForWholeCurrency
 import xyz.lilsus.raylsuite.feature.paymenthub.create.parseMinorAmount
 
-enum class HubWidgetKind { Contacts, Shortcut, Favorites, Recents, Metric }
+enum class HubWidgetKind { Contacts, Shortcut, Favorites, Recents, Provider }
 
-enum class HubWidgetScreen { Hub, Gallery, Variants, Configure }
+enum class HubWidgetScreen { Hub, Gallery, Variants, Configure, ProviderSetup }
 
-data class HubWidgetVariant(
-    val id: String,
-    val columns: Int,
-    val rows: Int,
-    val capacity: Int,
-    val title: String? = null
-)
+data class HubWidgetVariant(val id: String, val columns: Int, val rows: Int, val capacity: Int)
 
-/** Local definitions use platform-localized copy; remote definitions supply localized copy. */
+/** Platforms supply each definition's localized copy from its kind. */
 data class HubWidgetDefinition(
     val id: String,
     val kind: HubWidgetKind,
-    val variants: List<HubWidgetVariant>,
-    val title: String? = null,
-    val description: String? = null,
-    val fields: List<HubWidgetField> = emptyList()
+    val variants: List<HubWidgetVariant>
 )
-
-data class HubWidgetField(
-    val key: String,
-    val type: String,
-    val label: String,
-    val required: Boolean,
-    val options: List<HubWidgetChoice> = emptyList(),
-    val maxLength: Int? = null
-)
-
-data class HubWidgetChoice(val id: String, val label: String)
 
 data class HubWidgetPerson(
     val actionId: String,
     val contactId: String,
     val title: String,
     val address: String,
-    val amount: StoredAmount? = null
-)
-
-data class HubWidgetMetric(
-    val value: String,
-    val unit: String,
-    val label: String,
-    val asOf: String?
+    val amount: StoredAmount? = null,
+    /** What was last paid to this person; context only, a tap still asks for the amount. */
+    val lastPaid: StoredAmount? = null
 )
 
 data class HubWidgetTile(
@@ -58,11 +34,8 @@ data class HubWidgetTile(
     val definitionId: String,
     val kind: HubWidgetKind,
     val variant: HubWidgetVariant,
-    val title: String?,
     val people: List<HubWidgetPerson> = emptyList(),
-    val metric: HubWidgetMetric? = null,
-    val loading: Boolean = false,
-    val unavailable: Boolean = false
+    val provider: ProviderTile? = null
 )
 
 data class HubWidgetEditor(
@@ -71,11 +44,9 @@ data class HubWidgetEditor(
     val variantId: String,
     val existingWidgetId: String? = null,
     val contactIds: List<String> = emptyList(),
-    val title: String = "",
     val amountInput: String = "",
     val currencyCode: String = "USD",
-    val comment: String = "",
-    val configuration: Map<String, String> = emptyMap()
+    val comment: String = ""
 )
 
 enum class HubWidgetError {
@@ -84,7 +55,6 @@ enum class HubWidgetError {
     SelectContacts,
     TooManyContacts,
     InvalidAmount,
-    RequiredConfiguration,
     Unavailable,
     SaveFailed
 }
@@ -94,11 +64,16 @@ data class WidgetHubState(
     val widgets: List<HubWidgetTile> = emptyList(),
     val gallery: List<HubWidgetDefinition> = emptyList(),
     val contacts: List<HubContact> = emptyList(),
+    /** Contacts new widgets start with, best first. */
+    val defaultContactIds: List<String> = emptyList(),
     val editor: HubWidgetEditor? = null,
     val query: String = "",
     val arranging: Boolean = false,
-    val catalogLoading: Boolean = false,
-    val catalogUnavailable: Boolean = false,
+    val providerSetup: ProviderSetupState? = null,
+    val catalog: List<ProviderCatalogItem> = emptyList(),
+    /** Rayl's reviewed services and block list, for brands, warnings and blocked tiles. */
+    val serviceCatalog: ServiceCatalog = ServiceCatalog(),
+    val purchases: List<WidgetPurchase> = emptyList(),
     val busy: Boolean = false,
     val contactSavedSerial: Int = 0,
     val error: HubWidgetError? = null
@@ -119,7 +94,6 @@ internal fun HubWidgetEditor.shortcutAmount(): StoredAmount? {
 
 internal fun WidgetHubState.editorValidationError(): HubWidgetError? {
     val editor = editor ?: return HubWidgetError.Unavailable
-    val definition = selectedDefinition ?: return HubWidgetError.Unavailable
     val variant = selectedVariant ?: return HubWidgetError.Unavailable
     if (editor.kind == HubWidgetKind.Contacts || editor.kind == HubWidgetKind.Shortcut) {
         if (editor.contactIds.isEmpty()) return HubWidgetError.SelectContacts
@@ -127,17 +101,6 @@ internal fun WidgetHubState.editorValidationError(): HubWidgetError? {
     }
     if (editor.kind == HubWidgetKind.Shortcut && editor.shortcutAmount() == null) {
         return HubWidgetError.InvalidAmount
-    }
-    if (definition.fields.any { field ->
-            val value = editor.configuration[field.key].orEmpty().trim()
-            (field.required && value.isEmpty()) ||
-                (
-                    value.isNotEmpty() && field.type == "choice" &&
-                        field.options.none { it.id == value }
-                    )
-        }
-    ) {
-        return HubWidgetError.RequiredConfiguration
     }
     return null
 }

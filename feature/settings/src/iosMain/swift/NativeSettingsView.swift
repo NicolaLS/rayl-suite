@@ -336,7 +336,7 @@ private struct NativePaymentSettingsView: View {
     }
 
     private var hubSection: some View {
-        Section(snapshot.text.paymentHubTitle) {
+        Section {
             Toggle(
                 snapshot.text.paymentOfferSaveTargets,
                 isOn: Binding(
@@ -344,6 +344,17 @@ private struct NativePaymentSettingsView: View {
                     set: controller.setOfferToSaveNewTargets
                 )
             )
+            Toggle(
+                snapshot.text.paymentShareUsage,
+                isOn: Binding(
+                    get: { payment.shareUsage },
+                    set: controller.setShareUsage
+                )
+            )
+        } header: {
+            Text(snapshot.text.paymentHubTitle)
+        } footer: {
+            Text(snapshot.text.paymentShareUsageDetail)
         }
     }
 

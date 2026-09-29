@@ -27,7 +27,8 @@ internal class PaymentAdmissionPhase(
     private val currencyManager: PaymentCurrencyManager,
     private val history: PaymentHistory,
     private val presentation: PaymentPresentationPhase,
-    private val notifyScanSuccess: () -> Unit
+    private val notifyScanSuccess: () -> Unit,
+    private val openWidgetLink: (String) -> Boolean = { false }
 ) {
     private val preparation = PaymentPreparation(lnurlPayClient)
     private val inputParser = preparation.inputParser
@@ -47,6 +48,11 @@ internal class PaymentAdmissionPhase(
             }
         return when (val result = parseResult) {
             is LightningInputParser.ParseResult.Failure -> {
+                // Spike: any HTTPS link that is not a payment is offered to the Hub as a widget.
+                val link = rawInput.trim()
+                if (link.startsWith("https://", ignoreCase = true) && openWidgetLink(link)) {
+                    return AdmissionResult.Presented
+                }
                 handleParseFailure(result.reason)
                 AdmissionResult.Presented
             }

@@ -23,6 +23,8 @@ interface PaymentPreferencesRepository {
     suspend fun setVibrateOnScan(enabled: Boolean)
 
     suspend fun setVibrateOnPayment(enabled: Boolean)
+
+    suspend fun setShareUsage(enabled: Boolean)
 }
 
 class DefaultPaymentPreferencesRepository(private val settings: Settings) :
@@ -79,6 +81,13 @@ class DefaultPaymentPreferencesRepository(private val settings: Settings) :
         )
     }
 
+    override suspend fun setShareUsage(enabled: Boolean) {
+        update(
+            transform = { it.copy(shareUsage = enabled) },
+            persist = { settings.putBoolean(KEY_SHARE_USAGE, it.shareUsage) }
+        )
+    }
+
     private suspend fun update(
         transform: (PaymentPreferences) -> PaymentPreferences,
         persist: (PaymentPreferences) -> Unit
@@ -109,7 +118,8 @@ class DefaultPaymentPreferencesRepository(private val settings: Settings) :
             thresholdSats = thresholdSats,
             offerToSaveNewTargets = settings.getBoolean(KEY_OFFER_TO_SAVE_NEW_TARGETS, true),
             vibrateOnScan = settings.getBoolean(KEY_VIBRATE_SCAN, true),
-            vibrateOnPayment = settings.getBoolean(KEY_VIBRATE_PAYMENT, true)
+            vibrateOnPayment = settings.getBoolean(KEY_VIBRATE_PAYMENT, true),
+            shareUsage = settings.getBoolean(KEY_SHARE_USAGE, true)
         ).normalise()
     }
 
@@ -119,6 +129,7 @@ class DefaultPaymentPreferencesRepository(private val settings: Settings) :
         const val KEY_OFFER_TO_SAVE_NEW_TARGETS = "payments.offerToSaveNewTargets"
         const val KEY_VIBRATE_SCAN = "payments.vibrateOnScan"
         const val KEY_VIBRATE_PAYMENT = "payments.vibrateOnPayment"
+        const val KEY_SHARE_USAGE = "payments.shareUsage"
         const val MODE_ALWAYS = "always"
         const val MODE_ABOVE = "above"
     }

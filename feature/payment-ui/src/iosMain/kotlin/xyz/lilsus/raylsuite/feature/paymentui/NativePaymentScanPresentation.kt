@@ -7,8 +7,13 @@ import xyz.lilsus.raylsuite.core.ui.format.AmountFormatter
 import xyz.lilsus.raylsuite.core.ui.format.currentAmountFormatter
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
 import xyz.lilsus.raylsuite.core.ui.resources.nativeString
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetDeliveryItemKind
+import xyz.lilsus.raylsuite.core.widgetspec.WidgetDeliveryState
+import xyz.lilsus.raylsuite.feature.paymenthub.WidgetPurchase
 import xyz.lilsus.raylsuite.feature.paymenthub.host.HubSavePrompt
 import xyz.lilsus.raylsuite.feature.paymenthub.host.toNativePresentation
+import xyz.lilsus.raylsuite.feature.paymenthub.shownOnCard
+import xyz.lilsus.raylsuite.feature.paymenthub.voucherCard
 import xyz.lilsus.raylsuite.feature.paymentui.amount.ManualAmountUiState
 import xyz.lilsus.raylsuite.feature.paymentui.amount.RangeStatus
 
@@ -66,7 +71,23 @@ data class NativePaymentScanSheet(
     val textFieldValue: String?,
     val manualReview: NativeManualAmountReview? = null,
     val currencySwitch: NativeManualCurrencySwitch? = null,
-    val backspaceTitle: String? = null
+    val backspaceTitle: String? = null,
+    /** Delivered items and order details; codes can be copied. */
+    val items: List<NativeSheetItem> = emptyList(),
+    /** A voucher's native card, shown above the items. */
+    val voucher: xyz.lilsus.raylsuite.feature.paymenthub.NativeVoucherCard? = null,
+    /** Delivery is still being checked, so show progress. */
+    val inProgress: Boolean = false,
+    /** A warning the user must see before confirming. */
+    val notice: String? = null
+)
+
+/** [page] items are HTTPS pages, such as a voucher, shown inside the sheet. */
+data class NativeSheetItem(
+    val label: String,
+    val value: String,
+    val copyable: Boolean,
+    val page: Boolean = false
 )
 
 data class NativeManualCurrencySwitch(val title: String, val equivalent: String?)
@@ -84,6 +105,7 @@ suspend fun nativePaymentScanSnapshot(
     payment: PaymentScreenState,
     appTitle: String,
     savePrompt: HubSavePrompt?,
+    delivery: WidgetPurchase? = null,
     showResolvingContent: Boolean = true,
     recentCount: Int = 0,
     newRecentCount: Int = 0,
@@ -97,7 +119,8 @@ suspend fun nativePaymentScanSnapshot(
             showResolvingContent = showResolvingContent,
             formatter = formatter
         ),
-    sheet = savePrompt?.toNativeSheet() ?: payment.toNativeSheet(formatter),
+    sheet = savePrompt?.toNativeSheet() ?: delivery?.toNativeDeliverySheet()
+        ?: payment.toNativeSheet(formatter),
     recent =
         if (
             recentCount > 0 &&
@@ -338,6 +361,7 @@ private suspend fun PaymentScreenState.Confirm.toNativeSheet(
             )
         },
     fundingSource = fundingSource,
+    notice = notice,
     recipientTitle = lnurlPayDisplay?.recipientTitle(),
     recipientImageBase64 = lnurlPayDisplay?.image?.encodedBase64(),
     currencyAffix = null,
@@ -353,6 +377,64 @@ private suspend fun PaymentScreenState.Confirm.toNativeSheet(
     textFieldLabel = null,
     textFieldValue = null
 )
+
+private fun WidgetPurchase.toNativeDeliverySheet(): NativePaymentScanSheet {
+    fun text(key: String) = nativeString(NativeStringResource("PaymentUI", key))
+    fun text(key: String, argument: String) =
+        nativeString(NativeStringResource("PaymentUI", key), argument)
+    val state = delivery.state
+    val (title, body) = when {
+        delivery.lost -> text("delivery_failed_title") to text("delivery_lost_body", providerName)
+
+        state == WidgetDeliveryState.Delivered -> text("delivery_delivered_title") to null
+
+        state == WidgetDeliveryState.Failed ->
+            text("delivery_failed_title") to text("delivery_failed_body", providerName)
+
+        state == WidgetDeliveryState.Processing ->
+            text("delivery_processing_title") to text("delivery_processing_body", providerName)
+
+        else -> text("delivery_checking_title") to text("delivery_checking_body", providerName)
+    }
+    val inProgress = !state.terminal && !delivery.lost
+    return NativePaymentScanSheet(
+        kind = SHEET_DELIVERY,
+        title = title,
+        body = listOfNotNull(
+            delivery.message,
+            body,
+            text("delivery_close_hint").takeIf {
+                inProgress
+            }
+        )
+            .joinToString("\n\n"),
+        amount = null,
+        exactAmount = itemName,
+        fundingSource = null,
+        recipientTitle = "$providerName · $host",
+        recipientImageBase64 = null,
+        currencyAffix = null,
+        rangeMessage = null,
+        allowsDecimal = false,
+        canSubmit = true,
+        primaryActionTitle = text("delivery_done"),
+        secondaryActionTitle = null,
+        textFieldLabel = null,
+        textFieldValue = null,
+        voucher = voucherCard(),
+        items = delivery.items.filterNot(::shownOnCard).map {
+            NativeSheetItem(
+                it.label,
+                it.value,
+                copyable =
+                    it.kind in xyz.lilsus.raylsuite.feature.paymenthub.COPYABLE,
+                page = it.opensInApp
+            )
+        }.sortedByDescending { it.page } +
+            NativeSheetItem(text("delivery_order", orderId), orderId, copyable = true),
+        inProgress = inProgress
+    )
+}
 
 private suspend fun HubSavePrompt.toNativeSheet(): NativePaymentScanSheet {
     val presentation = toNativePresentation()
@@ -425,3 +507,4 @@ private const val CONTENT_ERROR = "error"
 private const val SHEET_MANUAL_AMOUNT = "manualAmount"
 private const val SHEET_CONFIRMATION = "confirmation"
 private const val SHEET_SAVE_TARGET = "saveTarget"
+private const val SHEET_DELIVERY = "delivery"
