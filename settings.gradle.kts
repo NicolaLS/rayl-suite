@@ -84,6 +84,7 @@ includeProvider(
 include(":core:model")
 include(":core:hub-api")
 include(":core:rayl-api")
+include(":core:widget-spec")
 include(":core:camera")
 include(":core:network")
 include(":core:payment")

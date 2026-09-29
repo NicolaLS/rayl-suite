@@ -1,0 +1,15 @@
+{
+  "entries": [
+    {
+      "id": "bitcoin-price",
+      "section": "info",
+      "url": "https://rayl-production.up.railway.app/v1/widgets/bitcoin-price.json"
+    },
+    {
+      "id": "block-time",
+      "section": "info",
+      "url": "https://rayl-production.up.railway.app/v1/widgets/block-time.json"
+    }
+  ],
+  "blocked": []
+}
