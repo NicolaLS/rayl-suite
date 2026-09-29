@@ -22,7 +22,7 @@ import xyz.lilsus.raylsuite.feature.paymenthub.DefaultPaymentHubRepository
 import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubController
 import xyz.lilsus.raylsuite.feature.paymentsettings.DefaultPaymentPreferencesRepository
 import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
-import xyz.lilsus.raylsuite.integration.exchangerate.CoinGeckoBitcoinPriceProvider
+import xyz.lilsus.raylsuite.integration.exchangerate.RaylBitcoinPriceProvider
 
 /**
  * Spark experience objects, held outside composition so both the Compose host and the native
@@ -53,7 +53,7 @@ internal class SparkRuntime(
     val languageRepository = createLanguageRepository()
     val paymentPreferences = DefaultPaymentPreferencesRepository(appSettings)
     val paymentHubRepository = DefaultPaymentHubRepository(appSettings)
-    val bitcoinPriceProvider = CoinGeckoBitcoinPriceProvider()
+    val bitcoinPriceProvider = RaylBitcoinPriceProvider()
     val tabState = AppTabState()
     val paymentHub = PaymentHubController(repository = paymentHubRepository, scope = scope)
 

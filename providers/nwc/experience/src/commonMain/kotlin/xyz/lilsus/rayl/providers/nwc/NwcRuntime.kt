@@ -32,7 +32,7 @@ import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubController
 import xyz.lilsus.raylsuite.feature.paymentsettings.DefaultPaymentPreferencesRepository
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentIntent
 import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
-import xyz.lilsus.raylsuite.integration.exchangerate.CoinGeckoBitcoinPriceProvider
+import xyz.lilsus.raylsuite.integration.exchangerate.RaylBitcoinPriceProvider
 import xyz.lilsus.raylsuite.integration.lnurl.KtorLnurlPayClient
 
 internal class NwcRuntime(
@@ -86,7 +86,7 @@ internal class NwcRuntime(
     private val mutableSettingsWalletFlow = MutableStateFlow(false)
     val settingsWalletFlow: StateFlow<Boolean> = mutableSettingsWalletFlow.asStateFlow()
     val paymentHub = PaymentHubController(paymentHubRepository, scope)
-    val bitcoinPriceProvider = CoinGeckoBitcoinPriceProvider()
+    val bitcoinPriceProvider = RaylBitcoinPriceProvider()
     val connectionDraft = NwcConnectionDraft()
     val nwcWallet by lazy {
         createNwcWallet(

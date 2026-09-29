@@ -83,6 +83,7 @@ includeProvider(
 
 include(":core:model")
 include(":core:hub-api")
+include(":core:rayl-api")
 include(":core:camera")
 include(":core:network")
 include(":core:payment")
@@ -104,3 +105,4 @@ include(":integration:exchange-rate")
 include(":integration:hub")
 include(":integration:lnurl")
 include(":backend:hub")
+include(":backend:rayl")

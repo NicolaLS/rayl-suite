@@ -30,7 +30,7 @@ import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubController
 import xyz.lilsus.raylsuite.feature.paymentsettings.DefaultPaymentPreferencesRepository
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentIntent
 import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
-import xyz.lilsus.raylsuite.integration.exchangerate.CoinGeckoBitcoinPriceProvider
+import xyz.lilsus.raylsuite.integration.exchangerate.RaylBitcoinPriceProvider
 import xyz.lilsus.raylsuite.integration.lnurl.KtorLnurlPayClient
 
 internal class BlinkRuntime(
@@ -89,7 +89,7 @@ internal class BlinkRuntime(
     }
     val blinkWallet by blinkWalletDelegate
 
-    private val bitcoinPriceProviderDelegate = lazy { CoinGeckoBitcoinPriceProvider() }
+    private val bitcoinPriceProviderDelegate = lazy { RaylBitcoinPriceProvider() }
     val bitcoinPriceProvider by bitcoinPriceProviderDelegate
     private val lnurlPayClientDelegate = lazy { KtorLnurlPayClient(networkConnectivity) }
     private val lnurlPayClient by lnurlPayClientDelegate

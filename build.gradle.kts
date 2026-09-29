@@ -208,6 +208,8 @@ fun String.isAppModule(): Boolean = startsWith(":app:")
 fun String.providerOwner(): String? =
     takeIf { it.startsWith(":providers:") }?.removePrefix(":providers:")?.substringBefore(":")
 
+val backendWireContracts = setOf(":core:hub-api", ":core:rayl-api")
+
 val verifyModuleDependencies = tasks.register("verifyModuleDependencies") {
     group = "verification"
     description = "Enforces app, provider, and provider-neutral project ownership."
@@ -231,8 +233,8 @@ val verifyModuleDependencies = tasks.register("verifyModuleDependencies") {
 
                                 source.path.startsWith(":backend:") &&
                                     !targetPath.startsWith(":backend:") &&
-                                    targetPath != ":core:hub-api" ->
-                                    "${source.path} -> $targetPath (backend may share only the Hub wire contract)"
+                                    targetPath !in backendWireContracts ->
+                                    "${source.path} -> $targetPath (backend may share only wire contracts)"
 
                                 targetProvider != null && !sourceIsApp &&
                                     sourceProvider == null ->
