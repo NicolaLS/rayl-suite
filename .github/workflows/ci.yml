@@ -34,9 +34,9 @@ jobs:
       - name: Set up and validate Gradle
         uses: gradle/actions/setup-gradle@v6
 
-      - name: Check formatting, module boundaries, and localizations
+      - name: Check formatting, module boundaries, localizations, and unit tests
         run: |
-          ./gradlew ktlintCheck verifyModuleDependencies verifyNativeLocalizations
+          ./gradlew ktlintCheck verifyModuleDependencies verifyNativeLocalizations testAndroidHostTest :backend:rayl:test
           ./gradlew -p build-logic ktlintCheck
 
   android:

@@ -474,6 +474,27 @@ val verifyNativeLocalizations = tasks.register("verifyNativeLocalizations") {
     }
 }
 
+val xcodeSpmLinkedModules =
+    setOf(
+        ":app:shared",
+        ":providers:spark:experience",
+        ":providers:spark:integration:wallet"
+    )
+
+subprojects {
+    afterEvaluate {
+        if (path in xcodeSpmLinkedModules) {
+            // breez_sdk_sparkFFI is linked by Xcode via Swift Package Manager; commonTest suites in
+            // these modules run on the JVM via testAndroidHostTest.
+            tasks.matching {
+                it.name == "linkDebugTestIosSimulatorArm64" || it.name == "iosSimulatorArm64Test"
+            }.configureEach {
+                enabled = false
+            }
+        }
+    }
+}
+
 tasks.register("check") {
     group = "verification"
     description = "Runs the root architecture checks."
