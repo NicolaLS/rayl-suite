@@ -210,19 +210,19 @@ private fun ReceiptPreimage(preimage: String) {
 @Composable
 private fun ReceiptExplanation() {
     val receiptBody = buildAnnotatedString {
-        append(stringResource(R.string.result_receipt_body_prefix))
+        append(stringResource(R.string.result_receipt_body_prefix).trim())
         append(' ')
         withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-            append(stringResource(R.string.result_receipt_body_preimage))
-            append(' ')
+            append(stringResource(R.string.result_receipt_body_preimage).trim())
         }
-        append(stringResource(R.string.result_receipt_body_middle))
+        append(' ')
+        append(stringResource(R.string.result_receipt_body_middle).trim())
         append(' ')
         withStyle(SpanStyle(fontWeight = FontWeight.Bold)) {
-            append(stringResource(R.string.result_receipt_body_only))
-            append(' ')
+            append(stringResource(R.string.result_receipt_body_only).trim())
         }
-        append(stringResource(R.string.result_receipt_body_suffix))
+        append(' ')
+        append(stringResource(R.string.result_receipt_body_suffix).trim())
     }
     Text(
         text = receiptBody,

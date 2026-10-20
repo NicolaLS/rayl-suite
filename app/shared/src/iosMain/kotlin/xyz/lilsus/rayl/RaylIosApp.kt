@@ -73,8 +73,13 @@ object RaylIosApp {
                 val selected = selection.wallet.value
                 val hasConnection = when (selected) {
                     RaylWallet.Blink -> blinkExperience()?.isConnected() == true
+
                     RaylWallet.Nwc -> nwcExperience()?.isConnected() == true
+
+                    // FIXME: Spark cold-start isConnected() is false while async restore is still
+                    // Loading, which can reject a cold-start payment deep link.
                     RaylWallet.Spark -> sparkExperience()?.isConnected() == true
+
                     null -> false
                 }
                 if (uri.substringBefore(':').equals("nostr+walletconnect", true)) {

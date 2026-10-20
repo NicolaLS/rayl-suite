@@ -31,6 +31,7 @@ dependencyResolutionManagement {
             }
         }
         mavenCentral()
+        // Used for maintainer-owned io.github.nicolals:nwc-kmp snapshot builds
         maven("https://central.sonatype.com/repository/maven-snapshots/")
     }
 }

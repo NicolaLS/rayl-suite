@@ -244,8 +244,6 @@ internal class NwcRuntime(
 
 internal const val NWC_SCHEME = "nostr+walletconnect"
 private const val LIGHTNING_SCHEME = "lightning"
-private const val BITCOIN_SCHEME = "bitcoin"
-private const val LNURL_SCHEME = "lnurl"
 
 private fun normalizeNwcUri(uri: String): String =
     if (uri.startsWith("$NWC_SCHEME://", ignoreCase = true)) {
@@ -257,6 +255,4 @@ private fun normalizeNwcUri(uri: String): String =
 
 private fun isPaymentScheme(scheme: String): Boolean =
     scheme.equals(LIGHTNING_SCHEME, ignoreCase = true) ||
-        scheme.equals(BITCOIN_SCHEME, ignoreCase = true) ||
-        scheme.equals(LNURL_SCHEME, ignoreCase = true) ||
         scheme.equals("lnurlp", ignoreCase = true)

@@ -78,6 +78,8 @@ internal class SparkRuntime(
     init {
         scope.launch {
             SparkDeepLinks.events.collect { link ->
+                // FIXME: On cold start, walletAccess.state is Loading until async restore finishes,
+                // so a payment deep link arriving during restore is dropped here.
                 if (onboardingState.canHandlePaymentDeepLink(
                         walletConnected = walletAccess.state.value == WalletAccessState.Connected
                     )

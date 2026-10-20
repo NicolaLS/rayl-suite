@@ -97,6 +97,8 @@ fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
             } else if (selected == null) {
                 message = R.string.connect_to_pay
             } else if (!snapshotFlow { connected }.filterNotNull().first()) {
+                // FIXME: Spark cold-start reports Loading -> false before async restore finishes,
+                // which can reject a cold-start payment deep link as disconnected.
                 message = R.string.connect_to_pay
             } else {
                 when (selected) {

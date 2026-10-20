@@ -1047,6 +1047,7 @@ private struct NativePaymentRecentDetailView: View {
 private struct NativePaymentReceiptView: View {
     let receipt: NativePaymentReceiptContent
     @State private var copied = false
+    @State private var copyTrigger = 0
 
     var body: some View {
         ScrollView {
@@ -1116,6 +1117,13 @@ private struct NativePaymentReceiptView: View {
         .scrollBounceBehavior(.basedOnSize)
         .navigationTitle(receipt.title)
         .onChange(of: receipt.preimage) { _, _ in copied = false }
+        .task(id: copyTrigger) {
+            guard copyTrigger > 0 else { return }
+            try? await Task.sleep(for: .seconds(2))
+            if !Task.isCancelled {
+                copied = false
+            }
+        }
     }
 
     private func receiptRow(_ label: String, value: String) -> some View {
@@ -1144,6 +1152,7 @@ private struct NativePaymentReceiptView: View {
     private func copyPreimage(_ preimage: String) {
         UIPasteboard.general.string = preimage
         copied = true
+        copyTrigger += 1
     }
 }
 

@@ -22,6 +22,7 @@ version.
 The `rayl/` directory contains public product metadata and the master icon:
 
 - `icon.png`: app artwork used by distribution channels.
+- `privacy.md`, `terms.md`: public Privacy Policy and Terms of Use.
 - `store-listing/en-US.md`, `de-DE.md`, `es-ES.md`: localized public store copy.
 
 Keep names, capabilities, identifiers, screenshots, and legal links accurate for
