@@ -34,8 +34,6 @@ private enum HubGeometry {
 /// The app owns payment behavior; the Hub presents independently configured native widgets.
 struct NativePaymentHubView: View {
     @StateObject private var model: NativePaymentHubModel
-    @Environment(\.scenePhase) private var scenePhase
-    @State private var isVisible = false
     @State private var hoveredId: String?
     init(controller: NativePaymentHubController) {
         _model = StateObject(wrappedValue: NativePaymentHubModel(controller: controller))
@@ -54,17 +52,6 @@ struct NativePaymentHubView: View {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
                 .interactiveDismissDisabled(model.snapshot?.busy == true)
-        }
-        .onAppear {
-            isVisible = true
-            model.controller.setActive(value: scenePhase == .active)
-        }
-        .onDisappear {
-            isVisible = false
-            model.controller.setActive(value: false)
-        }
-        .onChange(of: scenePhase) { _, phase in
-            model.controller.setActive(value: isVisible && phase == .active)
         }
     }
 
@@ -106,7 +93,6 @@ struct NativePaymentHubView: View {
                     .padding(.horizontal, HubGeometry.gutter)
                     .disabled(state.busy)
                 }
-                .refreshable { model.controller.refreshContent() }
                 .onAppear { model.controller.setCanvasColumns(value: Int32(columns)) }
                 .onChange(of: columns) { _, value in
                     model.controller.setCanvasColumns(value: Int32(value))
@@ -122,7 +108,6 @@ struct NativePaymentHubView: View {
             ForEach(Array(state.canvas.tiles.enumerated()), id: \.element.id) { index, tile in
                 WidgetContent(
                     tile: tile,
-                    copy: state.text,
                     interactive: true,
                     pay: { model.controller.pay(actionId: $0) }
                 )
@@ -390,16 +375,6 @@ private struct HubEditorSheet: View {
                         .buttonStyle(.plain)
                     }
                 }
-                if state.catalogLoading {
-                    ProgressView(state.text.loading).frame(maxWidth: .infinity)
-                }
-                if state.catalogUnavailable {
-                    VStack(spacing: 8) {
-                        Text(state.text.catalogUnavailable).font(.footnote).foregroundStyle(.secondary)
-                        Button(state.text.retry) { model.controller.refreshCatalog() }
-                    }
-                    .frame(maxWidth: .infinity)
-                }
             }
             .padding(20)
             .frame(maxWidth: 700)
@@ -484,7 +459,7 @@ private struct VariantGallery: View {
                         set: { controller.selectVariant(id: $0) }
                     )) {
                         ForEach(definition.variants, id: \.id) { variant in
-                            WidgetContent(tile: variant.preview, copy: state.text, interactive: false, pay: { _ in })
+                            WidgetContent(tile: variant.preview, interactive: false, pay: { _ in })
                                 .frame(
                                     width: HubGeometry.span(unit, variant.columns),
                                     height: HubGeometry.span(unit, variant.rows)
@@ -588,13 +563,6 @@ private struct WidgetConfigurationView: View {
                                 ))
                         }
                     }
-                    if !editor.fields.isEmpty {
-                        Section {
-                            ForEach(editor.fields, id: \.key) { field in
-                                configurationField(field)
-                            }
-                        }
-                    }
                 }
                 .disabled(state.busy)
                 .scrollDismissesKeyboard(.interactively)
@@ -663,25 +631,6 @@ private struct WidgetConfigurationView: View {
             }
         }
     }
-
-    @ViewBuilder
-    private func configurationField(_ field: NativeHubField) -> some View {
-        let binding = Binding(
-            get: { field.value },
-            set: { controller.updateConfiguration(key: field.key, value: $0) }
-        )
-        if field.type == "choice" {
-            Picker(field.label, selection: binding) {
-                if !field.required || field.value.isEmpty { Text("—").tag("") }
-                ForEach(field.options, id: \.id) { option in
-                    Text(option.label).tag(option.id)
-                }
-            }
-        } else {
-            TextField(field.label, text: binding)
-        }
-    }
-
 }
 
 private struct HubContactPicker: View {
@@ -905,7 +854,6 @@ private struct HubPrimaryButton: View {
 
 private struct WidgetContent: View {
     let tile: NativeHubTile
-    let copy: NativePaymentHubCopy
     let interactive: Bool
     let pay: (String) -> Void
 
@@ -919,9 +867,7 @@ private struct WidgetContent: View {
                 }
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-                if tile.kind == "metric" {
-                    metric
-                } else if tile.people.isEmpty {
+                if tile.people.isEmpty {
                     Text(tile.emptyText)
                         .font(.footnote)
                         .foregroundStyle(.secondary)
@@ -936,55 +882,6 @@ private struct WidgetContent: View {
             .background(Color(uiColor: .secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 24))
         }
         .accessibilityElement(children: .contain)
-    }
-
-    @ViewBuilder
-    private var metric: some View {
-        if tile.metric == nil && tile.loading {
-            ProgressView(copy.loading).frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if tile.metric == nil && tile.unavailable {
-            Text(copy.unavailable).foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else {
-            VStack(alignment: .leading, spacing: 4) {
-                Spacer(minLength: 0)
-                HStack(alignment: .firstTextBaseline, spacing: 5) {
-                    Text(tile.metric?.value ?? "—")
-                        .font(.system(.title, design: .rounded, weight: .semibold))
-                        .minimumScaleFactor(0.5)
-                        .lineLimit(1)
-                    if let metric = tile.metric, !metric.unit.isEmpty {
-                        Text(metric.unit).font(.caption).foregroundStyle(.secondary)
-                            .lineLimit(1)
-                    }
-                }
-                if let metric = tile.metric {
-                    if !metric.label.isEmpty {
-                        Text(metric.label).font(.caption).lineLimit(tile.rows > 1 ? 2 : 1)
-                    }
-                    if let asOf = metric.asOf, let date = metricDate(asOf) {
-                        Text(date, format: .relative(presentation: .named))
-                            .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                    }
-                    if tile.loading {
-                        ProgressView().controlSize(.mini).accessibilityLabel(copy.loading)
-                    } else if tile.unavailable {
-                        Label(copy.unavailable, systemImage: "exclamationmark.circle")
-                            .font(.caption2).foregroundStyle(.secondary).lineLimit(1)
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private func metricDate(_ value: String) -> Date? {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: value) { return date }
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter.date(from: value)
     }
 
     @ViewBuilder

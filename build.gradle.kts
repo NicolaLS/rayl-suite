@@ -208,7 +208,7 @@ fun String.isAppModule(): Boolean = startsWith(":app:")
 fun String.providerOwner(): String? =
     takeIf { it.startsWith(":providers:") }?.removePrefix(":providers:")?.substringBefore(":")
 
-val backendWireContracts = setOf(":core:hub-api", ":core:rayl-api", ":core:widget-spec")
+val backendWireContracts = setOf(":core:rayl-api")
 
 val verifyModuleDependencies = tasks.register("verifyModuleDependencies") {
     group = "verification"

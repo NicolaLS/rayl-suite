@@ -46,7 +46,6 @@ import xyz.lilsus.raylsuite.core.ui.platform.LocalProductName
 import xyz.lilsus.raylsuite.core.ui.platform.rememberHapticFeedbackManager
 import xyz.lilsus.raylsuite.core.ui.platform.rememberRetainedInstance
 import xyz.lilsus.raylsuite.core.ui.theme.RaylSuiteTheme
-import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 
 @Composable
 fun SparkExperience(
@@ -54,7 +53,6 @@ fun SparkExperience(
     environment: SparkEnvironment,
     startMode: WalletStartMode,
     breezApiKey: String? = null,
-    performanceDiagnostics: PerformanceDiagnostics? = null,
     onRemoved: () -> Unit,
     onChooseWallet: () -> Unit,
     onConnectionChanged: (Boolean) -> Unit
@@ -198,7 +196,6 @@ fun SparkExperience(
                         sparkHome(
                             runtime = runtime,
                             walletViewModel = walletViewModel,
-                            performanceDiagnostics = performanceDiagnostics,
                             onWalletRemoved = {
                                 navController.navigate(SparkOnboardingDestination.AddWallet) {
                                     popUpTo(navController.graph.id) { inclusive = true }

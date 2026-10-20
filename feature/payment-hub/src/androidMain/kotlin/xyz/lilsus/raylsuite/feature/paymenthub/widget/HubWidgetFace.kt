@@ -25,7 +25,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -59,13 +58,10 @@ internal fun HubWidgetFace(
         shape = MaterialTheme.shapes.extraLarge,
         modifier = modifier
     ) {
-        when {
-            tile.kind == HubWidgetKind.Metric -> MetricFace(tile, headerTrailingPadding)
-
-            tile.variant.capacity == 1 ->
-                SingleContactFace(tile, onPay, preview, interactive, headerTrailingPadding)
-
-            else -> ContactCollectionFace(tile, onPay, preview, interactive, headerTrailingPadding)
+        if (tile.variant.capacity == 1) {
+            SingleContactFace(tile, onPay, preview, interactive, headerTrailingPadding)
+        } else {
+            ContactCollectionFace(tile, onPay, preview, interactive, headerTrailingPadding)
         }
     }
 }
@@ -341,55 +337,6 @@ internal fun ContactAvatar(
                 color = color.second,
                 fontWeight = FontWeight.SemiBold
             )
-        }
-    }
-}
-
-@Composable
-private fun MetricFace(tile: HubWidgetTile, headerTrailingPadding: Dp) {
-    Column(
-        horizontalAlignment = Alignment.Start,
-        verticalArrangement = Arrangement.Center,
-        modifier = Modifier.fillMaxSize().padding(14.dp)
-    ) {
-        WidgetHeader(tile, headerTrailingPadding)
-        Spacer(Modifier.height(12.dp))
-        when {
-            tile.loading -> Text(
-                stringResource(R.string.hub_widget_loading),
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            tile.unavailable -> Text(
-                stringResource(R.string.hub_widget_unavailable),
-                style = MaterialTheme.typography.bodySmall
-            )
-
-            tile.metric != null -> {
-                Text(
-                    tile.metric.value,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    tile.metric.unit,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    tile.metric.label,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            else -> Text("—", style = MaterialTheme.typography.headlineMedium, color = Color.Gray)
         }
     }
 }

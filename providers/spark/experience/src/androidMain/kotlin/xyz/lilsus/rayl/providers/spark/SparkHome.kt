@@ -19,7 +19,6 @@ import xyz.lilsus.raylsuite.feature.appshell.AppTab
 import xyz.lilsus.raylsuite.feature.appshell.AppTabScaffold
 import xyz.lilsus.raylsuite.feature.paymenthub.PaymentHubTab
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentScanFlow
-import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 import xyz.lilsus.raylsuite.feature.settings.SettingsFlow
 import xyz.lilsus.raylsuite.feature.walletmanagement.R as WalletR
 import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalAction
@@ -27,14 +26,12 @@ import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalAction
 internal fun NavGraphBuilder.sparkHome(
     runtime: SparkRuntime,
     walletViewModel: WalletViewModel,
-    performanceDiagnostics: PerformanceDiagnostics?,
     onWalletRemoved: () -> Unit
 ) {
     composable<SparkDestination.Home> {
         SparkTabs(
             runtime = runtime,
             walletViewModel = walletViewModel,
-            performanceDiagnostics = performanceDiagnostics,
             onWalletRemoved = onWalletRemoved
         )
     }
@@ -45,7 +42,6 @@ internal fun NavGraphBuilder.sparkHome(
 private fun SparkTabs(
     runtime: SparkRuntime,
     walletViewModel: WalletViewModel,
-    performanceDiagnostics: PerformanceDiagnostics?,
     onWalletRemoved: () -> Unit
 ) {
     val tabState = runtime.tabState
@@ -61,7 +57,6 @@ private fun SparkTabs(
             runtime = runtime,
             walletViewModel = walletViewModel,
             tab = tab,
-            performanceDiagnostics = performanceDiagnostics,
             onWalletRemoved = onWalletRemoved
         )
     }
@@ -73,7 +68,6 @@ internal fun SparkTabContent(
     runtime: SparkRuntime,
     walletViewModel: WalletViewModel,
     tab: AppTab,
-    performanceDiagnostics: PerformanceDiagnostics?,
     onWalletRemoved: () -> Unit
 ) {
     val coordinator = runtime.paymentCoordinator
@@ -112,7 +106,6 @@ internal fun SparkTabContent(
             SparkSettingsTab(
                 runtime = runtime,
                 walletViewModel = walletViewModel,
-                performanceDiagnostics = performanceDiagnostics,
                 onWalletRemoved = onWalletRemoved
             )
     }
@@ -122,7 +115,6 @@ internal fun SparkTabContent(
 private fun SparkSettingsTab(
     runtime: SparkRuntime,
     walletViewModel: WalletViewModel,
-    performanceDiagnostics: PerformanceDiagnostics?,
     onWalletRemoved: () -> Unit
 ) {
     val walletState by walletViewModel.state.collectAsStateWithLifecycle()
@@ -140,7 +132,6 @@ private fun SparkSettingsTab(
         paymentPreferences = runtime.paymentPreferences,
         legalLinks = runtime.configuration.legalLinks,
         modifier = Modifier,
-        performanceDiagnostics = performanceDiagnostics,
         overviewBottomContent = {
             WalletRemovalAction(
                 canRemove = !isSubmitting && walletState.access == WalletAccessState.Connected,

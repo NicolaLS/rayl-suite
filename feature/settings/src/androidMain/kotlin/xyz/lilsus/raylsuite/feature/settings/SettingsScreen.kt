@@ -15,13 +15,11 @@ import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.CurrencyExchange
 import androidx.compose.material.icons.filled.Language
-import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -72,9 +70,7 @@ fun SettingsScreen(
     themeSubtitle: String? = null,
     overviewBottomContent: (@Composable () -> Unit)? = null,
     leadingEntries: List<SettingsEntry> = emptyList(),
-    trailingEntries: List<SettingsEntry> = emptyList(),
-    performanceDiagnosticsEnabled: Boolean? = null,
-    onPerformanceDiagnosticsChanged: ((Boolean) -> Unit)? = null
+    trailingEntries: List<SettingsEntry> = emptyList()
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
     val resolvedCurrencySubtitle =
@@ -122,12 +118,6 @@ fun SettingsScreen(
     require(entries.distinctBy(SettingsEntry::id).size == entries.size) {
         "Settings entry IDs must be unique"
     }
-    require(
-        (performanceDiagnosticsEnabled == null) ==
-            (onPerformanceDiagnosticsChanged == null)
-    ) {
-        "Performance diagnostics state and callback must be provided together"
-    }
 
     Scaffold(
         modifier = modifier.testTag(SettingsTestTags.SCREEN),
@@ -152,17 +142,6 @@ fun SettingsScreen(
             items(entries, key = { entry -> "entry:${entry.id}" }) { entry ->
                 SettingsListItem(entry)
             }
-            if (
-                performanceDiagnosticsEnabled != null &&
-                onPerformanceDiagnosticsChanged != null
-            ) {
-                item(key = "performance-diagnostics") {
-                    PerformanceDiagnosticsRow(
-                        enabled = performanceDiagnosticsEnabled,
-                        onEnabledChanged = onPerformanceDiagnosticsChanged
-                    )
-                }
-            }
             overviewBottomContent?.let { content ->
                 item(key = "slot:overview-bottom-content") {
                     content()
@@ -172,22 +151,6 @@ fun SettingsScreen(
                 SettingsFooter(legalLinks)
             }
         }
-    }
-}
-
-@Composable
-private fun PerformanceDiagnosticsRow(enabled: Boolean, onEnabledChanged: (Boolean) -> Unit) {
-    AppSettingsRow(
-        title = stringResource(R.string.settings_performance_diagnostics),
-        onClick = { onEnabledChanged(!enabled) },
-        subtitle = stringResource(R.string.settings_performance_diagnostics_subtitle),
-        icon = Icons.Filled.Speed,
-        subtitleMaxLines = 2
-    ) {
-        Switch(
-            checked = enabled,
-            onCheckedChange = onEnabledChanged
-        )
     }
 }
 

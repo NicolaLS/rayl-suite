@@ -18,8 +18,6 @@
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
     <string name="settings_footer_version">Version %1$s</string>
-    <string name="settings_performance_diagnostics">Performance diagnostics</string>
-    <string name="settings_performance_diagnostics_subtitle">Share startup and camera timing data. Payment and QR details are never included.</string>
     <string name="settings_footer_privacy">Privacy Policy</string>
     <string name="settings_footer_terms">Terms</string>
     <string name="settings_footer_repo">Source code</string>

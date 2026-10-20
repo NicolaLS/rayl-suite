@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import xyz.lilsus.raylsuite.core.ui.platform.enableTestTagsAsResourceId
-import xyz.lilsus.raylsuite.feature.paymenthub.HubItemId
 import xyz.lilsus.raylsuite.feature.paymenthub.R
 
 /** Offered after a successful payment to an address that is not a saved target yet. */
@@ -79,21 +78,4 @@ fun HubSavePromptBottomSheet(
 
 object PaymentHubTestTags {
     const val SAVE_PROMPT = "payment_hub_save_prompt"
-    const val CANVAS = "payment_hub_canvas"
-    const val CANVAS_EDIT = "payment_hub_canvas_edit"
-    const val CANVAS_ADD = "payment_hub_canvas_add"
-    const val NEW_TARGET = "payment_hub_new_target"
-    const val NEW_TARGET_MANUAL = "payment_hub_new_target_manual"
-    const val CONFIGURE_NAME = "payment_hub_configure_name"
-    const val CONFIGURE_ADDRESS = "payment_hub_configure_address"
-    const val CONFIGURE_SUBMIT = "payment_hub_configure_submit"
-    const val GROUP_EDITOR = "payment_hub_group_editor"
-
-    fun item(id: HubItemId): String = "payment_hub_item_" + id.value.stableTagToken()
 }
-
-private fun String.stableTagToken(): String = lowercase()
-    .map { character -> if (character.isLetterOrDigit()) character else '-' }
-    .joinToString(separator = "")
-    .trim('-')
-    .ifBlank { "item" }

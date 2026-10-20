@@ -15,7 +15,6 @@ internal fun HubWidgetKind.label(): String = stringResource(
         HubWidgetKind.Shortcut -> R.string.hub_widget_shortcut
         HubWidgetKind.Favorites -> R.string.hub_widget_favorites
         HubWidgetKind.Recents -> R.string.hub_widget_recents
-        HubWidgetKind.Metric -> R.string.hub_widget_metric
     }
 )
 
@@ -28,11 +27,10 @@ internal fun HubWidgetDefinition.body(): String = description ?: when (kind) {
     HubWidgetKind.Shortcut -> stringResource(R.string.hub_widget_shortcut_body)
     HubWidgetKind.Favorites -> stringResource(R.string.hub_widget_favorites_body)
     HubWidgetKind.Recents -> stringResource(R.string.hub_widget_recents_body)
-    HubWidgetKind.Metric -> ""
 }
 
 @Composable
-internal fun HubWidgetVariant.label(): String = stringResource(
+internal fun HubWidgetVariant.label(): String = title ?: stringResource(
     when {
         columns == 1 && rows == 1 -> R.string.hub_widget_single
         rows == 1 -> R.string.hub_widget_row
@@ -56,7 +54,6 @@ internal fun HubWidgetError.label(capacity: Int): String = when (this) {
     HubWidgetError.SelectContacts -> stringResource(R.string.hub_widget_select_contacts_error)
     HubWidgetError.TooManyContacts -> stringResource(R.string.hub_widget_choose_contacts, capacity)
     HubWidgetError.InvalidAmount -> stringResource(R.string.hub_error_enter_amount)
-    HubWidgetError.RequiredConfiguration -> stringResource(R.string.hub_widget_required_fields)
     HubWidgetError.Unavailable -> stringResource(R.string.hub_widget_unavailable)
     HubWidgetError.SaveFailed -> stringResource(R.string.hub_widget_error_save)
 }

@@ -8,11 +8,10 @@ internal object AndroidCameraTrace {
     private val nextCookie = AtomicInteger()
 
     fun beginInterval(event: CameraTraceEvent): AndroidCameraTraceInterval? {
-        val reportedTrace = beginReportedCameraTrace(event)
-        val cookie = if (Trace.isEnabled()) nextCookie.incrementAndGet() else null
-        cookie?.let { Trace.beginAsyncSection(event.traceName, it) }
-        if (cookie == null && reportedTrace == null) return null
-        return AndroidCameraTraceInterval(event, cookie, reportedTrace)
+        if (!Trace.isEnabled()) return null
+        val cookie = nextCookie.incrementAndGet()
+        Trace.beginAsyncSection(event.traceName, cookie)
+        return AndroidCameraTraceInterval(event, cookie)
     }
 
     fun event(event: CameraTraceEvent) {
@@ -24,15 +23,13 @@ internal object AndroidCameraTrace {
 
 internal class AndroidCameraTraceInterval(
     private val event: CameraTraceEvent,
-    private val cookie: Int?,
-    private val reportedTrace: CameraPerformanceTraceHandle?
+    private val cookie: Int
 ) {
     private val ended = AtomicBoolean(false)
 
     fun end() {
         if (ended.compareAndSet(false, true)) {
-            cookie?.let { Trace.endAsyncSection(event.traceName, it) }
-            reportedTrace?.end()
+            Trace.endAsyncSection(event.traceName, cookie)
         }
     }
 }

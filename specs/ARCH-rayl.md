@@ -22,22 +22,17 @@ models, platform services, reusable UI, payment-input utilities, and service
 adapters. Shared payment presentation does not own settlement.
 
 [ARCH-payment-hub](../feature/payment-hub/specs/ARCH-payment-hub.md) describes
-the shared Hub UI and its optional remote catalog. `backend/hub` is a separate
-JVM service; `core/hub-api` is its shared wire contract with clients.
+the shared Hub UI.
 
 `backend/rayl` is the Rayl backend, deployed on Railway. It serves bitcoin
 prices aggregated from several public sources, and every provider reads fiat
 prices from it through `integration/exchange-rate`. `core/rayl-api` is its wire
-contract and holds the production base URL. It also hosts Bitcoin price and block time
-widgets through the ordinary provider protocol, plus their catalog, review metadata and
-anonymous usage API. `core/widget-spec` validates definitions for that catalog; its
-[canonical contract](https://github.com/NicolaLS/rayl-widget-spec) is maintained separately.
-The existing Hub client and `backend/hub` remain unchanged by these backend services.
+contract and holds the production base URL.
 
 The dependency rules in [`verifyModuleDependencies`](../build.gradle.kts)
 keep providers independent of one another and of the app, and neutral modules
 independent of the app and providers. Backend modules share only their wire
-contracts (`core/hub-api`, `core/rayl-api`, `core/widget-spec`) with client code; clients do not
+contracts (`core/rayl-api`) with client code; clients do not
 depend on backend implementation.
 
 ## Platform composition

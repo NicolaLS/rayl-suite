@@ -40,25 +40,20 @@ import xyz.lilsus.raylsuite.feature.paymentflow.rememberPaymentFlowState
 import xyz.lilsus.raylsuite.feature.paymentflow.rememberPaymentMessages
 import xyz.lilsus.raylsuite.feature.paymenthub.PaymentHubTab
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentScanFlow
-import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 import xyz.lilsus.raylsuite.feature.settings.SettingsFlow
 import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalAction
 
-internal fun NavGraphBuilder.nwcHome(
-    runtime: NwcRuntime,
-    performanceDiagnostics: PerformanceDiagnostics?
-) {
+internal fun NavGraphBuilder.nwcHome(runtime: NwcRuntime) {
     composable<NwcDestination.Home> {
         NwcTabs(
-            runtime = runtime,
-            performanceDiagnostics = performanceDiagnostics
+            runtime = runtime
         )
     }
 }
 
 /** The Android tab shell. iOS renders [NwcTabContent] inside a native `TabView` instead. */
 @Composable
-private fun NwcTabs(runtime: NwcRuntime, performanceDiagnostics: PerformanceDiagnostics?) {
+private fun NwcTabs(runtime: NwcRuntime) {
     val tabState = runtime.tabState
     val selectedTab by tabState.selectedTab.collectAsStateWithLifecycle()
 
@@ -70,19 +65,14 @@ private fun NwcTabs(runtime: NwcRuntime, performanceDiagnostics: PerformanceDiag
     ) { tab ->
         NwcTabContent(
             runtime = runtime,
-            tab = tab,
-            performanceDiagnostics = performanceDiagnostics
+            tab = tab
         )
     }
 }
 
 /** One tab's content, with no tab bar of its own. */
 @Composable
-internal fun NwcTabContent(
-    runtime: NwcRuntime,
-    tab: AppTab,
-    performanceDiagnostics: PerformanceDiagnostics?
-) {
+internal fun NwcTabContent(runtime: NwcRuntime, tab: AppTab) {
     val coordinator = runtime.paymentCoordinator
     val isSubmitting by coordinator.isSubmitting.collectAsStateWithLifecycle()
     val tabState = runtime.tabState
@@ -117,14 +107,13 @@ internal fun NwcTabContent(
 
         AppTab.Settings ->
             NwcSettingsTab(
-                runtime = runtime,
-                performanceDiagnostics = performanceDiagnostics
+                runtime = runtime
             )
     }
 }
 
 @Composable
-private fun NwcSettingsTab(runtime: NwcRuntime, performanceDiagnostics: PerformanceDiagnostics?) {
+private fun NwcSettingsTab(runtime: NwcRuntime) {
     var destination by rememberSaveable { mutableStateOf(NwcSettingsDestination.Root) }
     val connection by runtime.nwcWallet.connection.collectAsStateWithLifecycle()
     val isSubmitting by runtime.paymentCoordinator.isSubmitting.collectAsStateWithLifecycle()
@@ -153,7 +142,6 @@ private fun NwcSettingsTab(runtime: NwcRuntime, performanceDiagnostics: Performa
                 paymentPreferences = runtime.paymentPreferences,
                 legalLinks = runtime.configuration.legalLinks,
                 modifier = Modifier,
-                performanceDiagnostics = performanceDiagnostics,
                 overviewBottomContent = {
                     Column(
                         verticalArrangement = Arrangement.spacedBy(

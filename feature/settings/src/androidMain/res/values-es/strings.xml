@@ -18,8 +18,6 @@
     <string name="settings_theme_light">Claro</string>
     <string name="settings_theme_dark">Oscuro</string>
     <string name="settings_footer_version">Versión %1$s</string>
-    <string name="settings_performance_diagnostics">Diagnóstico de rendimiento</string>
-    <string name="settings_performance_diagnostics_subtitle">Comparte tiempos de inicio y cámara. Nunca se incluyen detalles de pagos ni códigos QR.</string>
     <string name="settings_footer_privacy">Política de privacidad</string>
     <string name="settings_footer_terms">Términos</string>
     <string name="settings_footer_repo">Código fuente</string>

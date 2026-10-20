@@ -32,7 +32,6 @@ import xyz.lilsus.raylsuite.core.ui.platform.rememberCredentialClipboard
 import xyz.lilsus.raylsuite.core.ui.platform.rememberHapticFeedbackManager
 import xyz.lilsus.raylsuite.core.ui.platform.rememberRetainedInstance
 import xyz.lilsus.raylsuite.core.ui.theme.RaylSuiteTheme
-import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalFailure
 
 /** The Compose host used on Android. iOS drives the same content from a native shell. */
@@ -40,7 +39,6 @@ import xyz.lilsus.raylsuite.feature.walletmanagement.WalletRemovalFailure
 fun NwcExperience(
     configuration: NwcExperienceConfiguration,
     startMode: WalletStartMode,
-    performanceDiagnostics: PerformanceDiagnostics? = null,
     onRemoved: () -> Unit,
     onConnectionChanged: (Boolean) -> Unit
 ) {
@@ -83,7 +81,6 @@ fun NwcExperience(
             } else {
                 NwcExperienceContent(
                     runtime,
-                    performanceDiagnostics,
                     onConnectionChanged
                 )
             }
@@ -92,11 +89,7 @@ fun NwcExperience(
 }
 
 @Composable
-private fun NwcExperienceContent(
-    runtime: NwcRuntime,
-    performanceDiagnostics: PerformanceDiagnostics?,
-    onConnectionChanged: (Boolean) -> Unit
-) {
+private fun NwcExperienceContent(runtime: NwcRuntime, onConnectionChanged: (Boolean) -> Unit) {
     val connected by runtime.nwcWallet.connection.collectAsStateWithLifecycle()
     LaunchedEffect(runtime, connected) { onConnectionChanged(connected != null) }
     val clipboard = rememberCredentialClipboard()
@@ -170,7 +163,7 @@ private fun NwcExperienceContent(
                     }
                 }
             )
-            nwcHome(runtime = runtime, performanceDiagnostics = performanceDiagnostics)
+            nwcHome(runtime = runtime)
         }
     }
 }

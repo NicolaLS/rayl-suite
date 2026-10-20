@@ -13,11 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigationevent.NavigationEventInfo
 import androidx.navigationevent.compose.NavigationEventHandler
@@ -38,37 +34,18 @@ fun PaymentHubTab(
     preferredCurrencyCode: () -> String,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-    val currentContext by rememberUpdatedState(context)
     val currency by rememberUpdatedState(preferredCurrencyCode)
-    val remote =
-        remember(repository, controller, context.applicationContext) {
-            createHubRemoteSession(context)
-        }
-    val viewModel = remember(repository, controller, remote) {
+    val viewModel = remember(repository, controller) {
         WidgetHubViewModel(
             repository = repository,
             host = controller,
-            defaultCurrencyCode = { currency() },
-            locale = { currentContext.resources.configuration.locales[0].toLanguageTag() },
-            catalog = remote?.catalog
+            defaultCurrencyCode = { currency() }
         )
     }
-    DisposableEffect(viewModel, remote) {
+    DisposableEffect(viewModel) {
         onDispose {
             viewModel.clear()
-            remote?.close()
         }
-    }
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(viewModel, lifecycleOwner) {
-        val lifecycle = lifecycleOwner.lifecycle
-        val observer = LifecycleEventObserver { owner, _ ->
-            viewModel.setActive(owner.lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
-        }
-        lifecycle.addObserver(observer)
-        viewModel.setActive(lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
-        onDispose { lifecycle.removeObserver(observer) }
     }
     val state by viewModel.state.collectAsStateWithLifecycle()
     NavigationEventHandler(

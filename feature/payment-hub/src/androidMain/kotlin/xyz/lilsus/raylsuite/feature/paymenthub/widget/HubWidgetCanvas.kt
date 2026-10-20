@@ -460,14 +460,6 @@ private fun WidgetCanvasTile(
                             onClick = { choosingLayout = true }
                         )
                     }
-                    if (tile.unavailable) {
-                        DropdownMenuItem(text = {
-                            Text(stringResource(R.string.hub_widget_retry))
-                        }, onClick = {
-                            expanded = false
-                            viewModel.refreshContent()
-                        })
-                    }
                     DropdownMenuItem(text = { Text(moveUp) }, enabled = canMoveUp, onClick = {
                         expanded = false
                         viewModel.moveWidgetBy(tile.id, -1)

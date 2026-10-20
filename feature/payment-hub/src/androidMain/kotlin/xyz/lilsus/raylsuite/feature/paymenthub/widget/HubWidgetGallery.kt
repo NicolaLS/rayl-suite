@@ -28,16 +28,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Bolt
-import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.snapshotFlow
@@ -85,34 +82,6 @@ internal fun HubWidgetGallery(
             }
             items(state.gallery, key = HubWidgetDefinition::id) { definition ->
                 GalleryEntry(definition, onClick = { viewModel.selectDefinition(definition.id) })
-            }
-            if (state.catalogLoading) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Box(
-                        Modifier.fillMaxWidth().padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    }
-                }
-            }
-            if (state.catalogUnavailable) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(
-                            stringResource(R.string.hub_widget_catalog_unavailable),
-                            style = MaterialTheme.typography.bodySmall,
-                            textAlign = TextAlign.Center
-                        )
-                        TextButton(onClick = viewModel::refreshCatalog) {
-                            Text(stringResource(R.string.hub_widget_retry))
-                        }
-                    }
-                }
             }
         }
     }
@@ -171,7 +140,6 @@ private fun GalleryIllustration(kind: HubWidgetKind) {
                         HubWidgetKind.Shortcut -> Icons.Filled.Bolt
                         HubWidgetKind.Favorites -> Icons.Filled.Star
                         HubWidgetKind.Recents -> Icons.Filled.AccessTime
-                        HubWidgetKind.Metric -> Icons.Filled.Insights
                         HubWidgetKind.Contacts -> Icons.Filled.People
                     },
                     contentDescription = null,
@@ -262,17 +230,15 @@ internal fun HubWidgetVariants(
                                         kind = definition.kind,
                                         variant = variant,
                                         title = definition.title,
-                                        people = if (definition.kind == HubWidgetKind.Metric) {
-                                            emptyList()
-                                        } else {
-                                            state.contacts.take(variant.capacity).map { contact ->
-                                                HubWidgetPerson(
-                                                    actionId = "",
-                                                    contactId = contact.id,
-                                                    title = contact.title,
-                                                    address = ""
-                                                )
-                                            }
+                                        people = state.contacts.take(
+                                            variant.capacity
+                                        ).map { contact ->
+                                            HubWidgetPerson(
+                                                actionId = "",
+                                                contactId = contact.id,
+                                                title = contact.title,
+                                                address = ""
+                                            )
                                         }
                                     ),
                                     onPay = {},
@@ -311,16 +277,14 @@ internal fun HubWidgetVariants(
                             variant.title ?: variant.label(),
                             style = MaterialTheme.typography.titleMedium
                         )
-                        if (definition.kind != HubWidgetKind.Metric) {
-                            Text(
-                                variant.body(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.widthIn(max = 480.dp)
-                                    .padding(horizontal = 24.dp)
-                            )
-                        }
+                        Text(
+                            variant.body(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.widthIn(max = 480.dp)
+                                .padding(horizontal = 24.dp)
+                        )
                     }
                 }
             }

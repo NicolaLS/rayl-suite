@@ -346,52 +346,6 @@
         }
       }
     },
-    "settings_performance_diagnostics" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Leistungsdiagnose"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Performance diagnostics"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Diagnóstico de rendimiento"
-          }
-        }
-      }
-    },
-    "settings_performance_diagnostics_subtitle" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Start- und Kamera-Zeitdaten teilen. Zahlungs- und QR-Details werden niemals einbezogen."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Share startup and camera timing data. Payment and QR details are never included."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Comparte tiempos de inicio y cámara. Nunca se incluyen detalles de pagos ni códigos QR."
-          }
-        }
-      }
-    },
     "settings_theme" : {
       "extractionState" : "stale",
       "localizations" : {

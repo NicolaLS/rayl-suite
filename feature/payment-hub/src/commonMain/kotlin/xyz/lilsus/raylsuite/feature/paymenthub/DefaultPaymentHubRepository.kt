@@ -46,17 +46,7 @@ class DefaultPaymentHubRepository(
             if (id != null && current.widget(id) == null) return@mutate current
             val contacts = draft.contactIds.distinct()
             val local = LocalHubWidgets.definitions.firstOrNull { it.id == draft.definitionId }
-            if (draft.kind != HubWidgetKind.Metric &&
-                (local == null || local.kind != draft.kind || draft.variant !in local.variants)
-            ) {
-                return@mutate current
-            }
-            if (draft.kind == HubWidgetKind.Metric &&
-                (
-                    draft.definitionId.startsWith("local.") || draft.definitionId.isBlank() ||
-                        draft.variant.columns !in 1..2 || draft.variant.rows !in 1..2
-                    )
-            ) {
+            if (local == null || local.kind != draft.kind || draft.variant !in local.variants) {
                 return@mutate current
             }
             if (draft.kind == HubWidgetKind.Contacts || draft.kind == HubWidgetKind.Shortcut) {
@@ -102,27 +92,21 @@ class DefaultPaymentHubRepository(
 
                 else -> Unit
             }
-            result = HubWidget(
+            val saved = HubWidget(
                 id = id ?: "widget:${idGenerator()}",
                 definitionId = draft.definitionId,
                 kind = draft.kind,
                 variant = draft.variant,
                 title = draft.title?.trim()?.takeIf(String::isNotEmpty),
                 contactIds = if (draft.kind == HubWidgetKind.Contacts) contacts else emptyList(),
-                targetId = targetId,
-                configuration = if (draft.kind ==
-                    HubWidgetKind.Metric
-                ) {
-                    draft.configuration
-                } else {
-                    emptyMap()
-                }
+                targetId = targetId
             )
+            result = saved
             updated.copy(
                 widgets = if (id == null) {
-                    updated.widgets + result!!
+                    updated.widgets + saved
                 } else {
-                    updated.widgets.map { if (it.id == id) result!! else it }
+                    updated.widgets.map { if (it.id == id) saved else it }
                 }
             )
         }
@@ -276,8 +260,7 @@ private data class WidgetRecord(
     val capacity: Int,
     val title: String? = null,
     val contactIds: List<String> = emptyList(),
-    val actionId: String? = null,
-    val configuration: Map<String, String> = emptyMap()
+    val actionId: String? = null
 )
 
 private fun PaymentHub.toRecord() = HubRecord(
@@ -297,9 +280,16 @@ private fun PaymentHub.toRecord() = HubRecord(
     },
     widgets = widgets.map { widget ->
         WidgetRecord(
-            widget.id, widget.definitionId, widget.kind.name,
-            widget.variant.id, widget.variant.columns, widget.variant.rows, widget.variant.capacity,
-            widget.title, widget.contactIds, widget.targetId?.value, widget.configuration
+            widget.id,
+            widget.definitionId,
+            widget.kind.name,
+            widget.variant.id,
+            widget.variant.columns,
+            widget.variant.rows,
+            widget.variant.capacity,
+            widget.title,
+            widget.contactIds,
+            widget.targetId?.value
         )
     }
 )
@@ -341,8 +331,7 @@ private fun HubRecord.toHub() = PaymentHub(
             HubWidgetVariant(record.variantId, record.columns, record.rows, record.capacity),
             record.title,
             record.contactIds,
-            record.actionId?.let(::HubItemId),
-            record.configuration
+            record.actionId?.let(::HubItemId)
         )
     }
 )

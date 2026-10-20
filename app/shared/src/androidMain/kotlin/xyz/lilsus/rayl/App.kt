@@ -46,15 +46,10 @@ import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
 import xyz.lilsus.raylsuite.core.ui.platform.rememberRetainedInstance
 import xyz.lilsus.raylsuite.core.ui.theme.RaylSuiteTheme
 import xyz.lilsus.raylsuite.feature.onboarding.WelcomeScreen
-import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
 
 @Composable
-fun App(
-    sparkEnvironment: SparkEnvironment,
-    breezApiKey: String? = null,
-    performanceDiagnostics: PerformanceDiagnostics? = null
-) {
+fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
     val settings = rememberAppSettings(RAYL_PREFERENCES)
     val selection = rememberRetainedInstance(
         key = "rayl-selection",
@@ -137,7 +132,6 @@ fun App(
                 RaylWallet.Blink -> BlinkExperience(
                     configuration = RAYL_BLINK,
                     startMode = selection.startMode,
-                    performanceDiagnostics = performanceDiagnostics,
                     onRemoved = leave,
                     onConnectionChanged = {
                         if (selection.wallet.value == RaylWallet.Blink) {
@@ -150,7 +144,6 @@ fun App(
                 RaylWallet.Nwc -> NwcExperience(
                     configuration = RAYL_NWC,
                     startMode = selection.startMode,
-                    performanceDiagnostics = performanceDiagnostics,
                     onRemoved = leave,
                     onConnectionChanged = {
                         if (selection.wallet.value == RaylWallet.Nwc) {
@@ -165,7 +158,6 @@ fun App(
                     startMode = selection.startMode,
                     environment = sparkEnvironment,
                     breezApiKey = breezApiKey,
-                    performanceDiagnostics = performanceDiagnostics,
                     onRemoved = leave,
                     onChooseWallet = leave,
                     onConnectionChanged = {

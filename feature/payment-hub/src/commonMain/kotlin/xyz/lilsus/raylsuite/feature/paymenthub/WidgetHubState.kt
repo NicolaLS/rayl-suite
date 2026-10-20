@@ -5,7 +5,7 @@ import xyz.lilsus.raylsuite.core.model.StoredAmount
 import xyz.lilsus.raylsuite.feature.paymenthub.create.hasFractionForWholeCurrency
 import xyz.lilsus.raylsuite.feature.paymenthub.create.parseMinorAmount
 
-enum class HubWidgetKind { Contacts, Shortcut, Favorites, Recents, Metric }
+enum class HubWidgetKind { Contacts, Shortcut, Favorites, Recents }
 
 enum class HubWidgetScreen { Hub, Gallery, Variants, Configure }
 
@@ -17,26 +17,13 @@ data class HubWidgetVariant(
     val title: String? = null
 )
 
-/** Local definitions use platform-localized copy; remote definitions supply localized copy. */
 data class HubWidgetDefinition(
     val id: String,
     val kind: HubWidgetKind,
     val variants: List<HubWidgetVariant>,
     val title: String? = null,
-    val description: String? = null,
-    val fields: List<HubWidgetField> = emptyList()
+    val description: String? = null
 )
-
-data class HubWidgetField(
-    val key: String,
-    val type: String,
-    val label: String,
-    val required: Boolean,
-    val options: List<HubWidgetChoice> = emptyList(),
-    val maxLength: Int? = null
-)
-
-data class HubWidgetChoice(val id: String, val label: String)
 
 data class HubWidgetPerson(
     val actionId: String,
@@ -46,23 +33,13 @@ data class HubWidgetPerson(
     val amount: StoredAmount? = null
 )
 
-data class HubWidgetMetric(
-    val value: String,
-    val unit: String,
-    val label: String,
-    val asOf: String?
-)
-
 data class HubWidgetTile(
     val id: String,
     val definitionId: String,
     val kind: HubWidgetKind,
     val variant: HubWidgetVariant,
     val title: String?,
-    val people: List<HubWidgetPerson> = emptyList(),
-    val metric: HubWidgetMetric? = null,
-    val loading: Boolean = false,
-    val unavailable: Boolean = false
+    val people: List<HubWidgetPerson> = emptyList()
 )
 
 data class HubWidgetEditor(
@@ -74,8 +51,7 @@ data class HubWidgetEditor(
     val title: String = "",
     val amountInput: String = "",
     val currencyCode: String = "USD",
-    val comment: String = "",
-    val configuration: Map<String, String> = emptyMap()
+    val comment: String = ""
 )
 
 enum class HubWidgetError {
@@ -84,7 +60,6 @@ enum class HubWidgetError {
     SelectContacts,
     TooManyContacts,
     InvalidAmount,
-    RequiredConfiguration,
     Unavailable,
     SaveFailed
 }
@@ -97,8 +72,6 @@ data class WidgetHubState(
     val editor: HubWidgetEditor? = null,
     val query: String = "",
     val arranging: Boolean = false,
-    val catalogLoading: Boolean = false,
-    val catalogUnavailable: Boolean = false,
     val busy: Boolean = false,
     val contactSavedSerial: Int = 0,
     val error: HubWidgetError? = null
@@ -119,7 +92,6 @@ internal fun HubWidgetEditor.shortcutAmount(): StoredAmount? {
 
 internal fun WidgetHubState.editorValidationError(): HubWidgetError? {
     val editor = editor ?: return HubWidgetError.Unavailable
-    val definition = selectedDefinition ?: return HubWidgetError.Unavailable
     val variant = selectedVariant ?: return HubWidgetError.Unavailable
     if (editor.kind == HubWidgetKind.Contacts || editor.kind == HubWidgetKind.Shortcut) {
         if (editor.contactIds.isEmpty()) return HubWidgetError.SelectContacts
@@ -127,17 +99,6 @@ internal fun WidgetHubState.editorValidationError(): HubWidgetError? {
     }
     if (editor.kind == HubWidgetKind.Shortcut && editor.shortcutAmount() == null) {
         return HubWidgetError.InvalidAmount
-    }
-    if (definition.fields.any { field ->
-            val value = editor.configuration[field.key].orEmpty().trim()
-            (field.required && value.isEmpty()) ||
-                (
-                    value.isNotEmpty() && field.type == "choice" &&
-                        field.options.none { it.id == value }
-                    )
-        }
-    ) {
-        return HubWidgetError.RequiredConfiguration
     }
     return null
 }

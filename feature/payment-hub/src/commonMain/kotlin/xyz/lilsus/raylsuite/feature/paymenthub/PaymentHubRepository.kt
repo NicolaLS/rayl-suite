@@ -22,6 +22,5 @@ data class HubWidgetDraft(
     val title: String? = null,
     val contactIds: List<String> = emptyList(),
     val amount: StoredAmount? = null,
-    val comment: String? = null,
-    val configuration: Map<String, String> = emptyMap()
+    val comment: String? = null
 )

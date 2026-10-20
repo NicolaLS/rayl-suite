@@ -18,8 +18,6 @@
     <string name="settings_theme_light">Hell</string>
     <string name="settings_theme_dark">Dunkel</string>
     <string name="settings_footer_version">Version %1$s</string>
-    <string name="settings_performance_diagnostics">Leistungsdiagnose</string>
-    <string name="settings_performance_diagnostics_subtitle">Start- und Kamera-Zeitdaten teilen. Zahlungs- und QR-Details werden niemals einbezogen.</string>
     <string name="settings_footer_privacy">Datenschutz</string>
     <string name="settings_footer_terms">Nutzungsbedingungen</string>
     <string name="settings_footer_repo">Quellcode</string>

@@ -829,29 +829,6 @@
         }
       }
     },
-    "hub_widget_catalog_unavailable": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Could not load more widgets."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Weitere Widgets konnten nicht geladen werden."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "No se pudieron cargar más widgets."
-          }
-        }
-      }
-    },
     "hub_widget_change_contacts": {
       "extractionState": "manual",
       "localizations": {
@@ -1220,52 +1197,6 @@
         }
       }
     },
-    "hub_widget_loading": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Loading…"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Wird geladen…"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Cargando…"
-          }
-        }
-      }
-    },
-    "hub_widget_metric": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Information"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Information"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Información"
-          }
-        }
-      }
-    },
     "hub_widget_name": {
       "extractionState": "manual",
       "localizations": {
@@ -1469,52 +1400,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "Se actualiza automáticamente después de pagos completados."
-          }
-        }
-      }
-    },
-    "hub_widget_required_fields": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Complete the required fields."
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Fülle die erforderlichen Felder aus."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Completa los campos obligatorios."
-          }
-        }
-      }
-    },
-    "hub_widget_retry": {
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Retry"
-          }
-        },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Erneut versuchen"
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Reintentar"
           }
         }
       }

@@ -36,8 +36,6 @@ mokkery = "3.4.2"
 uriKmp = "0.0.21"
 breezSpark = "0.19.0"
 okio = "3.16.2"
-postgresql = "42.7.7"
-slf4j = "2.0.17"
 
 [libraries]
 kotlin-test = { module = "org.jetbrains.kotlin:kotlin-test", version.ref = "kotlin" }
@@ -95,8 +93,6 @@ compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.r
 uri-kmp = { module = "com.eygraber:uri-kmp", version.ref = "uriKmp" }
 breez-sdk-spark = { module = "technology.breez.spark:breez-sdk-spark-kmp", version.ref = "breezSpark" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
-postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
-slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }

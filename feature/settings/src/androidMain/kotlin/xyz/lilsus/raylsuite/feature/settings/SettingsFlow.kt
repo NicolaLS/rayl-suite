@@ -50,8 +50,7 @@ fun SettingsFlow(
     onBack: (() -> Unit)? = null,
     overviewBottomContent: (@Composable () -> Unit)? = null,
     leadingEntries: List<SettingsEntry> = emptyList(),
-    trailingEntries: List<SettingsEntry> = emptyList(),
-    performanceDiagnostics: PerformanceDiagnostics? = null
+    trailingEntries: List<SettingsEntry> = emptyList()
 ) {
     var destination by rememberSaveable { mutableStateOf(SettingsDestination.Overview) }
 
@@ -99,8 +98,7 @@ fun SettingsFlow(
                 modifier = modifier,
                 overviewBottomContent = overviewBottomContent,
                 leadingEntries = leadingEntries,
-                trailingEntries = trailingEntries,
-                performanceDiagnostics = performanceDiagnostics
+                trailingEntries = trailingEntries
             )
         }
 
@@ -183,11 +181,8 @@ private fun SettingsOverview(
     modifier: Modifier,
     overviewBottomContent: (@Composable () -> Unit)?,
     leadingEntries: List<SettingsEntry>,
-    trailingEntries: List<SettingsEntry>,
-    performanceDiagnostics: PerformanceDiagnostics?
+    trailingEntries: List<SettingsEntry>
 ) {
-    val performanceDiagnosticsEnabled =
-        performanceDiagnostics?.sharingEnabled?.collectAsStateWithLifecycle()?.value
     val currencyCode by currencyPreferences.code.collectAsStateWithLifecycle(
         CurrencyCatalog.DEFAULT_CODE
     )
@@ -208,12 +203,7 @@ private fun SettingsOverview(
         themeSubtitle = themeSubtitle(themePreference),
         overviewBottomContent = overviewBottomContent,
         leadingEntries = leadingEntries,
-        trailingEntries = trailingEntries,
-        performanceDiagnosticsEnabled = performanceDiagnosticsEnabled,
-        onPerformanceDiagnosticsChanged =
-            performanceDiagnostics?.let { diagnostics ->
-                diagnostics::setSharingEnabled
-            }
+        trailingEntries = trailingEntries
     )
 }
 

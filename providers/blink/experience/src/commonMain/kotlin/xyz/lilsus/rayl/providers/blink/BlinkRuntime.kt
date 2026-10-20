@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import xyz.lilsus.rayl.providers.blink.feature.blinkcontacts.BlinkContactsImporter
-import xyz.lilsus.rayl.providers.blink.feature.payment.BlinkPaymentPreferences
 import xyz.lilsus.rayl.providers.blink.feature.payment.BlinkPaymentSettlement
 import xyz.lilsus.rayl.providers.blink.feature.payment.PaymentDeepLinkEvents
 import xyz.lilsus.rayl.providers.blink.integration.blink.createBlinkWallet
@@ -74,7 +73,6 @@ internal class BlinkRuntime(
     val currencyPreferences = DefaultCurrencyPreferences(appSettings)
     val languageRepository = createLanguageRepository()
     val paymentPreferences = DefaultPaymentPreferencesRepository(appSettings)
-    val blinkPaymentPreferences = BlinkPaymentPreferences(appSettings)
     val paymentHubRepository = DefaultPaymentHubRepository(appSettings)
     val tabState = AppTabState()
     val paymentHub = PaymentHubController(paymentHubRepository, scope)

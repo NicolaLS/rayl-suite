@@ -15,16 +15,3 @@ emits payment intents to the
 [provider coordinators](../../../providers/specs/ARCH-providers.md).
 Providers own execution and report successful target payments back to update
 Hub usage history. The Hub does not submit wallet payments itself.
-
-## Remote catalog boundary
-
-The optional remote path uses [`integration/hub`](../../../integration/hub)
-and the versioned wire types in [`core/hub-api`](../../../core/hub-api).
-Remote descriptors and content are validated data for compiled native metric
-widgets, rather than downloaded executable UI.
-
-The [current build configuration](../build.gradle.kts) generates an empty
-backend URL, so Android and iOS Hub surfaces create no remote session.
-The separate [`backend/hub`](../../../backend/hub) JVM Ktor service currently
-returns an empty catalog and unavailable widget content; it has no role in
-wallet payment execution.

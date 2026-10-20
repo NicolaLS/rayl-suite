@@ -20,19 +20,13 @@ import xyz.lilsus.raylsuite.feature.paymentflow.rememberPaymentFlowState
 import xyz.lilsus.raylsuite.feature.paymentflow.rememberPaymentMessages
 import xyz.lilsus.raylsuite.feature.paymenthub.PaymentHubTab
 import xyz.lilsus.raylsuite.feature.paymentui.PaymentScanFlow
-import xyz.lilsus.raylsuite.feature.settings.PerformanceDiagnostics
 import xyz.lilsus.raylsuite.feature.settings.SettingsFlow
 import xyz.lilsus.raylsuite.feature.walletmanagement.R as WalletManagementR
 
-internal fun NavGraphBuilder.blinkHome(
-    runtime: BlinkRuntime,
-    performanceDiagnostics: PerformanceDiagnostics?,
-    onRemoveWallet: () -> Unit
-) {
+internal fun NavGraphBuilder.blinkHome(runtime: BlinkRuntime, onRemoveWallet: () -> Unit) {
     composable<BlinkDestination.Home> {
         BlinkTabs(
             runtime = runtime,
-            performanceDiagnostics = performanceDiagnostics,
             onRemoveWallet = onRemoveWallet
         )
     }
@@ -40,11 +34,7 @@ internal fun NavGraphBuilder.blinkHome(
 
 /** Blink's Android tab shell. iOS renders its tabs directly with SwiftUI. */
 @Composable
-private fun BlinkTabs(
-    runtime: BlinkRuntime,
-    performanceDiagnostics: PerformanceDiagnostics?,
-    onRemoveWallet: () -> Unit
-) {
+private fun BlinkTabs(runtime: BlinkRuntime, onRemoveWallet: () -> Unit) {
     val tabState = runtime.tabState
     val selectedTab by tabState.selectedTab.collectAsStateWithLifecycle()
 
@@ -57,7 +47,6 @@ private fun BlinkTabs(
         BlinkTabContent(
             runtime = runtime,
             tab = tab,
-            performanceDiagnostics = performanceDiagnostics,
             onRemoveWallet = onRemoveWallet
         )
     }
@@ -65,12 +54,7 @@ private fun BlinkTabs(
 
 /** One tab's content, with no tab bar of its own. */
 @Composable
-internal fun BlinkTabContent(
-    runtime: BlinkRuntime,
-    tab: AppTab,
-    performanceDiagnostics: PerformanceDiagnostics?,
-    onRemoveWallet: () -> Unit
-) {
+internal fun BlinkTabContent(runtime: BlinkRuntime, tab: AppTab, onRemoveWallet: () -> Unit) {
     val coordinator = runtime.paymentCoordinator
     val isSubmitting by coordinator.isSubmitting.collectAsStateWithLifecycle()
     val tabState = runtime.tabState
@@ -103,7 +87,6 @@ internal fun BlinkTabContent(
         AppTab.Settings ->
             BlinkSettingsTab(
                 runtime = runtime,
-                performanceDiagnostics = performanceDiagnostics,
                 onRemoveWallet = onRemoveWallet
             )
     }
@@ -119,11 +102,7 @@ private fun BlinkHubTab(runtime: BlinkRuntime, currencyCode: String) {
 }
 
 @Composable
-private fun BlinkSettingsTab(
-    runtime: BlinkRuntime,
-    performanceDiagnostics: PerformanceDiagnostics?,
-    onRemoveWallet: () -> Unit
-) {
+private fun BlinkSettingsTab(runtime: BlinkRuntime, onRemoveWallet: () -> Unit) {
     val isSubmitting by runtime.paymentCoordinator.isSubmitting.collectAsStateWithLifecycle()
     val removalMessage = stringResource(
         if (isSubmitting) {
@@ -148,7 +127,6 @@ private fun BlinkSettingsTab(
         paymentPreferences = runtime.paymentPreferences,
         legalLinks = runtime.configuration.legalLinks,
         modifier = Modifier,
-        performanceDiagnostics = performanceDiagnostics,
         overviewBottomContent = {
             BlinkWalletSettingsActions(
                 state = walletSettingsState,

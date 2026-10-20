@@ -4,15 +4,12 @@ import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import xyz.lilsus.raylsuite.core.hubapi.HubWidgetDescriptor
 import xyz.lilsus.raylsuite.core.model.CurrencyCatalog
 import xyz.lilsus.raylsuite.core.model.LightningAddress
 import xyz.lilsus.raylsuite.feature.paymenthub.create.cleanAmountInput
@@ -20,31 +17,18 @@ import xyz.lilsus.raylsuite.feature.paymenthub.create.formatMinorAmount
 import xyz.lilsus.raylsuite.feature.paymenthub.create.hasFractionForWholeCurrency
 import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubController
 import xyz.lilsus.raylsuite.feature.paymenthub.host.PaymentHubIntent
-import xyz.lilsus.raylsuite.integration.hub.HubWidgetCatalogResult
-import xyz.lilsus.raylsuite.integration.hub.HubWidgetContentResult
-import xyz.lilsus.raylsuite.integration.hub.HubWidgetUnavailableReason
-import xyz.lilsus.raylsuite.integration.hub.KtorHubWidgetCatalogClient
 
 /** Shared widget presentation state. Native platforms own sheets, controls, gestures and copy. */
 class WidgetHubViewModel(
     private val repository: PaymentHubRepository,
     private val host: PaymentHubController,
     private val defaultCurrencyCode: () -> String,
-    private val locale: () -> String = { "en" },
-    private val catalog: KtorHubWidgetCatalogClient? = null,
     dispatcher: CoroutineDispatcher = Dispatchers.Main
 ) {
     private val scope = CoroutineScope(SupervisorJob() + dispatcher)
     private val mutableState =
         MutableStateFlow(WidgetHubState(gallery = LocalHubWidgets.definitions))
     val state = mutableState.asStateFlow()
-    private var remoteDefinitions = emptyList<HubWidgetDescriptor>()
-    private val remoteContent = mutableMapOf<String, RemoteContent>()
-    private var catalogJob: Job? = null
-    private var contentJob: Job? = null
-    private var contentRefreshJob: Job? = null
-    private var remoteInstances = emptyList<HubWidget>()
-    private var active = true
 
     init {
         scope.launch {
@@ -68,26 +52,9 @@ class WidgetHubViewModel(
                         }
                     )
                 }
-                val updated = hub.widgets.filter { it.kind == HubWidgetKind.Metric }
-                if (updated != remoteInstances) {
-                    val previous = remoteInstances.associateBy { it.id }
-                    updated.forEach { widget ->
-                        val old = previous[widget.id]
-                        if (old?.definitionId != widget.definitionId ||
-                            old.variant.id != widget.variant.id ||
-                            old.configuration != widget.configuration
-                        ) {
-                            remoteContent.remove(widget.id)
-                        }
-                    }
-                    remoteInstances = updated
-                    remoteContent.keys.retainAll(updated.mapTo(mutableSetOf()) { it.id })
-                    refreshContent()
-                }
                 rebuildTiles()
             }
         }
-        refreshCatalog()
     }
 
     fun openGallery() {
@@ -221,17 +188,6 @@ class WidgetHubViewModel(
         edit { it.copy(currencyCode = code, amountInput = "") }
     }
 
-    fun updateConfiguration(key: String, value: String) {
-        val field =
-            mutableState.value.selectedDefinition?.fields?.firstOrNull { it.key == key } ?: return
-        edit {
-            it.copy(
-                configuration =
-                    it.configuration + (key to value.take(field.maxLength ?: 256))
-            )
-        }
-    }
-
     fun addContact(title: String, address: String) {
         if (mutableState.value.busy) return
         val name = title.trim()
@@ -271,7 +227,6 @@ class WidgetHubViewModel(
     fun saveWidget() {
         val snapshot = mutableState.value
         val editor = snapshot.editor ?: return
-        val definition = snapshot.selectedDefinition ?: return fail(HubWidgetError.Unavailable)
         val variant = snapshot.selectedVariant ?: return fail(HubWidgetError.Unavailable)
         snapshot.editorValidationError()?.let { return fail(it) }
         val amount = if (editor.kind == HubWidgetKind.Shortcut) {
@@ -286,8 +241,7 @@ class WidgetHubViewModel(
             editor.title,
             editor.contactIds,
             amount,
-            editor.comment,
-            editor.configuration.filterKeys { key -> definition.fields.any { it.key == key } }
+            editor.comment
         )
         mutate {
             if (repository.saveWidget(draft, editor.existingWidgetId) == null) {
@@ -316,14 +270,17 @@ class WidgetHubViewModel(
                 query = "",
                 error = null,
                 editor = HubWidgetEditor(
-                    widget.definitionId, widget.kind, variant.id, widget.id,
+                    widget.definitionId,
+                    widget.kind,
+                    variant.id,
+                    widget.id,
                     contactIds = target?.let { listOf(it.contactId) } ?: widget.contactIds,
                     title = widget.title.orEmpty(),
                     amountInput = amount?.minor?.formatMinorAmount(
                         CurrencyCatalog.infoFor(amount.normalizedCurrencyCode).fractionDigits
                     ).orEmpty(),
                     currencyCode = amount?.normalizedCurrencyCode ?: defaultCurrencyCode(),
-                    comment = target?.comment.orEmpty(), configuration = widget.configuration
+                    comment = target?.comment.orEmpty()
                 )
             )
         }
@@ -347,111 +304,6 @@ class WidgetHubViewModel(
     fun pay(actionId: String) {
         if (!mutableState.value.arranging && actionId.isNotBlank()) {
             host.dispatch(PaymentHubIntent.SelectItem(HubItemId(actionId)))
-        }
-    }
-
-    fun refreshCatalog() {
-        if (!active) return
-        val client = catalog ?: return
-        catalogJob?.cancel()
-        catalogJob = scope.launch {
-            mutableState.update { it.copy(catalogLoading = true) }
-            val result = client.fetchCatalog(locale())
-            when (result) {
-                is HubWidgetCatalogResult.Available -> {
-                    remoteDefinitions = result.widgets
-                    mutableState.update {
-                        it.copy(
-                            gallery =
-                                LocalHubWidgets.definitions + result.widgets.map(::definition),
-                            catalogUnavailable = false,
-                            catalogLoading = false
-                        )
-                    }
-                }
-
-                is HubWidgetCatalogResult.Unavailable -> mutableState.update {
-                    it.copy(
-                        catalogLoading = false,
-                        catalogUnavailable =
-                            result.reason != HubWidgetUnavailableReason.NotConfigured
-                    )
-                }
-            }
-            rebuildTiles()
-            refreshContent()
-        }
-    }
-
-    fun refreshContent() {
-        if (!active) return
-        val client = catalog ?: return
-        contentJob?.cancel()
-        contentRefreshJob?.cancel()
-        contentJob = scope.launch {
-            val widgets = repository.hub.value.widgets.filter { it.kind == HubWidgetKind.Metric }
-            var nextRefresh = 300
-            for (widget in widgets) {
-                if (remoteDefinitions.none { descriptor ->
-                        descriptor.id == widget.definitionId &&
-                            descriptor.variants.any { it.id == widget.variant.id }
-                    }
-                ) {
-                    continue
-                }
-                remoteContent[widget.id] =
-                    (remoteContent[widget.id] ?: RemoteContent()).copy(loading = true)
-                rebuildTiles()
-                val response = client.fetchContent(
-                    widget.definitionId,
-                    widget.variant.id,
-                    widget.configuration,
-                    locale()
-                )
-                if (repository.hub.value.widget(widget.id) != widget) continue
-                remoteContent[widget.id] = when (response) {
-                    is HubWidgetContentResult.Available -> {
-                        nextRefresh =
-                            minOf(nextRefresh, response.content.refreshAfterSeconds ?: 300)
-                        RemoteContent(
-                            HubWidgetMetric(
-                                response.content.value,
-                                response.content.unit,
-                                response.content.label,
-                                response.content.asOf
-                            )
-                        )
-                    }
-
-                    is HubWidgetContentResult.Unavailable -> RemoteContent(
-                        metric = remoteContent[widget.id]?.metric,
-                        unavailable = true
-                    )
-                }
-                rebuildTiles()
-            }
-            if (widgets.isNotEmpty()) {
-                contentRefreshJob = scope.launch {
-                    delay(nextRefresh.coerceAtLeast(30) * 1000L)
-                    refreshContent()
-                }
-            }
-        }
-    }
-
-    /** Native visibility and app lifecycle own remote refresh activity. */
-    fun setActive(value: Boolean) {
-        if (active == value) return
-        active = value
-        if (value) {
-            refreshCatalog()
-        } else {
-            catalogJob?.cancel()
-            contentJob?.cancel()
-            contentRefreshJob?.cancel()
-            remoteContent.entries.forEach { it.setValue(it.value.copy(loading = false)) }
-            mutableState.update { it.copy(catalogLoading = false) }
-            rebuildTiles()
         }
     }
 
@@ -482,31 +334,6 @@ class WidgetHubViewModel(
         }
     }
 
-    private fun definition(remote: HubWidgetDescriptor) = HubWidgetDefinition(
-        id = remote.id,
-        kind = HubWidgetKind.Metric,
-        title = remote.title,
-        description = remote.description,
-        variants = remote.variants.map { variant ->
-            val size = when (variant.size) {
-                "wide" -> LocalHubWidgets.Row
-                "large" -> LocalHubWidgets.Card
-                else -> LocalHubWidgets.Single
-            }
-            size.copy(id = variant.id, title = variant.title)
-        },
-        fields = remote.fields.map { field ->
-            HubWidgetField(
-                field.id,
-                field.type,
-                field.label,
-                field.required,
-                field.options.map { HubWidgetChoice(it.id, it.label) },
-                field.maxLength
-            )
-        }
-    )
-
     private fun rebuildTiles() {
         val hub = repository.hub.value
         val paid = hub.targets.filter { it.stats.successfulPaymentCount > 0 }
@@ -529,16 +356,12 @@ class WidgetHubViewModel(
                 HubWidgetKind.Shortcut -> listOfNotNull(widget.targetId?.let(hub::target))
                 HubWidgetKind.Favorites -> favorites.take(widget.variant.capacity)
                 HubWidgetKind.Recents -> recents.take(widget.variant.capacity)
-                HubWidgetKind.Metric -> emptyList()
-            }
-            val remote = remoteContent[widget.id]
-            val available = remoteDefinitions.any { descriptor ->
-                descriptor.id ==
-                    widget.definitionId &&
-                    descriptor.variants.any { it.id == widget.variant.id }
             }
             HubWidgetTile(
-                widget.id, widget.definitionId, widget.kind, widget.variant,
+                widget.id,
+                widget.definitionId,
+                widget.kind,
+                widget.variant,
                 widget.title
                     ?: mutableState.value.gallery.firstOrNull {
                         it.id == widget.definitionId
@@ -557,18 +380,9 @@ class WidgetHubViewModel(
                             (target.amountRule as? DirectTargetAmountRule.Preset)?.amount
                         )
                     }
-                },
-                metric = remote?.metric, loading = available && remote?.loading == true,
-                unavailable = widget.kind == HubWidgetKind.Metric &&
-                    (remote?.unavailable == true || !available)
+                }
             )
         }
         mutableState.update { it.copy(widgets = tiles) }
     }
-
-    private data class RemoteContent(
-        val metric: HubWidgetMetric? = null,
-        val loading: Boolean = false,
-        val unavailable: Boolean = false
-    )
 }

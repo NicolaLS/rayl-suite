@@ -69,12 +69,7 @@
     <string name="hub_widget_recents_hint">Se actualiza automáticamente después de pagos completados.</string>
     <string name="hub_widget_contacts_empty">Elige contactos para este widget.</string>
     <string name="hub_widget_select_variant">Elegir diseño</string>
-    <string name="hub_widget_metric">Información</string>
     <string name="hub_widget_unavailable">No disponible temporalmente</string>
-    <string name="hub_widget_loading">Cargando…</string>
-    <string name="hub_widget_retry">Reintentar</string>
-    <string name="hub_widget_catalog_unavailable">No se pudieron cargar más widgets.</string>
-    <string name="hub_widget_required_fields">Completa los campos obligatorios.</string>
     <string name="hub_widget_select_contacts_error">Elige al menos un contacto.</string>
     <string name="hub_widget_contact_placeholder">Contacto</string>
 </resources>

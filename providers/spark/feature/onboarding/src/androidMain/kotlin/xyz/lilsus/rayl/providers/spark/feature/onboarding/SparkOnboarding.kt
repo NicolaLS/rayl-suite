@@ -41,9 +41,6 @@ sealed interface SparkOnboardingDestination {
     data object AddWallet : SparkOnboardingDestination
 
     @Serializable
-    data object AddWalletFromSettings : SparkOnboardingDestination
-
-    @Serializable
     data object WalletRecovery : SparkOnboardingDestination
 }
 
@@ -169,24 +166,6 @@ fun NavGraphBuilder.sparkOnboarding(
             privacyPolicyUrl = privacyPolicyUrl,
             termsUrl = termsUrl,
             onWalletConnected = onWalletConnected
-        )
-    }
-    composable<SparkOnboardingDestination.AddWalletFromSettings> {
-        val state by walletViewModel.state.collectAsStateWithLifecycle()
-        LaunchedEffect(state.access) {
-            if (state.access == WalletAccessState.Connected) {
-                navController.navigateUp()
-            }
-        }
-        WalletConnectionScreen(
-            state = state,
-            onBack = navController::navigateUp,
-            dispatch = walletViewModel::dispatch,
-            onShowInstructions = {
-                navController.navigate(SparkOnboardingDestination.WalletInstructions)
-            },
-            privacyPolicyUrl = privacyPolicyUrl,
-            termsUrl = termsUrl
         )
     }
     composable<SparkOnboardingDestination.WalletRecovery> {

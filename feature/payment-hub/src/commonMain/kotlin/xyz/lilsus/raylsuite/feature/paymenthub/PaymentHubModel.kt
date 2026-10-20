@@ -39,8 +39,7 @@ data class HubWidget(
     val variant: HubWidgetVariant,
     val title: String? = null,
     val contactIds: List<String> = emptyList(),
-    val targetId: HubItemId? = null,
-    val configuration: Map<String, String> = emptyMap()
+    val targetId: HubItemId? = null
 )
 
 /** Ordered widgets, the local contact book, and successful payment history share one atomic write. */
