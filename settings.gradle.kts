@@ -4,7 +4,6 @@ pluginManagement {
     includeBuild("build-logic")
 
     repositories {
-        maven("https://mvn.breez.technology/releases")
         google {
             mavenContent {
                 includeGroupAndSubgroups("androidx")
@@ -22,7 +21,6 @@ plugins {
 
 dependencyResolutionManagement {
     repositories {
-        maven("https://mvn.breez.technology/releases")
         google {
             mavenContent {
                 includeGroupAndSubgroups("androidx")
@@ -68,17 +66,6 @@ includeProvider(
         "feature:wallet-connection",
         "feature:wallet-details",
         "integration:nwc"
-    )
-)
-includeProvider(
-    "spark",
-    listOf(
-        "experience",
-        "application",
-        "feature:onboarding",
-        "feature:payment",
-        "feature:wallet-connection",
-        "integration:wallet"
     )
 )
 

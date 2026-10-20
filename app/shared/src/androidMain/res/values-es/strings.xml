@@ -9,8 +9,6 @@
     <string name="blink_body">Conecta tu cuenta de Blink con una clave API.</string>
     <string name="nwc_title">Nostr Wallet Connect</string>
     <string name="nwc_body">Conecta una billetera compatible con su enlace de conexión NWC.</string>
-    <string name="spark_title">Spark</string>
-    <string name="spark_body">Importa tu billetera Spark con su frase de recuperación.</string>
     <string name="choose_another">Elegir otra billetera</string>
     <string name="connection_exists">Elimina tu billetera actual en Ajustes antes de conectar otra.</string>
     <string name="connect_to_pay">Conecta tu billetera y vuelve a abrir la solicitud de pago.</string>

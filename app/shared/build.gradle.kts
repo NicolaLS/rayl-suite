@@ -10,7 +10,6 @@ kotlin {
         binaries.withType<Framework>().configureEach {
             export(project(":providers:nwc:experience"))
             export(project(":providers:blink:experience"))
-            export(project(":providers:spark:experience"))
             export(project(":providers:blink:feature:blink-contacts"))
             export(project(":feature:payment-hub"))
             export(project(":feature:payment-ui"))
@@ -32,7 +31,6 @@ kotlin {
         commonMain.dependencies {
             api(project(":providers:nwc:experience"))
             api(project(":providers:blink:experience"))
-            api(project(":providers:spark:experience"))
             api(project(":providers:blink:feature:blink-contacts"))
             implementation(project(":core:settings"))
             implementation(project(":core:model"))

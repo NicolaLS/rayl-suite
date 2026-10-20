@@ -37,9 +37,6 @@ import xyz.lilsus.rayl.providers.blink.BlinkDeepLinks
 import xyz.lilsus.rayl.providers.blink.BlinkExperience
 import xyz.lilsus.rayl.providers.nwc.NwcDeepLinks
 import xyz.lilsus.rayl.providers.nwc.NwcExperience
-import xyz.lilsus.rayl.providers.spark.SparkDeepLinks
-import xyz.lilsus.rayl.providers.spark.SparkEnvironment
-import xyz.lilsus.rayl.providers.spark.SparkExperience
 import xyz.lilsus.rayl.shared.R
 import xyz.lilsus.raylsuite.core.model.ThemePreference
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
@@ -49,7 +46,7 @@ import xyz.lilsus.raylsuite.feature.onboarding.WelcomeScreen
 import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
 
 @Composable
-fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
+fun App() {
     val settings = rememberAppSettings(RAYL_PREFERENCES)
     val selection = rememberRetainedInstance(
         key = "rayl-selection",
@@ -74,7 +71,6 @@ fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
         RaylDeepLinks.clear()
         BlinkDeepLinks.clear()
         NwcDeepLinks.clear()
-        SparkDeepLinks.clear()
         message = null
         connected = null
         selection.clear()
@@ -97,14 +93,11 @@ fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
             } else if (selected == null) {
                 message = R.string.connect_to_pay
             } else if (!snapshotFlow { connected }.filterNotNull().first()) {
-                // FIXME: Spark cold-start reports Loading -> false before async restore finishes,
-                // which can reject a cold-start payment deep link as disconnected.
                 message = R.string.connect_to_pay
             } else {
                 when (selected) {
                     RaylWallet.Blink -> BlinkDeepLinks.emit(uri)
                     RaylWallet.Nwc -> NwcDeepLinks.emit(uri)
-                    RaylWallet.Spark -> SparkDeepLinks.emit(uri)
                 }
             }
         }
@@ -155,21 +148,6 @@ fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
                     }
                 )
 
-                RaylWallet.Spark -> SparkExperience(
-                    configuration = RAYL_SPARK,
-                    startMode = selection.startMode,
-                    environment = sparkEnvironment,
-                    breezApiKey = breezApiKey,
-                    onRemoved = leave,
-                    onChooseWallet = leave,
-                    onConnectionChanged = {
-                        if (selection.wallet.value == RaylWallet.Spark) {
-                            connected = it
-                            if (it) selection.connected(RaylWallet.Spark)
-                        }
-                    }
-                )
-
                 null -> Surface(modifier = Modifier.fillMaxSize()) {
                     if (!welcomeCompleted) {
                         WelcomeScreen(
@@ -198,8 +176,6 @@ fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
                                             R.string.blink_body
 
                                     RaylWallet.Nwc -> R.string.nwc_title to R.string.nwc_body
-
-                                    RaylWallet.Spark -> R.string.spark_title to R.string.spark_body
                                 }
                                 WalletChoice(title, body) {
                                     if (selection.wallet.value == null &&

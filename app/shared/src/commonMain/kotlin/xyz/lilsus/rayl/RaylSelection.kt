@@ -82,6 +82,6 @@ internal class RaylSelection(private val settings: Settings) {
     }
 }
 
-internal enum class RaylWallet { Blink, Nwc, Spark }
+internal enum class RaylWallet { Blink, Nwc }
 
 internal enum class WalletPreparation { Cleaning, Failed, Ready }

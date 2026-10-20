@@ -1,33 +1,6 @@
-import java.util.Properties
-
 plugins {
     id("xyz.lilsus.raylsuite.android.application")
 }
-
-val localProperties =
-    Properties().apply {
-        val file = rootProject.file("local.properties")
-        if (file.isFile) file.inputStream().use(::load)
-    }
-val productionBreezApiKey =
-    providers.gradleProperty("RAYL_BREEZ_API_KEY")
-        .orElse(providers.environmentVariable("RAYL_BREEZ_API_KEY"))
-        .orElse(localProperties.getProperty("RAYL_BREEZ_API_KEY") ?: "")
-
-val validateProductionConfiguration = tasks.register("validateProductionConfiguration") {
-    description = "Checks that the production Breez API key is configured."
-    notCompatibleWithConfigurationCache("Reads the production API key at execution time.")
-    doLast {
-        check(productionBreezApiKey.get().isNotBlank()) {
-            "RAYL_BREEZ_API_KEY is required for a Rayl release."
-        }
-    }
-}
-tasks.matching { it.name == "preReleaseBuild" }.configureEach {
-    dependsOn(validateProductionConfiguration)
-}
-
-fun String.asBuildConfigString(): String = "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
 
 android {
     namespace = "xyz.lilsus.rayl"
@@ -41,20 +14,13 @@ android {
 
     buildTypes {
         getByName("debug") {
-            buildConfigField("String", "BREEZ_API_KEY", "".asBuildConfigString())
             manifestPlaceholders["appLabel"] = "Rayl Dev"
         }
         getByName("release") {
-            buildConfigField(
-                "String",
-                "BREEZ_API_KEY",
-                productionBreezApiKey.get().asBuildConfigString()
-            )
             manifestPlaceholders["appLabel"] = "Rayl"
         }
         create("e2e") {
             initWith(getByName("release"))
-            buildConfigField("String", "BREEZ_API_KEY", "".asBuildConfigString())
             applicationIdSuffix = ".e2e"
             matchingFallbacks += listOf("release")
             manifestPlaceholders["appLabel"] = "Rayl E2E"
@@ -63,7 +29,6 @@ android {
         }
         create("benchmark") {
             initWith(getByName("release"))
-            buildConfigField("String", "BREEZ_API_KEY", "".asBuildConfigString())
             applicationIdSuffix = ".benchmark"
             isMinifyEnabled = false
             isShrinkResources = false
@@ -71,10 +36,6 @@ android {
             manifestPlaceholders["appLabel"] = "Rayl Benchmark"
             signingConfig = signingConfigs.getByName("debug")
         }
-    }
-
-    buildFeatures {
-        buildConfig = true
     }
 
     packaging {

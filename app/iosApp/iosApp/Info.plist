@@ -30,7 +30,5 @@
 	</array>
 	<key>NSCameraUsageDescription</key>
 	<string>Rayl uses the camera to scan wallet connection and Bitcoin Lightning QR codes.</string>
-	<key>RaylBreezAPIKey</key>
-	<string>$(RAYL_BREEZ_API_KEY)</string>
 </dict>
 </plist>

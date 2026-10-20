@@ -15,7 +15,6 @@ plugins {
     alias(libs.plugins.ktlint)
     alias(libs.plugins.apollo) apply false
     alias(libs.plugins.mokkery) apply false
-    alias(libs.plugins.breezSpark) apply false
     id("xyz.lilsus.raylsuite.kover")
 }
 
@@ -284,14 +283,14 @@ val verifyNativeLocalizations = tasks.register("verifyNativeLocalizations") {
         val baseAndroidCatalogs =
             fileTree(rootDir) {
                 include("**/src/androidMain/res/values/strings.xml")
-                exclude("**/build/**")
+                exclude("**/build/**", "providers/spark/**")
             }.files.sorted()
         check(baseAndroidCatalogs.isNotEmpty()) { "No native Android localization catalogs found" }
 
         val appleCatalogs =
             fileTree(rootDir) {
                 include("**/src/iosMain/resources/*.xcstrings")
-                exclude("**/build/**")
+                exclude("**/build/**", "providers/spark/**")
             }.files.sorted()
         check(appleCatalogs.isNotEmpty()) { "No Apple String Catalogs found" }
 
@@ -469,27 +468,6 @@ val verifyNativeLocalizations = tasks.register("verifyNativeLocalizations") {
             buildString {
                 appendLine("Native localization violations:")
                 violations.sorted().forEach { appendLine("  - $it") }
-            }
-        }
-    }
-}
-
-val xcodeSpmLinkedModules =
-    setOf(
-        ":app:shared",
-        ":providers:spark:experience",
-        ":providers:spark:integration:wallet"
-    )
-
-subprojects {
-    afterEvaluate {
-        if (path in xcodeSpmLinkedModules) {
-            // breez_sdk_sparkFFI is linked by Xcode via Swift Package Manager; commonTest suites in
-            // these modules run on the JVM via testAndroidHostTest.
-            tasks.matching {
-                it.name == "linkDebugTestIosSimulatorArm64" || it.name == "iosSimulatorArm64Test"
-            }.configureEach {
-                enabled = false
             }
         }
     }

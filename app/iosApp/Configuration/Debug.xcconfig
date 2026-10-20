@@ -1,3 +1,0 @@
-#include "Config.xcconfig"
-
-SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) RAYL_DEBUG

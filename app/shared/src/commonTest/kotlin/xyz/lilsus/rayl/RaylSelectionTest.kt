@@ -91,7 +91,7 @@ class RaylSelectionTest {
     fun failedCleanupBlocksTheChooserAndCanBeRetriedAfterRestart() = runTest {
         val settings = MapSettings()
         val selection = RaylSelection(settings)
-        selection.prepare { it != RaylWallet.Spark }
+        selection.prepare { it != RaylWallet.Nwc }
         assertEquals(WalletPreparation.Failed, selection.preparation.value)
         assertFailsWith<IllegalStateException> { selection.choose(RaylWallet.Blink) }
         selection.prepare { throw IllegalStateException("secure storage unavailable") }
@@ -99,7 +99,7 @@ class RaylSelectionTest {
         val restarted = RaylSelection(settings)
         restarted.prepare { true }
         assertEquals(WalletPreparation.Ready, restarted.preparation.value)
-        restarted.choose(RaylWallet.Spark)
+        restarted.choose(RaylWallet.Nwc)
     }
 
     @Test
@@ -118,9 +118,9 @@ class RaylSelectionTest {
         val settings = MapSettings()
         val selection = RaylSelection(settings)
         selection.prepare { true }
-        selection.choose(RaylWallet.Spark)
+        selection.choose(RaylWallet.Nwc)
         selection.clear()
-        selection.connected(RaylWallet.Spark)
+        selection.connected(RaylWallet.Nwc)
         assertNull(settings.getStringOrNull("rayl.wallet"))
     }
 
