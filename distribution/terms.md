@@ -4,7 +4,7 @@ Last updated: October 20, 2026
 
 These terms govern your use of **Rayl** for Android and iOS, maintained by
 **Bitcoin Coast** ("we" or "the maintainer"). For questions, contact
-[nicola@nicolasusca.com](mailto:nicola@nicolasusca.com). By using Rayl, you
+[rayl@nicolasusca.com](mailto:rayl@nicolasusca.com). By using Rayl, you
 agree to these terms. Data handling is described in the
 [Privacy Policy](privacy.md).
 

@@ -4,7 +4,7 @@ Last updated: October 20, 2026
 
 This policy covers **Rayl** for Android and iOS, maintained by **Bitcoin Coast**
 ("we" or "the maintainer"). For privacy questions or requests, contact
-[nicola@nicolasusca.com](mailto:nicola@nicolasusca.com) or open an issue at
+[rayl@nicolasusca.com](mailto:rayl@nicolasusca.com) or open an issue at
 <https://github.com/NicolaLS/rayl/issues>. Please do not send API keys,
 connection secrets, recovery phrases, or payment preimages.
 

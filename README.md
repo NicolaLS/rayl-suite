@@ -16,8 +16,7 @@ implementations.
 - `core/*`: provider-neutral models, platform services, and UI primitives
 - `feature/*`: reusable provider-neutral user stories
 - `integration/*`: shared external-service adapters
-- `distribution/rayl`: Rayl store copy and artwork
-- `distribution/*`: release guidance and encryption assessment
+- `distribution/*`: distribution artifacts
 
 ## Build
 
