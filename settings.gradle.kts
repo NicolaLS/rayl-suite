@@ -22,6 +22,7 @@ plugins {
 
 dependencyResolutionManagement {
     repositories {
+        mavenLocal()
         maven("https://mvn.breez.technology/releases")
         google {
             mavenContent {
