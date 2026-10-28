@@ -75,7 +75,7 @@ fun rememberPaymentMessages(
         coordinator.events.map { event ->
             when (event) {
                 is PaymentEvent.ShowError ->
-                    event.error.toLocalizedText().resolve(context, providerStrings)
+                    event.error.toLocalizedText().resolveText(context, providerStrings)
 
                 is PaymentEvent.ShowToast -> event.message.localizedMessage(context)
             }
@@ -140,8 +140,10 @@ private fun SessionTransactionItem.toPaymentSessionTransaction(
 private fun LocalizedText.resolveText(providerStrings: ProviderStringResource): String =
     resolve { key -> key.stringResource(providerStrings) }
 
-private fun LocalizedText.resolve(context: Context, providerStrings: ProviderStringResource) =
-    resolve(context) { key -> key.stringResource(providerStrings) }
+private fun LocalizedText.resolveText(
+    context: Context,
+    providerStrings: ProviderStringResource
+): String = resolve(context) { key -> key.stringResource(providerStrings) }
 
 @StringRes
 private fun LocalizedTextKey.stringResource(providerStrings: ProviderStringResource): Int =
