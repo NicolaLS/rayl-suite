@@ -7,7 +7,7 @@ android {
 
     defaultConfig {
         applicationId = "com.nicolasusca.rayl"
-        versionCode = 1
+        versionCode = 2
         versionName = "1.0.0"
         manifestPlaceholders["mainActivityName"] = "xyz.lilsus.rayl.MainActivity"
     }
