@@ -2,7 +2,6 @@ package xyz.lilsus.rayl
 
 import android.content.Intent
 import android.os.Bundle
-import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -12,7 +11,6 @@ open class MainActivity : AppCompatActivity() {
     private val orientationPolicy = CompactWindowOrientationPolicy(this)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
 
