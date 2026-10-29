@@ -26,6 +26,15 @@ Use JDK 21 and the root Gradle wrapper.
 
 For upload-key setup and Google Play releases, see [Distribution](distribution/README.md).
 
+Debug builds come in two apps that install side by side: **Rayl Dev** on Lightspark's
+Regtest (no key; see the [regtest bank](tools/regtest/README.md)) and **Rayl Dev
+Mainnet** on real bitcoin (`./gradlew :app:androidApp:installDebugMainnet`, or the
+`iosApp Mainnet` Xcode scheme). Release builds always use Mainnet. Mainnet builds need
+`RAYL_BREEZ_API_KEY` in the environment; load it from your secret manager in the
+gitignored `.envrc.local` (see `.envrc.example`). Xcode does not see shell variables,
+so have `.envrc` run `scripts/xcode-secrets`, which mirrors the key into the gitignored
+`app/iosApp/Configuration/Secrets.xcconfig` whenever direnv loads.
+
 Debug builds log payment-path timings (milliseconds since launch) under the `RaylTiming`
 tag: `adb logcat -s RaylTiming` on Android, or filter Console.app or the Xcode console
 for `RaylTiming` on iOS.

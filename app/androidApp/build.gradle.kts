@@ -19,11 +19,11 @@ val validateProductionConfiguration = tasks.register("validateProductionConfigur
     notCompatibleWithConfigurationCache("Reads the production API key at execution time.")
     doLast {
         check(productionBreezApiKey.get().isNotBlank()) {
-            "RAYL_BREEZ_API_KEY is required for a Rayl release."
+            "RAYL_BREEZ_API_KEY is required for Mainnet builds."
         }
     }
 }
-tasks.matching { it.name == "preReleaseBuild" }.configureEach {
+tasks.matching { it.name == "preReleaseBuild" || it.name == "preDebugMainnetBuild" }.configureEach {
     dependsOn(validateProductionConfiguration)
 }
 
@@ -43,6 +43,18 @@ android {
         getByName("debug") {
             buildConfigField("String", "BREEZ_API_KEY", "".asBuildConfigString())
             manifestPlaceholders["appLabel"] = "Rayl Dev"
+        }
+        // A debug app on Bitcoin Mainnet, installed beside the Regtest one.
+        create("debugMainnet") {
+            initWith(getByName("debug"))
+            buildConfigField(
+                "String",
+                "BREEZ_API_KEY",
+                productionBreezApiKey.get().asBuildConfigString()
+            )
+            applicationIdSuffix = ".mainnet"
+            matchingFallbacks += listOf("debug")
+            manifestPlaceholders["appLabel"] = "Rayl Dev Mainnet"
         }
         getByName("release") {
             buildConfigField(

@@ -1,3 +1,6 @@
 #include "Config.xcconfig"
 
+// Regtest needs no Breez key; keep it out of this app.
+RAYL_BREEZ_API_KEY =
+
 SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) RAYL_DEBUG

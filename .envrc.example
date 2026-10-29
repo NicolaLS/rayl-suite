@@ -9,7 +9,9 @@ export RAYL_UPLOAD_KEY_ALIAS="rayl-suite-upload"
 export RAYL_UPLOAD_STORE_PASSWORD="$(pass show rayl-suite/android-upload | sed -n '1p')"
 export RAYL_UPLOAD_KEY_PASSWORD="$RAYL_UPLOAD_STORE_PASSWORD"
 
-# Rayl production builds also require a Breez Spark API key. Load it from the
+# Release builds and the Mainnet debug apps require a Breez Spark API key. Your
+# .envrc should source this file and then run ./scripts/xcode-secrets, which
+# mirrors the key into Xcode's gitignored Secrets.xcconfig. Load it from the
 # secret manager; never commit the value or place it in local.properties files
 # that could be shared.
 export RAYL_BREEZ_API_KEY="$(pass show rayl-suite/rayl-breez-api-key | sed -n '1p')"

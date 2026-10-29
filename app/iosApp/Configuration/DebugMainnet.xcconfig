@@ -1,0 +1,5 @@
+#include "Config.xcconfig"
+
+// A debug app on Bitcoin Mainnet, installed beside the Regtest one. It takes the release code
+// path, so it needs RAYL_BREEZ_API_KEY (mirrored into Secrets.xcconfig by scripts/xcode-secrets).
+SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) RAYL_PRODUCTION
