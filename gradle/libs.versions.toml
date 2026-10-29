@@ -33,6 +33,7 @@ androidx-test-ext-junit = "1.3.0"
 androidx-test-runner = "1.7.0"
 apollo = "5.0.1"
 qrose = "1.1.2"
+zxing = "3.5.4"
 mokkery = "3.4.2"
 uriKmp = "0.0.21"
 # Bump together with the Xcode pin of breez-sdk-spark-swift (exactVersion in project.pbxproj, plus
@@ -86,6 +87,7 @@ androidx-test-runner = { module = "androidx.test:runner", version.ref = "android
 ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 apollo-runtime = { module = "com.apollographql.apollo:apollo-runtime", version.ref = "apollo" }
 qrose = { module = "io.github.alexzhirkevich:qrose", version.ref = "qrose" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
 compose-foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
 compose-material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "composeMaterial3" }
@@ -95,6 +97,7 @@ compose-material-icons-extended = { module = "org.jetbrains.compose.material:mat
 compose-ui-tooling = { module = "org.jetbrains.compose.ui:ui-tooling", version.ref = "composeMultiplatform" }
 uri-kmp = { module = "com.eygraber:uri-kmp", version.ref = "uriKmp" }
 breez-sdk-spark = { module = "technology.breez.spark:breez-sdk-spark-kmp", version.ref = "breezSpark" }
+breez-sdk-spark-jvm = { module = "technology.breez.spark:breez-sdk-spark-kmp-jvm", version.ref = "breezSpark" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 
 [plugins]

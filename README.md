@@ -18,6 +18,7 @@ implementations.
 - `feature/*`: reusable provider-neutral user stories
 - `integration/*`: shared external-service adapters
 - `distribution/*`: distribution artifacts
+- `tools/*`: developer tools, such as the [regtest bank](tools/regtest/README.md) for manual QA
 
 ## Build
 
