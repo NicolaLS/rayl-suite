@@ -11,9 +11,7 @@ import xyz.lilsus.raylsuite.core.model.WalletStartMode
 
 /** Owns the single configured provider and temporary setup. See SPEC-wallet-lifecycle. */
 internal class RaylSelection(private val settings: Settings) {
-    private val mutableWallet = MutableStateFlow(
-        RaylWallet.entries.firstOrNull { it.name == settings.getStringOrNull("rayl.wallet") }
-    )
+    private val mutableWallet = MutableStateFlow(configuredWallet(settings))
     val wallet = mutableWallet.asStateFlow()
     var startMode = WalletStartMode.Restore
         private set
@@ -82,6 +80,10 @@ internal class RaylSelection(private val settings: Settings) {
     }
 }
 
-internal enum class RaylWallet { Blink, Nwc, Spark }
+internal enum class RaylWallet { Rayl, Blink, Nwc, Spark }
+
+/** The provider that completed setup on an earlier launch, if any. */
+internal fun configuredWallet(settings: Settings): RaylWallet? =
+    RaylWallet.entries.firstOrNull { it.name == settings.getStringOrNull("rayl.wallet") }
 
 internal enum class WalletPreparation { Cleaning, Failed, Ready }

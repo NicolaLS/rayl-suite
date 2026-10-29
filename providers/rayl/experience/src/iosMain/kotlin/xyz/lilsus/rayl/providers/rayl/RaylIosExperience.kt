@@ -1,0 +1,224 @@
+package xyz.lilsus.rayl.providers.rayl
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.launch
+import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketStatus
+import xyz.lilsus.rayl.providers.rayl.integration.pocket.createIosRaylPocket
+import xyz.lilsus.raylsuite.core.settings.createAppSettings
+import xyz.lilsus.raylsuite.core.ui.platform.createHapticFeedbackManager
+import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
+import xyz.lilsus.raylsuite.core.ui.resources.nativeString
+import xyz.lilsus.raylsuite.feature.appshell.AppTab
+import xyz.lilsus.raylsuite.feature.appshell.appTabTitles
+import xyz.lilsus.raylsuite.feature.appshell.nativeColorSchemeValue
+import xyz.lilsus.raylsuite.feature.paymentflow.PaymentEvent
+import xyz.lilsus.raylsuite.feature.paymentflow.paymentErrorMessage
+import xyz.lilsus.raylsuite.feature.paymentflow.toNativePaymentScreenState
+import xyz.lilsus.raylsuite.feature.paymentflow.toNativeRecentItem
+import xyz.lilsus.raylsuite.feature.paymenthub.NativePaymentHubController
+import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentRecentController
+import xyz.lilsus.raylsuite.feature.paymentui.NativePaymentScanController
+import xyz.lilsus.raylsuite.feature.paymentui.PaymentIntent
+import xyz.lilsus.raylsuite.feature.paymentui.localizedMessage
+import xyz.lilsus.raylsuite.feature.settings.NativeSettingsController
+import xyz.lilsus.raylsuite.feature.settings.nativeSettingsAppVersionName
+
+/** Shown in place of the tabs while the pocket is not usable. */
+data class RaylProblemSnapshot(val message: String, val retryTitle: String)
+
+/**
+ * The Kotlin side of Rayl's native iOS shell. Swift owns the `TabView`; this owns the app scope so
+ * every tab's view controller shares one runtime.
+ */
+class RaylIosExperience(
+    configuration: RaylExperienceConfiguration,
+    environment: RaylEnvironment,
+    breezApiKey: String?
+) {
+    private val observerScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private val runtime = RaylRuntime(
+        appSettings = createAppSettings(),
+        configuration = configuration,
+        environment = environment,
+        pocket = RaylEarlyStart.take { createIosRaylPocket(environment.pocketConfig(breezApiKey)) },
+        haptics = createHapticFeedbackManager()
+    )
+
+    private val settingsController = lazy {
+        NativeSettingsController(
+            themePreferences = runtime.themePreferences,
+            languageRepository = runtime.languageRepository,
+            currencyPreferences = runtime.currencyPreferences,
+            paymentPreferences = runtime.paymentPreferences,
+            bitcoinPriceProvider = runtime.bitcoinPriceProvider,
+            legalLinks = configuration.legalLinks,
+            appVersionName = nativeSettingsAppVersionName()
+        )
+    }
+    private val scanController = lazy { createScanController(configuration.appName) }
+    private val recentController = lazy { createRecentController() }
+    private val hubController = lazy {
+        NativePaymentHubController(
+            repository = runtime.paymentHubRepository,
+            host = runtime.paymentHub,
+            languageChanges = runtime.languageRepository.preference,
+            currencyCodes = runtime.currencyPreferences.code
+        )
+    }
+    private val walletSettingsController = lazy { RaylNativeWalletSettingsController(runtime) }
+
+    /** `tabs` at once: the pocket connects in the background, so the camera never waits for it. */
+    fun stage(): String = stageOf(runtime.exit.value)
+
+    fun observeStage(onChange: (String) -> Unit): () -> Unit =
+        observe(runtime.exit) { onChange(stageOf(it)) }
+
+    /** Shown when closing the pocket for "Use another wallet" failed. */
+    fun observeProblem(onChange: (RaylProblemSnapshot) -> Unit): () -> Unit =
+        observe(runtime.languageRepository.preference) {
+            onChange(RaylProblemSnapshot(text("rayl_leave_failed"), text("rayl_retry")))
+        }
+
+    fun retry() = runtime.retryLeave()
+
+    fun isConnected(): Boolean = connected(runtime.pocket.status.value, runtime.exit.value)
+
+    fun observeConnected(onChange: (Boolean) -> Unit): () -> Unit = observe(
+        combine(runtime.pocket.status, runtime.exit, ::connected)
+    ) { onChange(it) }
+
+    /** True once the pocket session has closed after the user chose to leave Rayl. */
+    fun observeLeft(onChange: (Boolean) -> Unit): () -> Unit =
+        observe(runtime.exit) { onChange(it == RaylExit.Done) }
+
+    fun selectedTab(): String = runtime.tabState.selectedTab.value.storedValue
+
+    fun observeSelectedTab(onChange: (String) -> Unit): () -> Unit =
+        observe(runtime.tabState.selectedTab) { onChange(it.storedValue) }
+
+    fun observeTheme(onChange: (String) -> Unit): () -> Unit =
+        observe(runtime.themePreferences.preference) { onChange(it.nativeColorSchemeValue()) }
+
+    fun observeTabTitles(onChange: (Map<String, String>) -> Unit): () -> Unit =
+        observe(runtime.languageRepository.preference) { onChange(appTabTitles()) }
+
+    fun selectTab(tab: String) {
+        if (!runtime.paymentCoordinator.isSubmitting.value) {
+            runtime.tabState.select(AppTab.fromStoredValue(tab))
+        }
+    }
+
+    fun settingsController(): NativeSettingsController = settingsController.value
+
+    fun scanController(): NativePaymentScanController = scanController.value
+
+    fun recentController(): NativePaymentRecentController = recentController.value
+
+    fun hubController(): NativePaymentHubController = hubController.value
+
+    fun walletSettingsController(): RaylNativeWalletSettingsController =
+        walletSettingsController.value
+
+    fun clear() {
+        if (settingsController.isInitialized()) settingsController.value.clear()
+        if (scanController.isInitialized()) scanController.value.clear()
+        if (recentController.isInitialized()) recentController.value.clear()
+        if (hubController.isInitialized()) hubController.value.clear()
+        if (walletSettingsController.isInitialized()) walletSettingsController.value.clear()
+        observerScope.coroutineContext[Job]?.cancel()
+        runtime.clear()
+    }
+
+    private fun <T> observe(flow: Flow<T>, onChange: suspend (T) -> Unit): () -> Unit {
+        val job = observerScope.launch { flow.collect(onChange) }
+        return { job.cancel() }
+    }
+
+    private fun createScanController(appName: String): NativePaymentScanController {
+        val coordinator = runtime.paymentCoordinator
+        val controller = NativePaymentScanController(
+            onPaymentIntent = coordinator::dispatch,
+            onHubIntent = runtime.paymentHub::dispatch
+        )
+        observerScope.launch {
+            combine(
+                coordinator.uiState,
+                coordinator.sessionTransactions,
+                coordinator.newSessionTransactionCount,
+                runtime.paymentHub.state,
+                runtime.languageRepository.preference
+            ) { payment, transactions, newTransactionCount, hubState, _ ->
+                controller.update(
+                    payment = payment.toNativePaymentScreenState(),
+                    appTitle = appName,
+                    savePrompt = hubState.savePrompt,
+                    recentCount = transactions.size,
+                    newRecentCount = newTransactionCount
+                )
+            }.collect {}
+        }
+        observerScope.launch {
+            coordinator.events.collect { event ->
+                controller.emitMessage(
+                    when (event) {
+                        is PaymentEvent.ShowError -> paymentErrorMessage(event.error)
+                        is PaymentEvent.ShowToast -> event.message.localizedMessage()
+                    }
+                )
+            }
+        }
+        observerScope.launch {
+            coordinator.transactionDetailNavigationTarget.collect { id ->
+                if (id == null) return@collect
+                runtime.tabState.openTransaction(id)
+                coordinator.dispatch(PaymentIntent.TransactionDetailNavigationHandled(id))
+            }
+        }
+        return controller
+    }
+
+    private fun createRecentController(): NativePaymentRecentController {
+        val coordinator = runtime.paymentCoordinator
+        val controller = NativePaymentRecentController(
+            onIntent = coordinator::dispatch,
+            onSelectTransaction = { id ->
+                if (!coordinator.isSubmitting.value) runtime.tabState.selectTransaction(id)
+            }
+        )
+        observerScope.launch {
+            combine(
+                coordinator.sessionTransactions,
+                runtime.tabState.selectedTransactionId,
+                runtime.languageRepository.preference
+            ) { transactions, selectedId, _ ->
+                controller.update(
+                    items = transactions.map { it.toNativeRecentItem() },
+                    selectedTransactionId = selectedId,
+                    receiptFeeInformation = null
+                )
+            }.collect {}
+        }
+        return controller
+    }
+}
+
+private fun stageOf(exit: RaylExit): String = when (exit) {
+    RaylExit.None -> "tabs"
+    RaylExit.Failed -> "problem"
+    RaylExit.Working, RaylExit.Done -> "loading"
+}
+
+private fun connected(status: PocketStatus, exit: RaylExit): Boolean =
+    status == PocketStatus.Ready && exit == RaylExit.None
+
+internal fun text(key: String): String = nativeString(NativeStringResource("RaylExperience", key))
+
+/** Call at app launch when Rayl is the configured wallet. */
+fun startRaylPocketEarly(environment: RaylEnvironment, breezApiKey: String?) {
+    RaylEarlyStart.start { createIosRaylPocket(environment.pocketConfig(breezApiKey)) }
+}

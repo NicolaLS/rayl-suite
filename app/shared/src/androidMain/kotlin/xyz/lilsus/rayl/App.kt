@@ -1,5 +1,6 @@
 package xyz.lilsus.rayl
 
+import android.content.Context
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,11 +38,15 @@ import xyz.lilsus.rayl.providers.blink.BlinkDeepLinks
 import xyz.lilsus.rayl.providers.blink.BlinkExperience
 import xyz.lilsus.rayl.providers.nwc.NwcDeepLinks
 import xyz.lilsus.rayl.providers.nwc.NwcExperience
+import xyz.lilsus.rayl.providers.rayl.RaylExperience
+import xyz.lilsus.rayl.providers.rayl.RaylPaymentLinks
+import xyz.lilsus.rayl.providers.rayl.startRaylPocketEarly
 import xyz.lilsus.rayl.providers.spark.SparkDeepLinks
 import xyz.lilsus.rayl.providers.spark.SparkEnvironment
 import xyz.lilsus.rayl.providers.spark.SparkExperience
 import xyz.lilsus.rayl.shared.R
 import xyz.lilsus.raylsuite.core.model.ThemePreference
+import xyz.lilsus.raylsuite.core.settings.createAppSettings
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
 import xyz.lilsus.raylsuite.core.ui.platform.rememberRetainedInstance
 import xyz.lilsus.raylsuite.core.ui.theme.RaylSuiteTheme
@@ -74,6 +79,7 @@ fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
         RaylDeepLinks.clear()
         BlinkDeepLinks.clear()
         NwcDeepLinks.clear()
+        RaylPaymentLinks.clear()
         SparkDeepLinks.clear()
         message = null
         connected = null
@@ -96,12 +102,15 @@ fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
                 }
             } else if (selected == null) {
                 message = R.string.connect_to_pay
-            } else if (!snapshotFlow { connected }.filterNotNull().first()) {
+            } else if (selected != RaylWallet.Rayl && // Rayl queues links while it connects.
+                !snapshotFlow { connected }.filterNotNull().first()
+            ) {
                 // FIXME: Spark cold-start reports Loading -> false before async restore finishes,
                 // which can reject a cold-start payment deep link as disconnected.
                 message = R.string.connect_to_pay
             } else {
                 when (selected) {
+                    RaylWallet.Rayl -> RaylPaymentLinks.emit(uri)
                     RaylWallet.Blink -> BlinkDeepLinks.emit(uri)
                     RaylWallet.Nwc -> NwcDeepLinks.emit(uri)
                     RaylWallet.Spark -> SparkDeepLinks.emit(uri)
@@ -131,6 +140,19 @@ fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
         }
         key(wallet, selection.sessionId) {
             when (wallet) {
+                RaylWallet.Rayl -> RaylExperience(
+                    configuration = RAYL_POCKET,
+                    environment = sparkEnvironment.toRaylEnvironment(),
+                    breezApiKey = breezApiKey,
+                    onLeft = leave,
+                    onConnectionChanged = {
+                        if (selection.wallet.value == RaylWallet.Rayl) {
+                            connected = it
+                            if (it) selection.connected(RaylWallet.Rayl)
+                        }
+                    }
+                )
+
                 RaylWallet.Blink -> BlinkExperience(
                     configuration = RAYL_BLINK,
                     startMode = selection.startMode,
@@ -193,6 +215,8 @@ fun App(sparkEnvironment: SparkEnvironment, breezApiKey: String? = null) {
                             Text(stringResource(R.string.choose_body))
                             RaylWallet.entries.forEach { provider ->
                                 val (title, body) = when (provider) {
+                                    RaylWallet.Rayl -> R.string.rayl_title to R.string.rayl_body
+
                                     RaylWallet.Blink ->
                                         R.string.blink_title to
                                             R.string.blink_body
@@ -234,5 +258,16 @@ private fun WalletChoice(title: Int, description: Int, onClick: () -> Unit) {
             Text(stringResource(title), style = MaterialTheme.typography.titleLarge)
             Text(stringResource(description), style = MaterialTheme.typography.bodyMedium)
         }
+    }
+}
+
+/** Starts the configured wallet before any UI, so it connects while the app launches. */
+fun startConfiguredWalletEarly(
+    context: Context,
+    sparkEnvironment: SparkEnvironment,
+    breezApiKey: String? = null
+) {
+    if (configuredWallet(createAppSettings(context, RAYL_PREFERENCES)) == RaylWallet.Rayl) {
+        startRaylPocketEarly(context, sparkEnvironment.toRaylEnvironment(), breezApiKey)
     }
 }

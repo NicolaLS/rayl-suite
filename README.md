@@ -1,8 +1,9 @@
 # Rayl
 
-Rayl is a Kotlin Multiplatform Lightning app for Android and iOS. Connect a Blink
-account with an API key, a compatible wallet through Nostr Wallet Connect, or a
-Spark wallet with its recovery phrase. Rayl uses one provider experience at a
+Rayl is a Kotlin Multiplatform Lightning app for Android and iOS. Pay from a Rayl
+pocket that needs no setup, or connect a Blink account with an API key, a
+compatible wallet through Nostr Wallet Connect, or a Spark wallet with its
+recovery phrase. Rayl uses one provider experience at a
 time and is the repository's only distributed app. It is prerelease.
 
 See [Rayl architecture](specs/ARCH-rayl.md) for application composition and
@@ -12,7 +13,7 @@ implementations.
 ## Project layout
 
 - `app`: Rayl composition, platform entry points, and wallet selection
-- `providers/blink`, `providers/nwc`, `providers/spark`: independent provider implementations
+- `providers/rayl`, `providers/blink`, `providers/nwc`, `providers/spark`: independent provider implementations
 - `core/*`: provider-neutral models, platform services, and UI primitives
 - `feature/*`: reusable provider-neutral user stories
 - `integration/*`: shared external-service adapters
@@ -23,6 +24,10 @@ implementations.
 Use JDK 21 and the root Gradle wrapper.
 
 For upload-key setup and Google Play releases, see [Distribution](distribution/README.md).
+
+Debug builds log payment-path timings (milliseconds since launch) under the `RaylTiming`
+tag: `adb logcat -s RaylTiming` on Android, or filter Console.app or the Xcode console
+for `RaylTiming` on iOS.
 
 ```shell
 ./gradlew :app:androidApp:assembleDebug

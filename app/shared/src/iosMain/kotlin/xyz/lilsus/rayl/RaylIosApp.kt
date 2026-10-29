@@ -13,6 +13,9 @@ import xyz.lilsus.rayl.providers.blink.BlinkDeepLinks
 import xyz.lilsus.rayl.providers.blink.BlinkIosExperience
 import xyz.lilsus.rayl.providers.nwc.NwcDeepLinks
 import xyz.lilsus.rayl.providers.nwc.NwcIosExperience
+import xyz.lilsus.rayl.providers.rayl.RaylIosExperience
+import xyz.lilsus.rayl.providers.rayl.RaylPaymentLinks
+import xyz.lilsus.rayl.providers.rayl.startRaylPocketEarly
 import xyz.lilsus.rayl.providers.spark.SparkAppHost
 import xyz.lilsus.rayl.providers.spark.SparkDeepLinks
 import xyz.lilsus.rayl.providers.spark.SparkEnvironment
@@ -29,6 +32,7 @@ import xyz.lilsus.raylsuite.feature.themesettings.DefaultThemePreferences
 class RaylSnapshot(
     val wallet: String?,
     val wallets: List<String>,
+    val raylExperience: RaylIosExperience?,
     val blinkExperience: BlinkIosExperience?,
     val nwcExperience: NwcIosExperience?,
     val sparkExperience: SparkIosExperience?,
@@ -59,10 +63,12 @@ object RaylIosApp {
     private val language = createLanguageRepository()
     private val experienceState = MutableStateFlow(RaylExperienceState())
     private val messageKey = MutableStateFlow<String?>(null)
+    private var rayl: RaylIosExperience? = null
     private var blink: BlinkIosExperience? = null
     private var nwc: NwcIosExperience? = null
     private var spark: SparkIosExperience? = null
     private var sparkHostFactory: ((WalletStartMode) -> SparkAppHost)? = null
+    private var raylFactory: (() -> RaylIosExperience)? = null
     private var cancellations = emptyList<() -> Unit>()
 
     init {
@@ -72,6 +78,9 @@ object RaylIosApp {
                 selection.preparation.first { it == WalletPreparation.Ready }
                 val selected = selection.wallet.value
                 val hasConnection = when (selected) {
+                    // Rayl queues payment links while its pocket connects.
+                    RaylWallet.Rayl -> raylExperience() != null
+
                     RaylWallet.Blink -> blinkExperience()?.isConnected() == true
 
                     RaylWallet.Nwc -> nwcExperience()?.isConnected() == true
@@ -95,6 +104,7 @@ object RaylIosApp {
                     messageKey.value = "connect_to_pay"
                 } else {
                     when (selected) {
+                        RaylWallet.Rayl -> RaylPaymentLinks.emit(uri)
                         RaylWallet.Blink -> BlinkDeepLinks.emit(uri)
                         RaylWallet.Nwc -> NwcDeepLinks.emit(uri)
                         RaylWallet.Spark -> SparkDeepLinks.emit(uri)
@@ -106,8 +116,14 @@ object RaylIosApp {
     }
 
     fun configureSpark(environment: SparkEnvironment, breezApiKey: String?) {
-        check(spark == null) { "Configure Spark before mounting its experience" }
+        check(spark == null && rayl == null) { "Configure Spark before mounting its experience" }
         sparkHostFactory = { mode -> createIOSAppHost(environment, mode, breezApiKey) }
+        raylFactory = {
+            RaylIosExperience(RAYL_POCKET, environment.toRaylEnvironment(), breezApiKey)
+        }
+        if (selection.wallet.value == RaylWallet.Rayl) {
+            startRaylPocketEarly(environment.toRaylEnvironment(), breezApiKey)
+        }
     }
 
     fun observe(onChange: (RaylSnapshot) -> Unit): () -> Unit {
@@ -133,6 +149,8 @@ object RaylIosApp {
                 val keys =
                     listOf(
                         "welcome_title",
+                        "rayl_title",
+                        "rayl_body",
                         "welcome_body",
                         "get_started",
                         "choose_wallet",
@@ -155,6 +173,13 @@ object RaylIosApp {
                         }
                 // SwiftUI may render this snapshot after removal has cleared the live selection.
                 // Keep its experience with it; rendering must never resolve a different session.
+                val raylExperience = if (ready &&
+                    wallet == RaylWallet.Rayl
+                ) {
+                    raylExperience()
+                } else {
+                    null
+                }
                 val blinkExperience = if (ready &&
                     wallet == RaylWallet.Blink
                 ) {
@@ -171,6 +196,7 @@ object RaylIosApp {
                     null
                 }
                 val mountedWallet = when {
+                    raylExperience != null -> "rayl"
                     blinkExperience != null -> "blink"
                     nwcExperience != null -> "nwc"
                     sparkExperience != null -> "spark"
@@ -180,6 +206,7 @@ object RaylIosApp {
                 RaylSnapshot(
                     mountedWallet,
                     wallets,
+                    raylExperience,
                     blinkExperience,
                     nwcExperience,
                     sparkExperience,
@@ -222,12 +249,40 @@ object RaylIosApp {
             return
         }
         val selected = when (wallet) {
+            "rayl" -> RaylWallet.Rayl
             "blink" -> RaylWallet.Blink
             "nwc" -> RaylWallet.Nwc
             "spark" -> RaylWallet.Spark
             else -> return
         }
         selection.choose(selected)
+    }
+
+    private fun raylExperience(): RaylIosExperience? {
+        if (selection.wallet.value != RaylWallet.Rayl) return null
+        return rayl ?: checkNotNull(raylFactory) {
+            "Configure the environment before observing Rayl"
+        }().also { experience ->
+            rayl = experience
+            cancellations =
+                listOf(
+                    experience.observeConnected { connected ->
+                        if (rayl === experience) {
+                            if (connected) selection.connected(RaylWallet.Rayl)
+                            experienceState.update { it.copy(connected = connected) }
+                        }
+                    },
+                    experience.observeTheme { colorScheme ->
+                        if (rayl === experience) {
+                            experienceState.update { it.copy(colorScheme = colorScheme) }
+                        }
+                    },
+                    // The pocket closes but is not erased; see SPEC-wallet-lifecycle.
+                    experience.observeLeft {
+                        if (it) scope.launch { if (rayl === experience) leave() }
+                    }
+                )
+        }
     }
 
     private fun blinkExperience(): BlinkIosExperience? {
@@ -293,7 +348,7 @@ object RaylIosApp {
         if (selection.wallet.value != RaylWallet.Spark) return null
         return spark ?: SparkIosExperience(
             host = checkNotNull(sparkHostFactory) {
-                "Configure Spark before observing Rayl"
+                "Configure the environment before observing Rayl"
             }(selection.startMode),
             configuration = RAYL_SPARK
         ).also { experience ->
@@ -325,9 +380,15 @@ object RaylIosApp {
 
     fun cancelSetup() {
         val canCancel = when (selection.wallet.value) {
+            // Rayl has no setup to cancel; Settings offers "Use another wallet".
+            RaylWallet.Rayl -> false
+
             RaylWallet.Blink -> blink?.canCancelSetup() == true
+
             RaylWallet.Nwc -> nwc?.canCancelSetup() == true
+
             RaylWallet.Spark -> spark?.canCancelSetup() == true
+
             null -> false
         }
         if (!canCancel) return
@@ -372,9 +433,11 @@ object RaylIosApp {
     private fun leave() {
         cancellations.forEach { it() }
         cancellations = emptyList()
+        rayl?.clear()
         blink?.clear()
         nwc?.clear()
         spark?.clear()
+        rayl = null
         blink = null
         nwc = null
         spark = null
@@ -390,6 +453,7 @@ object RaylIosApp {
         RaylDeepLinks.clear()
         BlinkDeepLinks.clear()
         NwcDeepLinks.clear()
+        RaylPaymentLinks.clear()
         SparkDeepLinks.clear()
         selection.clear()
         retryWalletCleanup()

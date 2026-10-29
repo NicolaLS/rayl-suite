@@ -1,0 +1,9 @@
+<resources>
+    <string name="error_insufficient_funds">Nicht genug Guthaben. Lade in den Einstellungen Guthaben auf.</string>
+    <string name="error_pocket_not_ready">Rayl war nicht erreichbar, es wurde nichts bezahlt. Prüfe deine Verbindung und versuche es erneut.</string>
+    <string name="error_sub_satoshi_amount">Rayl kann nur ganze Satoshi-Beträge bezahlen.</string>
+    <string name="error_payment_rejected_generic">Zahlung fehlgeschlagen.</string>
+    <string name="error_payment_rejected_message">Zahlung fehlgeschlagen: %1$s</string>
+    <string name="error_payment_unconfirmed">Zahlungsstatus unbekannt. Die Zahlung ist möglicherweise erfolgt.</string>
+    <string name="error_payment_unconfirmed_message">Zahlungsstatus unbekannt: %1$s</string>
+</resources>

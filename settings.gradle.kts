@@ -72,6 +72,14 @@ includeProvider(
     )
 )
 includeProvider(
+    "rayl",
+    listOf(
+        "experience",
+        "feature:payment",
+        "integration:pocket"
+    )
+)
+includeProvider(
     "spark",
     listOf(
         "experience",

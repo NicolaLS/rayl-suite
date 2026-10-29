@@ -28,6 +28,14 @@ runtime creation, so Rayl can enforce
 [SPEC-wallet-lifecycle](../../specs/SPEC-wallet-lifecycle.md) before mounting an
 experience.
 
+Rayl also runs on `feature/payment-flow`. Its
+[`integration/pocket`](../rayl/integration/pocket) owns an app-owned Spark wallet
+through the Breez SDK: it generates the pocket key on first use, keeps it in
+device-only platform storage, quotes and pays invoices, and creates funding
+invoices. It shares no code with the Spark provider, and its key outlives the
+provider session as defined by
+[SPEC-wallet-lifecycle](../../specs/SPEC-wallet-lifecycle.md).
+
 Spark defines wallet and payment interfaces in
 [`application`](../spark/application): `WalletAccess` controls wallet/session
 access and `PaymentEngine` controls preparation and submission. Its payment
@@ -54,7 +62,7 @@ sources compile together in the app target.
 
 ## Shared services
 
-Blink and NWC resolve LNURL through `integration/lnurl` and the shared
+Rayl, Blink, and NWC resolve LNURL through `integration/lnurl` and the shared
 `LnurlInvoiceResolver`. Spark extends the shared input parser for Spark invoices
 and delegates LNURL preparation to Breez.
 

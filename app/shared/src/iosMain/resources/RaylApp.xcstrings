@@ -277,6 +277,52 @@
         }
       }
     },
+    "rayl_body" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sofort bezahlen. Keine Schlüssel oder Verbindungslinks nötig."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Start paying right away. No keys or connection links needed."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empieza a pagar de inmediato. Sin claves ni enlaces de conexión."
+          }
+        }
+      }
+    },
+    "rayl_title" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rayl"
+          }
+        }
+      }
+    },
     "spark_body" : {
       "extractionState" : "stale",
       "localizations" : {

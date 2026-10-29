@@ -17,4 +17,6 @@
     <string name="close">Cerrar</string>
     <string name="wallet_cleanup_failed">Rayl no pudo terminar de borrar la conexión de la cartera anterior. Vuelve a intentarlo para continuar.</string>
     <string name="wallet_cleanup_retry">Reintentar</string>
+    <string name="rayl_title">Rayl</string>
+    <string name="rayl_body">Empieza a pagar de inmediato. Sin claves ni enlaces de conexión.</string>
 </resources>

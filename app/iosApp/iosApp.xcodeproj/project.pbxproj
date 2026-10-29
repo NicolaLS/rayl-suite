@@ -42,6 +42,8 @@
 		D40000000000000000000001 /* SparkExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000001 /* SparkExperience.xcstrings */; };
 		D40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000002 /* SparkOnboarding.xcstrings */; };
 		D40000000000000000000003 /* SparkPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000003 /* SparkPayment.xcstrings */; };
+		D50000000000000000000001 /* RaylExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C50000000000000000000001 /* RaylExperience.xcstrings */; };
+		D50000000000000000000002 /* RaylPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C50000000000000000000002 /* RaylPayment.xcstrings */; };
 		D40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000004 /* SparkWalletConnection.xcstrings */; };
 		D8D428B72EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = D8D428B62EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy */; };
 		E1DD348ED9D15B051664ABCC /* blink_dashboard_copy_key.png in Resources */ = {isa = PBXBuildFile; fileRef = 2452E53FCF66E3EE09362089 /* blink_dashboard_copy_key.png */; };
@@ -64,6 +66,8 @@
 		E40000000000000000000001 /* SparkExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000001 /* SparkExperience.xcstrings */; };
 		E40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000002 /* SparkOnboarding.xcstrings */; };
 		E40000000000000000000003 /* SparkPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000003 /* SparkPayment.xcstrings */; };
+		E50000000000000000000001 /* RaylExperience.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C50000000000000000000001 /* RaylExperience.xcstrings */; };
+		E50000000000000000000002 /* RaylPayment.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C50000000000000000000002 /* RaylPayment.xcstrings */; };
 		E40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = C40000000000000000000004 /* SparkWalletConnection.xcstrings */; };
 		EE253643352FE7EBDE6C0C65 /* BlinkWalletSettings.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AC25F142F2335CECAEAB2D19 /* BlinkWalletSettings.xcstrings */; };
 		F66FC212555C239ADBBF0F03 /* blink_dashboard_api_keys.png in Resources */ = {isa = PBXBuildFile; fileRef = E44C5776A776765F3F772AE6 /* blink_dashboard_api_keys.png */; };
@@ -97,6 +101,8 @@
 		C40000000000000000000001 /* SparkExperience.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkExperience.xcstrings; path = ../../providers/spark/experience/src/iosMain/resources/SparkExperience.xcstrings; sourceTree = "<group>"; };
 		C40000000000000000000002 /* SparkOnboarding.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkOnboarding.xcstrings; path = ../../providers/spark/feature/onboarding/src/iosMain/resources/SparkOnboarding.xcstrings; sourceTree = "<group>"; };
 		C40000000000000000000003 /* SparkPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkPayment.xcstrings; path = ../../providers/spark/feature/payment/src/iosMain/resources/SparkPayment.xcstrings; sourceTree = "<group>"; };
+		C50000000000000000000001 /* RaylExperience.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = RaylExperience.xcstrings; path = ../../providers/rayl/experience/src/iosMain/resources/RaylExperience.xcstrings; sourceTree = "<group>"; };
+		C50000000000000000000002 /* RaylPayment.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = RaylPayment.xcstrings; path = ../../providers/rayl/feature/payment/src/iosMain/resources/RaylPayment.xcstrings; sourceTree = "<group>"; };
 		C40000000000000000000004 /* SparkWalletConnection.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = SparkWalletConnection.xcstrings; path = "../../providers/spark/feature/wallet-connection/src/iosMain/resources/SparkWalletConnection.xcstrings"; sourceTree = "<group>"; };
 		D8D428B62EEF0BAA007EDED8 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		E2E000000000000000000001 /* Rayl E2E.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Rayl E2E.app"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -195,6 +201,12 @@
 			path = ../../providers/spark/experience/src/iosMain/swift;
 			sourceTree = "<group>";
 		};
+		F50000000000000000000001 /* Rayl Experience Swift */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			name = "Rayl Experience Swift";
+			path = ../../providers/rayl/experience/src/iosMain/swift;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -223,6 +235,8 @@
 				C40000000000000000000001 /* SparkExperience.xcstrings */,
 				C40000000000000000000002 /* SparkOnboarding.xcstrings */,
 				C40000000000000000000003 /* SparkPayment.xcstrings */,
+				C50000000000000000000001 /* RaylExperience.xcstrings */,
+				C50000000000000000000002 /* RaylPayment.xcstrings */,
 				C40000000000000000000004 /* SparkWalletConnection.xcstrings */,
 				C30000000000000000000001 /* CoreUI.xcstrings */,
 				C30000000000000000000002 /* AppShell.xcstrings */,
@@ -250,6 +264,7 @@
 				8AB20B57D09014CBC9805679 /* Blink Experience Swift */,
 				ABC5659E4400D0CC657B53E3 /* Nwc Experience Swift */,
 				F40000000000000000000001 /* Spark Experience Swift */,
+				F50000000000000000000001 /* Rayl Experience Swift */,
 				D90BDCC58B0B3EAC96B0EEB8 /* iosApp */,
 				E2E000000000000000000002 /* iosAppE2E */,
 				E073F01B7BAFD6FD252567F6 /* Products */,
@@ -309,6 +324,7 @@
 				F22E00000000000000000005 /* Onboarding Swift */,
 				F22E00000000000000000006 /* Wallet Management Swift */,
 				F40000000000000000000001 /* Spark Experience Swift */,
+				F50000000000000000000001 /* Rayl Experience Swift */,
 			);
 			name = iosApp;
 			packageProductDependencies = (
@@ -343,6 +359,7 @@
 				F22E00000000000000000005 /* Onboarding Swift */,
 				F22E00000000000000000006 /* Wallet Management Swift */,
 				F40000000000000000000001 /* Spark Experience Swift */,
+				F50000000000000000000001 /* Rayl Experience Swift */,
 			);
 			name = iosAppE2E;
 			packageProductDependencies = (
@@ -403,6 +420,8 @@
 				D40000000000000000000001 /* SparkExperience.xcstrings in Resources */,
 				D40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */,
 				D40000000000000000000003 /* SparkPayment.xcstrings in Resources */,
+				D50000000000000000000001 /* RaylExperience.xcstrings in Resources */,
+				D50000000000000000000002 /* RaylPayment.xcstrings in Resources */,
 				D40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */,
 				D3CF307EE6BABC7238C09DC0 /* BlinkUI.xcstrings in Resources */,
 				EE253643352FE7EBDE6C0C65 /* BlinkWalletSettings.xcstrings in Resources */,
@@ -439,6 +458,8 @@
 				E40000000000000000000001 /* SparkExperience.xcstrings in Resources */,
 				E40000000000000000000002 /* SparkOnboarding.xcstrings in Resources */,
 				E40000000000000000000003 /* SparkPayment.xcstrings in Resources */,
+				E50000000000000000000001 /* RaylExperience.xcstrings in Resources */,
+				E50000000000000000000002 /* RaylPayment.xcstrings in Resources */,
 				E40000000000000000000004 /* SparkWalletConnection.xcstrings in Resources */,
 				33DD96B4F486FAEA94E1F9F9 /* BlinkUI.xcstrings in Resources */,
 				59E91E194796F1BBA9A081CA /* BlinkWalletSettings.xcstrings in Resources */,
@@ -989,7 +1010,7 @@
 			repositoryURL = "https://github.com/breez/breez-sdk-spark-swift.git";
 			requirement = {
 				kind = exactVersion;
-				version = 0.19.0;
+				version = 0.27.2;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

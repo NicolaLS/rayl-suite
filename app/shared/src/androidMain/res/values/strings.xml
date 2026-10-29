@@ -17,4 +17,6 @@
     <string name="close">Close</string>
     <string name="wallet_cleanup_failed">Rayl could not finish clearing the previous wallet connection. Retry to continue.</string>
     <string name="wallet_cleanup_retry">Retry</string>
+    <string name="rayl_title">Rayl</string>
+    <string name="rayl_body">Start paying right away. No keys or connection links needed.</string>
 </resources>

@@ -8,7 +8,8 @@ Rayl's platform hosts, provider runtimes, and platform credential stores jointly
 
 The wallet chooser means no wallet is configured, no provider session is active,
 and no provider retains credentials or connection-specific local data. App
-preferences and the user's shared Hub are independent of wallet connections.
+preferences, the user's shared Hub, and the Rayl pocket are independent of wallet
+connections.
 
 Choosing a provider starts temporary setup. It must not retrieve an earlier
 wallet's credentials or reconnect an earlier session. Only successful connection
@@ -34,3 +35,15 @@ An Android configuration change retains the current in-process setup.
 Connecting the same wallet after removal requires supplying its credentials
 again. Importing the same Spark recovery phrase still identifies the same remote
 wallet; local erasure does not create a new wallet or move funds.
+
+## The Rayl pocket
+
+The Rayl provider holds funds in an app-owned pocket rather than a connection to
+an external wallet. Its key is generated on the device the first time Rayl is
+chosen and is never entered or shown in normal use, so erasing it would destroy
+funds the user cannot recover. Leaving Rayl for the chooser therefore stops its
+session without erasing the key or pocket data; startup cleanup does not erase
+them either, and choosing Rayl again restores the same pocket. A generated key is
+stored before the pocket first connects, and a key that exists but cannot be read
+is never replaced. Only an explicit debug-build action erases the pocket.
+While selected, Rayl is the one configured provider like any other.

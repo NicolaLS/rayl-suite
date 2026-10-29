@@ -1,0 +1,205 @@
+package xyz.lilsus.rayl.providers.rayl.integration.pocket
+
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertNull
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runTest
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class RaylPocketTest {
+    @Test
+    fun createsStoresAndConnectsWithANewKeyWhenNoneExists() = runTest {
+        val keys = FakeKeyStore()
+        val connector = FakeConnector()
+        val pocket = pocket(keys, connector)
+
+        pocket.connect()
+
+        val stored = (keys.load() as PocketKeyLoad.Present).key
+        assertEquals(12, stored.phrase.split(' ').size)
+        assertSame(stored, connector.keys.single())
+        assertEquals(PocketStatus.Ready, pocket.status.value)
+    }
+
+    @Test
+    fun reusesTheStoredKey() = runTest {
+        val existing = PocketKey("existing")
+        val keys = FakeKeyStore(existing)
+        val connector = FakeConnector()
+
+        pocket(keys, connector).connect()
+
+        assertSame(existing, connector.keys.single())
+        assertEquals(0, keys.adds)
+    }
+
+    @Test
+    fun neverReplacesAKeyThatCannotBeRead() = runTest {
+        val keys = FakeKeyStore(unavailable = true)
+        val connector = FakeConnector()
+        val pocket = pocket(keys, connector)
+
+        pocket.connect()
+
+        assertEquals(PocketStatus.Failed, pocket.status.value)
+        assertEquals(0, keys.adds)
+        assertTrue(connector.keys.isEmpty())
+    }
+
+    @Test
+    fun doesNotConnectWithAKeyThatWasNotStored() = runTest {
+        val keys = FakeKeyStore(acceptAdds = false)
+        val connector = FakeConnector()
+        val pocket = pocket(keys, connector)
+
+        pocket.connect()
+
+        assertEquals(PocketStatus.Failed, pocket.status.value)
+        assertTrue(connector.keys.isEmpty())
+    }
+
+    @Test
+    fun retryAfterConnectionFailureKeepsTheSameKey() = runTest {
+        val keys = FakeKeyStore()
+        val connector = FakeConnector(failures = 1)
+        val pocket = pocket(keys, connector)
+
+        pocket.connect()
+        assertEquals(PocketStatus.Failed, pocket.status.value)
+        pocket.connect()
+
+        assertEquals(PocketStatus.Ready, pocket.status.value)
+        assertEquals(1, keys.adds)
+        assertSame(connector.keys[0], connector.keys[1])
+    }
+
+    @Test
+    fun closeKeepsTheKeyAndEraseDeletesIt() = runTest {
+        val keys = FakeKeyStore()
+        val connector = FakeConnector()
+        var dataErased = false
+        val pocket = pocket(keys, connector, eraseData = {
+            dataErased = true
+            true
+        })
+        pocket.connect()
+
+        pocket.close()
+        assertTrue(connector.wallet.disconnected)
+        assertTrue(keys.load() is PocketKeyLoad.Present)
+        assertEquals(PocketStatus.Closed, pocket.status.value)
+
+        assertTrue(pocket.erase())
+        assertEquals(PocketKeyLoad.Absent, keys.load())
+        assertTrue(dataErased)
+    }
+
+    @Test
+    fun aPaymentDuringStartupWaitsForThePocket() = runTest {
+        val pocket = pocket(FakeKeyStore(), FakeConnector())
+        pocket.start()
+
+        assertEquals(PocketQuoteResult.Rejected("wallet"), pocket.quote("lnbcrt1", null))
+        assertEquals(PocketStatus.Ready, pocket.status.value)
+    }
+
+    @Test
+    fun aPaymentAfterAFailedStartRetriesTheConnection() = runTest {
+        val connector = FakeConnector(failures = 1)
+        val pocket = pocket(FakeKeyStore(), connector)
+        pocket.start()
+        advanceUntilIdle()
+        assertEquals(PocketStatus.Failed, pocket.status.value)
+
+        assertEquals(PocketQuoteResult.Rejected("wallet"), pocket.quote("lnbcrt1", null))
+        assertEquals(2, connector.keys.size)
+    }
+
+    @Test
+    fun reportsBalanceAndPaidInvoices() = runTest {
+        val connector = FakeConnector()
+        val pocket = pocket(FakeKeyStore(), connector)
+        val received = mutableListOf<String>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            pocket.receivedInvoices.collect { received += it }
+        }
+        assertNull(pocket.balanceSats.value)
+
+        pocket.connect()
+        advanceUntilIdle()
+        assertEquals(0L, pocket.balanceSats.value)
+
+        connector.wallet.balance = 2_100
+        connector.wallet.events.emit(PocketEvent.Received("lnbcrt1invoice"))
+        advanceUntilIdle()
+
+        assertEquals(2_100L, pocket.balanceSats.value)
+        assertEquals(listOf("lnbcrt1invoice"), received)
+    }
+
+    private fun TestScope.pocket(keys: FakeKeyStore, connector: FakeConnector, eraseData: suspend () -> Boolean = { true }) =
+        RaylPocket(keys, connector, eraseData, StandardTestDispatcher(testScheduler))
+}
+
+private class FakeKeyStore(
+    private var key: PocketKey? = null,
+    private val unavailable: Boolean = false,
+    private val acceptAdds: Boolean = true
+) : PocketKeyStore {
+    var adds = 0
+
+    override suspend fun load(): PocketKeyLoad = when {
+        unavailable -> PocketKeyLoad.Unavailable
+        else -> key?.let(PocketKeyLoad::Present) ?: PocketKeyLoad.Absent
+    }
+
+    override suspend fun add(key: PocketKey): Boolean {
+        adds++
+        if (!acceptAdds || this.key != null) return false
+        this.key = key
+        return true
+    }
+
+    override suspend fun delete(): Boolean {
+        key = null
+        return true
+    }
+}
+
+private class FakeConnector(private var failures: Int = 0) : PocketConnector {
+    val keys = mutableListOf<PocketKey>()
+    val wallet = FakeWallet()
+
+    override suspend fun connect(key: PocketKey): PocketWallet {
+        keys += key
+        if (failures-- > 0) error("offline")
+        return wallet
+    }
+}
+
+private class FakeWallet : PocketWallet {
+    override val events = MutableSharedFlow<PocketEvent>()
+    var balance = 0L
+    var disconnected = false
+
+    override suspend fun balanceSats(): Long = balance
+
+    override suspend fun quote(invoice: String, amountSats: Long?): PocketQuoteResult = PocketQuoteResult.Rejected("wallet")
+
+    override suspend fun pay(quote: PocketQuote): PocketPayOutcome = PocketPayOutcome.Failed(null)
+
+    override suspend fun createInvoice(amountSats: Long, description: String): String = "lnbcrt1"
+
+    override suspend fun disconnect() {
+        disconnected = true
+    }
+}

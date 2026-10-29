@@ -477,6 +477,9 @@ val verifyNativeLocalizations = tasks.register("verifyNativeLocalizations") {
 val xcodeSpmLinkedModules =
     setOf(
         ":app:shared",
+        ":providers:rayl:experience",
+        ":providers:rayl:feature:payment",
+        ":providers:rayl:integration:pocket",
         ":providers:spark:experience",
         ":providers:spark:integration:wallet"
     )

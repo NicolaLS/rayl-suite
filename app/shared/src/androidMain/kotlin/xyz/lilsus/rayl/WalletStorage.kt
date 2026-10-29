@@ -10,8 +10,13 @@ import xyz.lilsus.rayl.providers.spark.clearSavedSparkWallet
 internal suspend fun clearSavedWallet(context: Context, wallet: RaylWallet): Boolean =
     withContext(Dispatchers.Default) {
         when (wallet) {
+            // The Rayl pocket is app-owned and survives switching wallets. See SPEC-wallet-lifecycle.
+            RaylWallet.Rayl -> Unit
+
             RaylWallet.Blink -> clearSavedBlinkWallet(context, RAYL_BLINK)
+
             RaylWallet.Nwc -> clearSavedNwcWallet(context, RAYL_NWC)
+
             RaylWallet.Spark -> return@withContext clearSavedSparkWallet(context)
         }
         true

@@ -2,6 +2,9 @@ import Foundation
 import Shared
 
 func configureRaylSpark() {
+#if DEBUG
+    RaylEarlyStartKt.enableRaylTimings()
+#endif
 #if RAYL_DEBUG && RAYL_PRODUCTION
 #error("Rayl environment conditions are contradictory")
 #elseif RAYL_DEBUG

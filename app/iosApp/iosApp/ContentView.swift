@@ -48,6 +48,9 @@ struct ContentView: View {
                         }
                         .padding(24)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if let experience = snapshot.raylExperience {
+                        RaylExperienceView(experience: experience)
+                            .id(ObjectIdentifier(experience))
                     } else if let experience = snapshot.blinkExperience {
                         BlinkExperienceView(experience: experience)
                             .id(ObjectIdentifier(experience))
