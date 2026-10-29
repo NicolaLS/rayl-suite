@@ -15,8 +15,10 @@ separate the background, symbol, and lighting; gradients remain editable.
   maps to the central 72dp of the 108dp layer; its convergence point remains in
   the 66dp safe circle. The decorative rays extend beyond the mask for launcher
   motion. A separate vector of the four planes supports themed icons.
-- Google Play: `../androidApp/src/main/ic_launcher-playstore.png` is the opaque,
-  unmasked 512 × 512 export.
+- Google Play: `../../distribution/store-listing/icon.png` is the opaque,
+  unmasked 512 × 512 icon export, and
+  `../../distribution/store-listing/feature-graphic.png` is the opaque
+  1024 × 500 feature graphic export.
 
 The rounded presentation exports, duplicate foreground SVGs, comparison sheet,
 and standalone HTML preview from the delivery pack are omitted. The two vector

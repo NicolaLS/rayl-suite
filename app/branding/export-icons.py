@@ -13,14 +13,18 @@ from PIL import Image, ImageDraw
 
 BRANDING = Path(__file__).resolve().parent
 APP = BRANDING.parent
+ROOT = APP.parent
 RES = APP / "androidApp/src/main/res"
+STORE_LISTING = ROOT / "distribution/store-listing"
 SVG = "{http://www.w3.org/2000/svg}"
 SOURCE = ET.parse(BRANDING / "rails.svg").getroot()
 
 
-def render(svg, size):
+def render(svg, width, height=None):
+    if height is None:
+        height = width
     data = cairosvg.svg2png(
-        bytestring=ET.tostring(svg), output_width=size, output_height=size
+        bytestring=ET.tostring(svg), output_width=width, output_height=height
     )
     return Image.open(BytesIO(data)).convert("RGBA")
 
@@ -65,14 +69,52 @@ def adaptive_layers():
     return background, foreground
 
 
+def feature_graphic():
+    graphic = deepcopy(SOURCE)
+    graphic.set("width", "1024")
+    graphic.set("height", "500")
+    graphic.set("viewBox", "0 0 1024 500")
+
+    clip = graphic.find(f".//{SVG}clipPath[@id='canvas-clip']/{SVG}rect")
+    clip.set("height", "500")
+    graphic.find(f".//{SVG}linearGradient[@id='background-gradient']").set("y2", "500")
+    ambient = graphic.find(f".//{SVG}radialGradient[@id='background-ambient']")
+    ambient.attrib.update(cy="80", r="680")
+
+    art = artwork(graphic)
+    for rect in art.find(f"{SVG}g[@id='background']").iter(f"{SVG}rect"):
+        rect.set("height", "500")
+
+    # Relocate the convergence point into Google Play's 1024x500 safe zone and
+    # angle the four rails across the widescreen canvas while preserving their
+    # relative geometry and user-space lighting gradients.
+    transform = "translate(690 172) rotate(8) scale(0.85) translate(-690 -336)"
+    for group_id in ("rails-atmosphere", "rails-symbol", "rails-light-accents"):
+        group = art.find(f"{SVG}g[@id='{group_id}']")
+        group.set("transform", transform)
+        for rect in group.iter(f"{SVG}rect"):
+            rect.attrib.update(x="-512", y="-512", width="2048", height="2048")
+        for path in group.iter(f"{SVG}path"):
+            path.set("d", extend_rail(path.get("d")))
+    return graphic
+
+
 def main():
+    STORE_LISTING.mkdir(parents=True, exist_ok=True)
     icon = render(SOURCE, 1024)
     if icon.getchannel("A").getextrema() != (255, 255):
         raise ValueError("The iOS and Play icon must be completely opaque")
     icon = icon.convert("RGB")
     icon.save(APP / "iosApp/iosApp/Assets.xcassets/AppIcon.appiconset/AppIcon.png")
     icon.resize((512, 512), Image.Resampling.LANCZOS).save(
-        APP / "androidApp/src/main/ic_launcher-playstore.png"
+        STORE_LISTING / "icon.png"
+    )
+
+    feature = render(feature_graphic(), 1024, 500)
+    if feature.getchannel("A").getextrema() != (255, 255):
+        raise ValueError("The Play feature graphic must be completely opaque")
+    feature.convert("RGB").save(
+        STORE_LISTING / "feature-graphic.png"
     )
 
     background, foreground = adaptive_layers()
