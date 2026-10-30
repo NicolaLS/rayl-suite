@@ -41,6 +41,7 @@ uriKmp = "0.0.21"
 breezSpark = "0.27.2"
 okio = "3.16.2"
 hikari = "7.1.0"
+slf4j = "2.0.17"
 androidx-credentials = "1.6.0"
 googleid = "1.2.1"
 postgresql = "42.7.14"
@@ -109,6 +110,7 @@ breez-sdk-spark = { module = "technology.breez.spark:breez-sdk-spark-kmp", versi
 breez-sdk-spark-jvm = { module = "technology.breez.spark:breez-sdk-spark-kmp-jvm", version.ref = "breezSpark" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
 androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "androidx-credentials" }
 androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "androidx-credentials" }
 googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }

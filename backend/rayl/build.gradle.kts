@@ -23,6 +23,8 @@ dependencies {
     implementation(libs.ktor.server.contentNegotiation)
     implementation(libs.ktor.serialization.kotlinx.json)
     implementation(libs.ktor.client.okhttp)
+    // Ktor and the Club log through SLF4J; without a provider every line is dropped.
+    runtimeOnly(libs.slf4j.simple)
     testImplementation(kotlin("test-junit"))
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.ktor.client.mock)
