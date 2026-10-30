@@ -267,7 +267,14 @@ class CreditTest {
         )
         application {
             install(ContentNegotiation) { json() }
-            club(env.store, env.memberships, env.credit, issuer.verifier, operatorToken = null)
+            club(
+                env.store,
+                env.memberships,
+                env.credit,
+                StatementStore(db) { treasury },
+                issuer.verifier,
+                operatorToken = null
+            )
         }
         val subject = member(env)
         val token = issuer.token(subject = subject.toString())

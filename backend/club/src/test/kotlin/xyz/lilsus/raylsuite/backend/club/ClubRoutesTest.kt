@@ -49,6 +49,7 @@ class ClubRoutesTest {
                 store,
                 memberships,
                 CreditStore(database, { null }, paused = false, exposureCapSat = null),
+                StatementStore(database) { null },
                 issuer.verifier,
                 operatorToken
             )

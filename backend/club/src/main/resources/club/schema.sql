@@ -93,3 +93,30 @@ create table if not exists club_credit_spend (
 -- An invoice is paid with credit at most once.
 create unique index if not exists club_credit_spend_one_payment
     on club_credit_spend (invoice) where status <> 'failed';
+
+-- A closed monthly statement (P-03, P-05). `closing_msat` is the member receivable at
+-- `period_end`, so it includes any earlier unpaid statement. It is paid once repayments recorded
+-- after `period_end` add up to it.
+create table if not exists club_statement (
+    id uuid primary key,
+    account_id uuid not null references club_account (id),
+    membership_id uuid not null references club_membership (id),
+    period_start timestamptz not null,
+    period_end timestamptz not null,
+    closing_msat bigint not null,
+    due_at timestamptz not null,
+    paid_at timestamptz,
+    created_at timestamptz not null default now(),
+    unique (membership_id, period_end)
+);
+
+-- A treasury invoice a member pays to repay their balance. At most one is open per account.
+create table if not exists club_repayment (
+    id uuid primary key,
+    account_id uuid not null references club_account (id),
+    invoice text not null unique,
+    amount_msat bigint not null check (amount_msat > 0),
+    expires_at timestamptz not null,
+    paid_at timestamptz,
+    created_at timestamptz not null default now()
+);

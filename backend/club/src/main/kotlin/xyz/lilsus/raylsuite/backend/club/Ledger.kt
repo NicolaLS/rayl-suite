@@ -11,7 +11,7 @@ object LedgerAccount {
     /** Annual fees earned; postings name the member who paid. */
     const val FEE_REVENUE = "fee_revenue"
 
-    /** What each member owes for credit spends; postings name the member. */
+    /** What each member owes for credit spends, less repayments; postings name the member. */
     const val MEMBER_RECEIVABLE = "member_receivable"
 }
 
@@ -20,13 +20,20 @@ class Posting(val ledgerAccount: String, val memberAccountId: UUID?, val amountM
 /**
  * Appends one balanced journal entry. An entry for the same [kind] and [refId] already recorded
  * makes the insert fail on its unique key, so callers record each event at most once.
+ *
+ * The entry is timestamped when it is written, not when its transaction began: callers that post
+ * to a member's receivable hold [lockAccount] first, so a statement closed under the same lock
+ * either sees the entry or precedes it in time.
  */
 internal fun Connection.recordEntry(kind: String, refId: UUID, vararg postings: Posting) {
     require(postings.size >= 2 && postings.sumOf { it.amountMsat } == 0L) {
         "A journal entry needs balanced postings"
     }
     val entryId = UUID.randomUUID()
-    prepareStatement("insert into club_journal_entry (id, kind, ref_id) values (?, ?, ?)").use {
+    prepareStatement(
+        "insert into club_journal_entry (id, kind, ref_id, created_at) " +
+            "values (?, ?, ?, clock_timestamp())"
+    ).use {
         it.setObject(1, entryId)
         it.setString(2, kind)
         it.setObject(3, refId)

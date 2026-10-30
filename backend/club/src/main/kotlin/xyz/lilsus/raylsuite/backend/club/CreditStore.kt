@@ -193,6 +193,8 @@ class CreditStore(
      * a failed one releases its reservation, a pending one keeps it.
      */
     private suspend fun record(spendId: UUID, outcome: SendOutcome): StoredSpend = db.transaction {
+        // The account lock orders this entry against statement closes and a concurrent record.
+        lockAccount(checkNotNull(spendById(spendId)).accountId)
         val spend = checkNotNull(spendById(spendId))
         if (spend.status != SpendStatus.Paying) return@transaction spend
         when (outcome) {
@@ -268,11 +270,18 @@ class CreditStore(
             statement.executeQuery().use { it.spends().firstOrNull() }
         }
 
-    private fun Connection.isOwnInvoice(invoice: String): Boolean =
-        prepareStatement("select 1 from club_fee_quote where invoice = ?").use { statement ->
-            statement.setString(1, invoice.trim())
-            statement.executeQuery().use { it.next() }
-        }
+    /** A fee or repay invoice: the treasury paying itself. */
+    private fun Connection.isOwnInvoice(invoice: String): Boolean = prepareStatement(
+        """
+        select 1 from club_fee_quote where invoice = ?
+        union all
+        select 1 from club_repayment where invoice = ?
+        """
+    ).use { statement ->
+        statement.setString(1, invoice.trim())
+        statement.setString(2, invoice.trim())
+        statement.executeQuery().use { it.next() }
+    }
 
     private fun StoredSpend.repeatedBy(request: CreditSpendRequest): CreditSpendResult =
         if (invoice == request.invoice.trim()) {

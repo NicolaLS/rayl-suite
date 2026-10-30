@@ -38,6 +38,9 @@ import xyz.lilsus.raylsuite.core.raylapi.RedeemInviteRequest
 /** Operator endpoints; served only when `CLUB_OPERATOR_TOKEN` is set. Not part of the app contract. */
 const val OPERATOR_INVITES_PATH = "/v1/club/operator/invites"
 
+/** `POST` a [CloseStatementRequest]: closes the member's open period now (D-23). */
+const val OPERATOR_CLOSE_STATEMENT_PATH = "/v1/club/operator/statements/close"
+
 private const val MEMBER_AUTH = "club-member"
 
 /** Verifies Supabase access tokens: signed by a key from [jwks], issued by [issuer]. */
@@ -64,6 +67,7 @@ fun Application.club(
     store: ClubStore,
     memberships: MembershipStore,
     credit: CreditStore,
+    statements: StatementStore,
     verifier: ClubTokenVerifier,
     operatorToken: String?
 ) {
@@ -157,6 +161,36 @@ fun Application.club(
                     }
                 }
             }
+            post(ClubApi.REPAYMENTS_PATH) {
+                clubCall {
+                    when (statements.repay(member())) {
+                        RepayResult.Requested -> call.respond(
+                            memberships.account(member(), platform())
+                        )
+
+                        RepayResult.NotAMember -> fail(
+                            HttpStatusCode.Forbidden,
+                            ClubApiError.NOT_A_MEMBER
+                        )
+
+                        RepayResult.NothingDue -> fail(
+                            HttpStatusCode.Conflict,
+                            ClubApiError.NOTHING_DUE
+                        )
+
+                        RepayResult.Unavailable -> fail(
+                            HttpStatusCode.ServiceUnavailable,
+                            ClubApiError.UNAVAILABLE
+                        )
+                    }
+                }
+            }
+            get(ClubApi.STATEMENT_PATH) {
+                clubCall {
+                    statements.statement(member())?.let { call.respond(it) }
+                        ?: fail(HttpStatusCode.Forbidden, ClubApiError.NOT_A_MEMBER)
+                }
+            }
             post(ClubApi.REDEEM_INVITE_PATH) {
                 val request = runCatching { call.receive<RedeemInviteRequest>() }.getOrNull()
                     ?: return@post call.respond(
@@ -191,6 +225,7 @@ fun Application.club(
         }
         if (operatorToken != null) {
             route(OPERATOR_INVITES_PATH) { operatorInvites(store, operatorToken) }
+            route(OPERATOR_CLOSE_STATEMENT_PATH) { operatorClose(statements, operatorToken) }
         }
     }
 }
@@ -216,17 +251,35 @@ data class InviteView(
     val redeemedAt: String?
 )
 
-private fun Route.operatorInvites(store: ClubStore, operatorToken: String) {
-    val expected = "Bearer $operatorToken".toByteArray()
-    suspend fun RoutingContext.authorized(): Boolean {
-        val presented =
-            call.request.headers[HttpHeaders.Authorization]?.toByteArray() ?: ByteArray(0)
-        if (MessageDigest.isEqual(presented, expected)) return true
-        fail(HttpStatusCode.Unauthorized, ClubApiError.UNAUTHORIZED)
-        return false
-    }
+/** [memberCode] as the member's app shows it; case, spaces and dashes are ignored. */
+@Serializable
+data class CloseStatementRequest(val memberCode: String)
+
+/** Answers 401 unless the request carries the operator token. */
+private suspend fun RoutingContext.operator(operatorToken: String): Boolean {
+    val presented = call.request.headers[HttpHeaders.Authorization]?.toByteArray() ?: ByteArray(0)
+    if (MessageDigest.isEqual(presented, "Bearer $operatorToken".toByteArray())) return true
+    fail(HttpStatusCode.Unauthorized, ClubApiError.UNAUTHORIZED)
+    return false
+}
+
+private fun Route.operatorClose(statements: StatementStore, operatorToken: String) {
     post {
-        if (!authorized()) return@post
+        if (!operator(operatorToken)) return@post
+        val request = runCatching { call.receive<CloseStatementRequest>() }.getOrNull()
+            ?: return@post fail(HttpStatusCode.BadRequest, ClubApiError.INVALID_REQUEST)
+        clubCall {
+            when (val result = statements.closeNow(request.memberCode)) {
+                is CloseResult.Closed -> call.respond(result.statement)
+                CloseResult.NotAMember -> fail(HttpStatusCode.NotFound, ClubApiError.NOT_A_MEMBER)
+            }
+        }
+    }
+}
+
+private fun Route.operatorInvites(store: ClubStore, operatorToken: String) {
+    post {
+        if (!operator(operatorToken)) return@post
         val request = runCatching { call.receive<CreateInviteRequest>() }.getOrNull()
         if (request == null ||
             request.tierCodes.isEmpty() ||
@@ -249,7 +302,7 @@ private fun Route.operatorInvites(store: ClubStore, operatorToken: String) {
         }
     }
     get {
-        if (!authorized()) return@get
+        if (!operator(operatorToken)) return@get
         clubCall { call.respond(store.invites().map { it.view() }) }
     }
 }

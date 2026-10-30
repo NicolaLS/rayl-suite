@@ -89,8 +89,8 @@ class TestIssuer(val issuer: String = "https://test-ref.supabase.co/auth/v1") {
 }
 
 private const val TRUNCATE_ALL =
-    "truncate club_posting, club_journal_entry, club_credit_spend, club_fee_quote, " +
-        "club_membership, club_invite, club_account"
+    "truncate club_posting, club_journal_entry, club_credit_spend, club_statement, " +
+        "club_repayment, club_fee_quote, club_membership, club_invite, club_account"
 
 /**
  * Issues numbered fake invoices and remembers their amounts. Invoices from [payee] can be paid:

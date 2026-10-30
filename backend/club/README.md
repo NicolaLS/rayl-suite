@@ -1,7 +1,7 @@
 # Rayl Club backend
 
-Club accounts, invites, memberships and credit spends, served by the Rayl backend
-(`backend/rayl`) under `/v1/club`.
+Club accounts, invites, memberships, credit spends, statements and repayments, served by the Rayl
+backend (`backend/rayl`) under `/v1/club`.
 The app-facing contract is `ClubApi` in [`core/rayl-api`](../../core/rayl-api).
 
 ## Configuration
@@ -47,6 +47,22 @@ curl -sS -X POST "$RAYL_BACKEND/v1/club/operator/invites" \
 ```
 
 List invites with `GET` on the same path.
+
+Close a member's statement now instead of at the month's end (for demos and tests; `memberCode` is
+the member ID their app shows):
+
+```sh
+curl -sS -X POST "$RAYL_BACKEND/v1/club/operator/statements/close" \
+  -H "Authorization: Bearer $CLUB_OPERATOR_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"memberCode":"ABCDE-FGHJK"}'
+```
+
+## Statements
+
+Every ten minutes the backend closes the statements of months that have ended (UTC), catching up
+after downtime. A statement is due 14 days after it closes. Members repay through treasury
+invoices, one open at a time; the treasury's paid-invoice watcher records them, including those
+paid while the backend was down.
 
 ## Tests
 

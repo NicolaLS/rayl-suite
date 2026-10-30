@@ -58,6 +58,7 @@ class MembershipTest {
                 env.store,
                 env.memberships,
                 CreditStore(db, { null }, paused = false, exposureCapSat = null),
+                StatementStore(db) { null },
                 issuer.verifier,
                 operatorToken = null
             )

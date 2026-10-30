@@ -12,8 +12,9 @@ import kotlinx.coroutines.launch
 
 /**
  * Serves Rayl Club and starts it in the background: the schema once Postgres answers, then the
- * treasury (if `TREASURY_MNEMONIC` is set), which activates memberships as fees arrive. Until the
- * treasury is up, joins that need a fee answer `club_unavailable`; fee-waived joins work.
+ * treasury (if `TREASURY_MNEMONIC` is set), which activates memberships as fees arrive and records
+ * repayments. Statements close every month once the schema is applied. Until the treasury is up,
+ * joins that need a fee and repayments answer `club_unavailable`; fee-waived joins work.
  */
 fun Application.startClub(
     config: ClubConfig,
@@ -25,6 +26,7 @@ fun Application.startClub(
     val memberships =
         MembershipStore(database, treasury::get, btcUsd, config.joinPlatforms, config.paused)
     val credit = CreditStore(database, treasury::get, config.paused, config.exposureCapSat)
+    val statements = StatementStore(database, treasury::get)
     if (config.paused) log.warn("Rayl Club is paused: no new credit spends or joins")
     if (config.exposureCapSat == null) {
         log.warn("Rayl Club credit is off: CLUB_EXPOSURE_CAP_SAT is not set")
@@ -33,12 +35,14 @@ fun Application.startClub(
         ClubStore(database, config.allowTestTiers),
         memberships,
         credit,
+        statements,
         ClubTokenVerifier.forSupabase(config),
         config.operatorToken
     )
     launch {
         database.applySchemaWhenReachable { log.warn("Club schema not applied yet: ${it.message}") }
         log.info("Rayl Club schema applied")
+        launch { closeStatements(statements) }
         if (treasuryConfig == null) {
             log.warn("Rayl Club treasury disabled: TREASURY_MNEMONIC is not set")
             return@launch
@@ -52,10 +56,29 @@ fun Application.startClub(
             ) {
                 log.warn("Club fee paid by an existing member: $invoice")
             }
+            if (result == FeePaidResult.Unknown) {
+                val repaid = statements.repaymentPaid(invoice)
+                if (repaid != RepaymentPaidResult.Unknown) log.info("Club repayment: $repaid")
+            }
         }
         treasury.set(connected)
         log.info("Rayl Club treasury connected on ${treasuryConfig.network}")
         reconcileSpends(credit)
+    }
+}
+
+/** Closes statements whose month has ended, every ten minutes; a restart catches up. */
+private suspend fun Application.closeStatements(statements: StatementStore) {
+    while (true) {
+        try {
+            val closed = statements.closeDue()
+            if (closed > 0) log.info("Club statements closed: $closed")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn("Club statement close failed: ${e.message}")
+        }
+        delay(10.minutes)
     }
 }
 

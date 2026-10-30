@@ -207,7 +207,7 @@ class MembershipStore(
         statement.setObject(1, accountId)
         statement.executeQuery().use { rows ->
             if (!rows.next()) return null
-            ClubMembership(
+            val membership = ClubMembership(
                 tierCode = rows.getString("tier_code"),
                 status = rows.getString("status"),
                 creditLimitSat = rows.getObject("credit_limit_msat")?.let { (it as Long) / 1_000 },
@@ -229,6 +229,13 @@ class MembershipStore(
                         ).toInstant().toString()
                     )
                 }
+            )
+            if (membership.status != ClubMembershipStatus.ACTIVE) return membership
+            membership.copy(
+                balanceSat = wholeSats(receivableMsat(accountId).coerceAtLeast(0)),
+                statement = latestStatement(accountId)?.summary(),
+                amountDue = amountDue(accountId),
+                repayment = openRepayment(accountId)
             )
         }
     }
@@ -318,7 +325,7 @@ class MembershipStore(
     }
 }
 
-/** Serializes joins, fee payments and credit spends per account. */
+/** Serializes joins, fee payments, credit spends, repayments and statements per account. */
 internal fun Connection.lockAccount(accountId: UUID) {
     prepareStatement("select 1 from club_account where id = ? for update").use { statement ->
         statement.setObject(1, accountId)

@@ -39,6 +39,17 @@ object ClubApi {
      * [CreditSpend] and never pays twice.
      */
     const val CREDIT_SPENDS_PATH = "/v1/club/credit/spends"
+
+    /**
+     * `POST` (no body, with [PLATFORM_PARAMETER]): a treasury invoice for the member's
+     * [ClubMembership.amountDue], answered as the updated [ClubAccount] with
+     * [ClubMembership.repayment]. While that invoice is open, the same one is answered again.
+     * [ClubApiError.NOTHING_DUE] when nothing is owed.
+     */
+    const val REPAYMENTS_PATH = "/v1/club/repayments"
+
+    /** `GET`: the member's [ClubStatement]. */
+    const val STATEMENT_PATH = "/v1/club/statement"
 }
 
 object ClubMembershipStatus {
@@ -73,6 +84,9 @@ object ClubApiError {
 
     /** The routing fee rose above [CreditSpendRequest.maxFeeMsat]; nothing was paid. */
     const val FEE_CHANGED = "fee_changed"
+
+    /** Nothing is owed, so there is nothing to repay. */
+    const val NOTHING_DUE = "nothing_due"
 }
 
 object ClubCreditSpendStatus {
@@ -81,6 +95,19 @@ object ClubCreditSpendStatus {
 
     /** Sent, outcome not known yet; the amount stays reserved until it is. */
     const val PENDING = "pending"
+}
+
+object ClubAmountDueKind {
+    /** The latest statement is unpaid: its remaining balance, due at [ClubAmountDue.dueAt]. */
+    const val STATEMENT = "statement"
+
+    /** No statement is unpaid: everything owed so far. */
+    const val BALANCE = "balance"
+}
+
+object ClubStatementLineKind {
+    const val SPEND = "spend"
+    const val REPAYMENT = "repayment"
 }
 
 /**
@@ -121,8 +148,54 @@ data class ClubMembership(
     /** The limit less what is owed and what is reserved for payments in flight. */
     val creditAvailableSat: Long? = null,
     val termEnd: String? = null,
-    val payment: ClubFeePayment? = null
+    val payment: ClubFeePayment? = null,
+    /** What is owed for settled spends, rounded up to whole sats. */
+    val balanceSat: Long? = null,
+    /** The latest closed statement; null before the first one closes. */
+    val statement: ClubStatementSummary? = null,
+    /** What the repay button pays; null when nothing is owed. */
+    val amountDue: ClubAmountDue? = null,
+    /** The open repay invoice, until it is paid or expires. */
+    val repayment: ClubRepayment? = null
 )
+
+/**
+ * A monthly statement (ISO-8601 times). [closingSat] is what was owed at [periodEnd], including
+ * any earlier unpaid statement; [remainingSat] is what is still to pay of it by [dueAt].
+ */
+@Serializable
+data class ClubStatementSummary(
+    val periodStart: String,
+    val periodEnd: String,
+    val closingSat: Long,
+    val remainingSat: Long,
+    val dueAt: String,
+    val paid: Boolean
+)
+
+/** [kind] is a [ClubAmountDueKind]; [dueAt] is set for a statement. */
+@Serializable
+data class ClubAmountDue(val amountSat: Long, val kind: String, val dueAt: String? = null)
+
+/** A repayment as a Lightning invoice to the treasury, valid until [expiresAt] (ISO-8601). */
+@Serializable
+data class ClubRepayment(val invoice: String, val amountSat: Long, val expiresAt: String)
+
+/**
+ * The latest closed [statement] with its [lines], and the [currentLines] since
+ * [currentPeriodStart], oldest first.
+ */
+@Serializable
+data class ClubStatement(
+    val statement: ClubStatementSummary? = null,
+    val lines: List<ClubStatementLine> = emptyList(),
+    val currentPeriodStart: String,
+    val currentLines: List<ClubStatementLine> = emptyList()
+)
+
+/** [kind] is a [ClubStatementLineKind]; a spend's [amountSat] includes its routing fee. */
+@Serializable
+data class ClubStatementLine(val kind: String, val at: String, val amountSat: Long)
 
 /** The annual fee as a Lightning invoice, valid until [expiresAt] (ISO-8601). */
 @Serializable
