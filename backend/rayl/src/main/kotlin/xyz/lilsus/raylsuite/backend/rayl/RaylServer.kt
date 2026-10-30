@@ -9,6 +9,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.server.application.Application
 import io.ktor.server.application.install
+import io.ktor.server.application.log
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -20,13 +21,22 @@ import io.ktor.server.routing.routing
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import xyz.lilsus.raylsuite.backend.club.ClubConfig
+import xyz.lilsus.raylsuite.backend.club.ClubDatabase
+import xyz.lilsus.raylsuite.backend.club.ClubStore
+import xyz.lilsus.raylsuite.backend.club.ClubTokenVerifier
+import xyz.lilsus.raylsuite.backend.club.applySchemaWhenReachable
+import xyz.lilsus.raylsuite.backend.club.club
 import xyz.lilsus.raylsuite.core.raylapi.BitcoinPrices
 import xyz.lilsus.raylsuite.core.raylapi.RaylApi
 import xyz.lilsus.raylsuite.core.raylapi.RaylApiError
 
 private val REFRESH_INTERVAL = 30.seconds
 
-/** Railway sets `PORT`; the container image sets `HOST=0.0.0.0`. */
+/**
+ * Railway sets `PORT`; the container image sets `HOST=0.0.0.0`. Rayl Club is served when its
+ * environment is configured ([ClubConfig]).
+ */
 fun main() {
     val host = System.getenv("HOST") ?: "127.0.0.1"
     val port = (System.getenv("PORT") ?: "8080").toInt()
@@ -36,8 +46,25 @@ fun main() {
         install(UserAgent) { agent = "rayl-backend" }
     }
     val board = PriceBoard(defaultPriceSources(http))
+    val clubConfig = ClubConfig.fromEnvironment()
     embeddedServer(CIO, host = host, port = port) {
         raylModule(board::current)
+        if (clubConfig == null) {
+            log.info("Rayl Club disabled: DATABASE_URL and SUPABASE_URL are not both set")
+        } else {
+            val database = ClubDatabase.connect(clubConfig.database)
+            club(
+                ClubStore(database),
+                ClubTokenVerifier.forSupabase(clubConfig),
+                clubConfig.operatorToken
+            )
+            launch {
+                database.applySchemaWhenReachable {
+                    log.warn("Club schema not applied yet: ${it.message}")
+                }
+                log.info("Rayl Club schema applied")
+            }
+        }
         launch {
             while (true) {
                 board.refresh()

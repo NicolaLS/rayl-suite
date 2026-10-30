@@ -14,6 +14,7 @@ application {
 
 dependencies {
     implementation(project(":core:rayl-api"))
+    implementation(project(":backend:club"))
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.cio)

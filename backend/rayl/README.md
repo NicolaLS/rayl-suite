@@ -4,6 +4,8 @@ Serves `GET /v1/bitcoin/prices` ([wire contract](../../core/rayl-api)). Every 30
 mempool.space, Coinbase, Kraken and blockchain.info, and it answers with the per-currency
 median of the quotes that are at most five minutes old. It returns 503 when no source is fresh.
 
+With `DATABASE_URL` and `SUPABASE_URL` set, it also serves Rayl Club ([`backend/club`](../club)).
+
 Run locally on `127.0.0.1:8080`:
 
 ```sh
@@ -18,3 +20,6 @@ built distribution, so Railway never configures the Gradle project:
 railway up backend/rayl --path-as-root --no-gitignore \
   -p 9bbf2625-4edc-4a92-bc7c-b3e9f6c840be -s rayl -e production --detach
 ```
+
+The `regtest` environment of the same project serves the Club for Regtest builds; deploy it with
+`-e regtest`.
