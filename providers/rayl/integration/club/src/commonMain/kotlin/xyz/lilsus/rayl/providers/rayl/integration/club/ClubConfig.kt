@@ -20,8 +20,9 @@ data class ClubConfig(
     val googleWebClientId: String? = GOOGLE_WEB_CLIENT_ID
 ) {
     companion object {
-        // TODO(club): set once the Google Cloud OAuth clients exist (see the Club setup checklist).
-        private val GOOGLE_WEB_CLIENT_ID: String? = null
+        /** Google Cloud project `rayl-club`, client "Rayl Club web"; one for both networks. */
+        private val GOOGLE_WEB_CLIENT_ID: String? =
+            "634575389340-0cpdqgpob4mg7igs466o7ngrmg72m9u5.apps.googleusercontent.com"
 
         val Regtest = ClubConfig(
             backendUrl = RaylApi.REGTEST_BASE_URL,
