@@ -41,7 +41,10 @@ private func makeRaylShellAdapter(_ experience: RaylIosExperience) -> NativeShel
                 NativeSettingsView(
                     controller: experience.settingsController(),
                     trailingContent: AnyView(
-                        RaylWalletSettingsActions(controller: experience.walletSettingsController())
+                        RaylWalletSettingsActions(
+                            controller: experience.walletSettingsController(),
+                            clubController: experience.clubController()
+                        )
                     )
                 )
             )
@@ -126,15 +129,19 @@ private enum RaylLeaveConfirmation: Identifiable {
 
 private struct RaylWalletSettingsActions: View {
     @StateObject private var model: RaylWalletSettingsModel
+    @StateObject private var club: RaylClubModel
     @State private var confirmation: RaylLeaveConfirmation?
 
-    init(controller: RaylNativeWalletSettingsController) {
+    init(controller: RaylNativeWalletSettingsController, clubController: RaylNativeClubController) {
         _model = StateObject(wrappedValue: RaylWalletSettingsModel(controller: controller))
+        _club = StateObject(wrappedValue: RaylClubModel(controller: clubController))
     }
 
     var body: some View {
         if let snapshot = model.snapshot {
             VStack(alignment: .leading, spacing: 12) {
+                RaylClubRow(model: club)
+                Divider()
                 if snapshot.pocketFailed {
                     Button { model.controller.retryPocket() } label: { spendingPower(snapshot) }
                 } else {

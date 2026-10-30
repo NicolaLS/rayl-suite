@@ -8,8 +8,8 @@ Rayl's platform hosts, provider runtimes, and platform credential stores jointly
 
 The wallet chooser means no wallet is configured, no provider session is active,
 and no provider retains credentials or connection-specific local data. App
-preferences, the user's shared Hub, and the Rayl pocket are independent of wallet
-connections.
+preferences, the user's shared Hub, the Rayl pocket, and the Rayl Club sign-in are
+independent of wallet connections.
 
 Choosing a provider starts temporary setup. It must not retrieve an earlier
 wallet's credentials or reconnect an earlier session. Only successful connection
@@ -47,3 +47,10 @@ them either, and choosing Rayl again restores the same pocket. A generated key i
 stored before the pocket first connects, and a key that exists but cannot be read
 is never replaced. Only an explicit debug-build action erases the pocket.
 While selected, Rayl is the one configured provider like any other.
+
+## The Rayl Club sign-in
+
+Only the Rayl provider offers Rayl Club. A member's Club sign-in belongs to the person rather
+than a wallet connection: leaving Rayl for the chooser and startup cleanup keep it, choosing Rayl
+again restores it, and only an explicit sign-out ends it. Regtest and Mainnet builds keep separate
+sign-ins.

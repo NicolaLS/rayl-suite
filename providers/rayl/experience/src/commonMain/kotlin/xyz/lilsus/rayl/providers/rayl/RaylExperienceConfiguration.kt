@@ -1,5 +1,6 @@
 package xyz.lilsus.rayl.providers.rayl
 
+import xyz.lilsus.rayl.providers.rayl.integration.club.ClubConfig
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketConfig
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketNetwork
 import xyz.lilsus.raylsuite.feature.settings.SettingsLegalLinks
@@ -24,3 +25,9 @@ internal fun RaylEnvironment.pocketConfig(breezApiKey: String?): PocketConfig = 
     },
     breezApiKey = breezApiKey
 )
+
+/** Regtest builds use the Club's `regtest` backend and Supabase project; release builds Mainnet's. */
+internal fun RaylEnvironment.clubConfig(): ClubConfig = when (this) {
+    RaylEnvironment.DEBUG -> ClubConfig.Regtest
+    RaylEnvironment.PRODUCTION -> ClubConfig.Mainnet
+}

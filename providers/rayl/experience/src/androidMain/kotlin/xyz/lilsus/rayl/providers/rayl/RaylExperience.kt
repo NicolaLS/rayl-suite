@@ -26,9 +26,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlin.random.Random
 import xyz.lilsus.rayl.providers.rayl.experience.R
+import xyz.lilsus.rayl.providers.rayl.integration.club.RaylClub
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketStatus
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.createAndroidRaylPocket
 import xyz.lilsus.raylsuite.core.model.ThemePreference
+import xyz.lilsus.raylsuite.core.settings.createSecureSettings
 import xyz.lilsus.raylsuite.core.settings.rememberAppSettings
 import xyz.lilsus.raylsuite.core.ui.platform.LocalProductName
 import xyz.lilsus.raylsuite.core.ui.platform.rememberHapticFeedbackManager
@@ -60,6 +62,9 @@ fun RaylExperience(
                 environment = environment,
                 pocket = RaylEarlyStart.take {
                     createAndroidRaylPocket(context, environment.pocketConfig(breezApiKey))
+                },
+                club = environment.clubConfig().let { club ->
+                    RaylClub.create(club, createSecureSettings(context, club.storageName))
                 },
                 haptics = haptics,
                 onFundingInvoice = { invoice ->

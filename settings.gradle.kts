@@ -76,6 +76,7 @@ includeProvider(
     listOf(
         "experience",
         "feature:payment",
+        "integration:club",
         "integration:pocket"
     )
 )

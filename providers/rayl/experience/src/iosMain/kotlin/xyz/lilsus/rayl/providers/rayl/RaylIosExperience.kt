@@ -7,9 +7,11 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import xyz.lilsus.rayl.providers.rayl.integration.club.RaylClub
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketStatus
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.createIosRaylPocket
 import xyz.lilsus.raylsuite.core.settings.createAppSettings
+import xyz.lilsus.raylsuite.core.settings.createSecureSettings
 import xyz.lilsus.raylsuite.core.ui.platform.createHapticFeedbackManager
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
 import xyz.lilsus.raylsuite.core.ui.resources.nativeString
@@ -46,6 +48,9 @@ class RaylIosExperience(
         configuration = configuration,
         environment = environment,
         pocket = RaylEarlyStart.take { createIosRaylPocket(environment.pocketConfig(breezApiKey)) },
+        club = environment.clubConfig().let { club ->
+            RaylClub.create(club, createSecureSettings(club.storageName))
+        },
         haptics = createHapticFeedbackManager()
     )
 
@@ -71,6 +76,9 @@ class RaylIosExperience(
         )
     }
     private val walletSettingsController = lazy { RaylNativeWalletSettingsController(runtime) }
+    private val clubController = lazy {
+        RaylNativeClubController(runtime.club, runtime.languageRepository.preference)
+    }
 
     /** `tabs` at once: the pocket connects in the background, so the camera never waits for it. */
     fun stage(): String = stageOf(runtime.exit.value)
@@ -124,12 +132,15 @@ class RaylIosExperience(
     fun walletSettingsController(): RaylNativeWalletSettingsController =
         walletSettingsController.value
 
+    fun clubController(): RaylNativeClubController = clubController.value
+
     fun clear() {
         if (settingsController.isInitialized()) settingsController.value.clear()
         if (scanController.isInitialized()) scanController.value.clear()
         if (recentController.isInitialized()) recentController.value.clear()
         if (hubController.isInitialized()) hubController.value.clear()
         if (walletSettingsController.isInitialized()) walletSettingsController.value.clear()
+        if (clubController.isInitialized()) clubController.value.clear()
         observerScope.coroutineContext[Job]?.cancel()
         runtime.clear()
     }

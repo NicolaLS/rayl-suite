@@ -562,6 +562,7 @@
 				DEVELOPMENT_TEAM = N94Z39Q5S8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Rayl Dev";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
@@ -598,6 +599,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"iosApp/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Rayl Dev";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
@@ -763,6 +765,7 @@
 				DEVELOPMENT_TEAM = TA77463BFV;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Rayl;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";
@@ -1048,6 +1051,7 @@
 				DEVELOPMENT_TEAM = N94Z39Q5S8;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_ENTITLEMENTS = iosApp/iosApp.entitlements;
 				INFOPLIST_FILE = iosApp/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "Rayl Dev Mainnet";
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.finance";

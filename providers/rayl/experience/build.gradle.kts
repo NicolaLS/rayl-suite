@@ -11,6 +11,7 @@ kotlin {
         commonMain.dependencies {
             implementation(project(":providers:rayl:feature:payment"))
             implementation(project(":providers:rayl:integration:pocket"))
+            implementation(project(":providers:rayl:integration:club"))
             implementation(project(":core:model"))
             implementation(project(":core:network"))
             implementation(project(":core:settings"))
@@ -30,6 +31,9 @@ kotlin {
             implementation(libs.compose.runtime)
         }
         androidMain.dependencies {
+            implementation(libs.androidx.credentials)
+            implementation(libs.androidx.credentials.play.services.auth)
+            implementation(libs.googleid)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             implementation(libs.compose.foundation)
             implementation(libs.compose.material.icons.extended)

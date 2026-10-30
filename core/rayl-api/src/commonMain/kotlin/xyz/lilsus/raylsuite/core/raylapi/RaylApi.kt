@@ -5,6 +5,9 @@ import kotlinx.serialization.Serializable
 /** Wire contract between Rayl clients and the Rayl backend (`backend/rayl`). */
 object RaylApi {
     const val BASE_URL = "https://rayl-production.up.railway.app"
+
+    /** The Railway `regtest` environment, which serves Rayl Club to Regtest builds. */
+    const val REGTEST_BASE_URL = "https://rayl-regtest.up.railway.app"
     const val BITCOIN_PRICES_PATH = "/v1/bitcoin/prices"
 }
 

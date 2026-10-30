@@ -125,7 +125,7 @@ private fun RaylSettingsTab(runtime: RaylRuntime) {
     NavigationEventHandler(
         state = rememberNavigationEventState(currentInfo = RaylSettingsNavigationInfo(destination)),
         isForwardEnabled = false,
-        isBackEnabled = destination == RaylSettingsDestination.AddFunds,
+        isBackEnabled = destination != RaylSettingsDestination.Root,
         onBackCompleted = { destination = RaylSettingsDestination.Root }
     )
     when (destination) {
@@ -139,9 +139,16 @@ private fun RaylSettingsTab(runtime: RaylRuntime) {
             overviewBottomContent = {
                 RaylSettingsActions(
                     runtime = runtime,
+                    onOpenClub = { destination = RaylSettingsDestination.Club },
                     onAddFunds = { destination = RaylSettingsDestination.AddFunds }
                 )
             }
+        )
+
+        RaylSettingsDestination.Club -> RaylClubScreen(
+            club = runtime.club,
+            googleWebClientId = runtime.environment.clubConfig().googleWebClientId,
+            onBack = { destination = RaylSettingsDestination.Root }
         )
 
         RaylSettingsDestination.AddFunds -> RaylAddFundsScreen(
@@ -155,7 +162,11 @@ private fun RaylSettingsTab(runtime: RaylRuntime) {
 }
 
 @Composable
-private fun RaylSettingsActions(runtime: RaylRuntime, onAddFunds: () -> Unit) {
+private fun RaylSettingsActions(
+    runtime: RaylRuntime,
+    onOpenClub: () -> Unit,
+    onAddFunds: () -> Unit
+) {
     val balance by runtime.pocket.balanceSats.collectAsStateWithLifecycle()
     val status by runtime.pocket.status.collectAsStateWithLifecycle()
     val failed = status == PocketStatus.Failed
@@ -164,6 +175,7 @@ private fun RaylSettingsActions(runtime: RaylRuntime, onAddFunds: () -> Unit) {
     var confirmation by rememberSaveable { mutableStateOf<RaylLeaveConfirmation?>(null) }
 
     Column(verticalArrangement = Arrangement.spacedBy(AppSettingsRowDefaults.RowSpacing)) {
+        RaylClubRow(club = runtime.club, onOpen = onOpenClub)
         AppSettingsRow(
             title = stringResource(R.string.rayl_spending_power),
             subtitle = if (failed) {
@@ -366,7 +378,7 @@ private fun RaylAddFundsScreen(funding: RaylFunding, onBack: () -> Unit) {
     }
 }
 
-private enum class RaylSettingsDestination { Root, AddFunds }
+private enum class RaylSettingsDestination { Root, Club, AddFunds }
 
 private enum class RaylLeaveConfirmation { Leave, Erase }
 

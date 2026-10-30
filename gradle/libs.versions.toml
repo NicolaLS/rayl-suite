@@ -41,6 +41,8 @@ uriKmp = "0.0.21"
 breezSpark = "0.27.2"
 okio = "3.16.2"
 hikari = "7.1.0"
+androidx-credentials = "1.6.0"
+googleid = "1.2.1"
 postgresql = "42.7.14"
 embeddedPostgres = "2.2.2"
 # Matches the Postgres major version on Railway (ghcr.io/railwayapp-templates/postgres-ssl:18).
@@ -107,6 +109,9 @@ breez-sdk-spark = { module = "technology.breez.spark:breez-sdk-spark-kmp", versi
 breez-sdk-spark-jvm = { module = "technology.breez.spark:breez-sdk-spark-kmp-jvm", version.ref = "breezSpark" }
 okio = { module = "com.squareup.okio:okio", version.ref = "okio" }
 hikari = { module = "com.zaxxer:HikariCP", version.ref = "hikari" }
+androidx-credentials = { module = "androidx.credentials:credentials", version.ref = "androidx-credentials" }
+androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "androidx-credentials" }
+googleid = { module = "com.google.android.libraries.identity.googleid:googleid", version.ref = "googleid" }
 postgresql = { module = "org.postgresql:postgresql", version.ref = "postgresql" }
 embedded-postgres = { module = "io.zonky.test:embedded-postgres", version.ref = "embeddedPostgres" }
 embedded-postgres-binaries-bom = { module = "io.zonky.test.postgres:embedded-postgres-binaries-bom", version.ref = "embeddedPostgresBinaries" }

@@ -7,12 +7,9 @@ import fr.acinq.bitcoin.MnemonicCode
  * down; it stays a standard phrase so a later emergency export works with any Spark wallet.
  *
  * TODO(production): Required before real users hold funds: a lost or reset phone loses this key.
- * Derive it from a passkey with Breez passkey login (guide/passkey.html): `connectWithPasskey`
- * once, then store the returned seed here so launches and payments never prompt. Use the shared
- * Breez relying party (register the app IDs with Breez) and a "Rayl" label, so the wallet differs
- * from other Breez apps'. On iOS, inject Breez's Swift `PasskeyProvider` into this Kotlin SDK's
- * `PasskeyClient`; Breez's Swift `PasskeyClient` would re-register the SDK callbacks. Keeping a
- * generated key where passkeys are unsupported is a stopgap that needs its own backup.
+ * Back it up with the platform's cloud sync, the owner's choice over Breez passkey login: a
+ * synchronizable iCloud Keychain item on iOS and Google Block Store on Android, so a new phone
+ * signed in to the same Apple or Google account restores the same pocket without prompting.
  */
 class PocketKey internal constructor(internal val phrase: String) {
     override fun toString(): String = "PocketKey(<redacted>)"

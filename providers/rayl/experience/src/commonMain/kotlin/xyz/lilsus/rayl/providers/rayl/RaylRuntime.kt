@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import xyz.lilsus.rayl.providers.rayl.feature.payment.RaylPaymentSettlement
+import xyz.lilsus.rayl.providers.rayl.integration.club.RaylClub
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketTimings
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.RaylPocket
 import xyz.lilsus.raylsuite.core.network.createNetworkConnectivity
@@ -38,8 +39,10 @@ internal enum class RaylExit { None, Working, Failed, Done }
 internal class RaylRuntime(
     appSettings: Settings,
     val configuration: RaylExperienceConfiguration,
-    environment: RaylEnvironment,
+    val environment: RaylEnvironment,
     val pocket: RaylPocket,
+    /** Survives leaving Rayl like the pocket; only signing out ends it. */
+    val club: RaylClub,
     haptics: HapticFeedbackManager,
     onFundingInvoice: (String) -> Unit = {}
 ) {
@@ -143,6 +146,7 @@ internal class RaylRuntime(
         lnurlPayClient.close()
         languageRepository.close()
         RaylPaymentLinks.clear()
+        club.close()
         CoroutineScope(SupervisorJob() + Dispatchers.Main).launch(
             start = CoroutineStart.UNDISPATCHED
         ) {
