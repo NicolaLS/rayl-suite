@@ -30,7 +30,9 @@ prices from it through `integration/exchange-rate`. `core/rayl-api` is its wire
 contract and holds the production base URL.
 The same service hosts Rayl Club (`backend/club`) when its Postgres database and Supabase project
 are configured. Supabase only authenticates members; the backend verifies their tokens against
-the project's public keys and is the only reader and writer of Club data.
+the project's public keys and is the only reader and writer of Club data. Club funds sit in a
+treasury Spark wallet that the backend runs through the Breez SDK; it receives membership fees, and
+an append-only double-entry ledger in the Club database records every movement.
 
 The dependency rules in [`verifyModuleDependencies`](../build.gradle.kts)
 keep providers independent of one another and of the app, and neutral modules
