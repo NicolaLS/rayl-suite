@@ -14,7 +14,9 @@ import java.security.spec.ECGenParameterSpec
 import java.time.Instant
 import java.util.Base64
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import javax.sql.DataSource
+import kotlin.time.Duration
 
 /** One embedded Postgres for the whole test run. */
 object TestPostgres {
@@ -87,4 +89,49 @@ class TestIssuer(val issuer: String = "https://test-ref.supabase.co/auth/v1") {
 }
 
 private const val TRUNCATE_ALL =
-    "truncate club_posting, club_journal_entry, club_fee_quote, club_membership, club_invite, club_account"
+    "truncate club_posting, club_journal_entry, club_credit_spend, club_fee_quote, " +
+        "club_membership, club_invite, club_account"
+
+/**
+ * Issues numbered fake invoices and remembers their amounts. Invoices from [payee] can be paid:
+ * [nextSend] decides each send's outcome, and [history] is what [sendOutcome] finds later.
+ */
+class FakeTreasury : Treasury {
+    val invoices = mutableMapOf<String, Long>()
+    private val payable = mutableMapOf<String, Payable>()
+    val sends = mutableListOf<String>()
+    val history: MutableMap<String, SendOutcome> = ConcurrentHashMap()
+    var nextSend: (SendQuote) -> SendOutcome = { SendOutcome.Settled(it.feeMsat, "00ff", "p") }
+
+    private class Payable(val amountMsat: Long?, val feeMsat: Long, val expired: Boolean)
+
+    /** An invoice someone else issued, payable for [amountMsat] (null: any amount). */
+    fun payee(amountMsat: Long?, feeMsat: Long = 0, expired: Boolean = false): String =
+        "lnbcrt-payee-${payable.size + 1}".also {
+            payable[it] = Payable(amountMsat, feeMsat, expired)
+        }
+
+    override suspend fun createInvoice(
+        amountSats: Long,
+        description: String,
+        expiry: Duration
+    ): String = "lnbcrt-fake-${invoices.size + 1}".also { invoices[it] = amountSats }
+
+    override suspend fun watchPaidInvoices(onPaid: suspend (invoice: String) -> Unit) = Unit
+
+    override suspend fun quoteSend(invoice: String, amountMsat: Long?): SendQuoteResult {
+        val target = payable[invoice] ?: return SendQuoteResult.Invalid
+        if (target.expired) return SendQuoteResult.Expired
+        val msat = target.amountMsat ?: amountMsat ?: return SendQuoteResult.Invalid
+        return SendQuoteResult.Ready(SendQuote(msat, target.feeMsat, handle = invoice))
+    }
+
+    override suspend fun send(quote: SendQuote, idempotencyKey: UUID, wait: Duration): SendOutcome {
+        val invoice = quote.handle as String
+        synchronized(sends) { sends += invoice }
+        return nextSend(quote).also { history[invoice] = it }
+    }
+
+    override suspend fun sendOutcome(paymentId: String?, invoice: String): SendOutcome? =
+        history[invoice]
+}

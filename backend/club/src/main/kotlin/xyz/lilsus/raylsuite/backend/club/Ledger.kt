@@ -10,6 +10,9 @@ object LedgerAccount {
 
     /** Annual fees earned; postings name the member who paid. */
     const val FEE_REVENUE = "fee_revenue"
+
+    /** What each member owes for credit spends; postings name the member. */
+    const val MEMBER_RECEIVABLE = "member_receivable"
 }
 
 class Posting(val ledgerAccount: String, val memberAccountId: UUID?, val amountMsat: Long)

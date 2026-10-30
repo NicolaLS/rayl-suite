@@ -29,6 +29,8 @@ import kotlin.time.toJavaDuration
 import kotlinx.serialization.Serializable
 import xyz.lilsus.raylsuite.core.raylapi.ClubApi
 import xyz.lilsus.raylsuite.core.raylapi.ClubApiError
+import xyz.lilsus.raylsuite.core.raylapi.CreditQuoteRequest
+import xyz.lilsus.raylsuite.core.raylapi.CreditSpendRequest
 import xyz.lilsus.raylsuite.core.raylapi.JoinRequest
 import xyz.lilsus.raylsuite.core.raylapi.RaylApiError
 import xyz.lilsus.raylsuite.core.raylapi.RedeemInviteRequest
@@ -61,6 +63,7 @@ data class ClubMember(val subject: UUID)
 fun Application.club(
     store: ClubStore,
     memberships: MembershipStore,
+    credit: CreditStore,
     verifier: ClubTokenVerifier,
     operatorToken: String?
 ) {
@@ -117,6 +120,39 @@ fun Application.club(
                         JoinResult.Unavailable -> fail(
                             HttpStatusCode.ServiceUnavailable,
                             ClubApiError.UNAVAILABLE
+                        )
+                    }
+                }
+            }
+            post(ClubApi.CREDIT_QUOTES_PATH) {
+                val request = runCatching { call.receive<CreditQuoteRequest>() }.getOrNull()
+                    ?: return@post fail(HttpStatusCode.BadRequest, ClubApiError.INVALID_REQUEST)
+                clubCall {
+                    when (
+                        val result = credit.quote(member(), request.invoice, request.amountMsat)
+                    ) {
+                        is CreditQuoteResult.Quoted -> call.respond(result.quote)
+                        is CreditQuoteResult.Declined -> decline(result.reason)
+                    }
+                }
+            }
+            post(ClubApi.CREDIT_SPENDS_PATH) {
+                val request = runCatching { call.receive<CreditSpendRequest>() }.getOrNull()
+                    ?.takeIf {
+                        it.idempotencyKey.isNotBlank() &&
+                            it.idempotencyKey.length <= MAX_IDEMPOTENCY_KEY &&
+                            it.maxFeeMsat >= 0
+                    }
+                    ?: return@post fail(HttpStatusCode.BadRequest, ClubApiError.INVALID_REQUEST)
+                clubCall {
+                    when (val result = credit.spend(member(), request)) {
+                        is CreditSpendResult.Spent -> call.respond(result.spend)
+
+                        is CreditSpendResult.Declined -> decline(result.reason)
+
+                        CreditSpendResult.KeyReused -> fail(
+                            HttpStatusCode.Conflict,
+                            ClubApiError.INVALID_REQUEST
                         )
                     }
                 }
@@ -235,6 +271,19 @@ private fun RoutingContext.platform(): String? =
 
 private suspend fun RoutingContext.fail(status: HttpStatusCode, error: String) =
     call.respond(status, RaylApiError(error))
+
+private suspend fun RoutingContext.decline(reason: CreditDecline) = fail(
+    when (reason) {
+        CreditDecline.NotAMember -> HttpStatusCode.Forbidden
+        CreditDecline.OverLimit, CreditDecline.FeeChanged -> HttpStatusCode.Conflict
+        CreditDecline.InvoiceInvalid, CreditDecline.OwnInvoice -> HttpStatusCode.UnprocessableEntity
+        CreditDecline.InvoiceExpired -> HttpStatusCode.Gone
+        CreditDecline.Unavailable -> HttpStatusCode.ServiceUnavailable
+    },
+    reason.code
+)
+
+private const val MAX_IDEMPOTENCY_KEY = 64
 
 /** Answers `club_unavailable` when the database cannot be reached. */
 private suspend fun RoutingContext.clubCall(block: suspend RoutingContext.() -> Unit) {

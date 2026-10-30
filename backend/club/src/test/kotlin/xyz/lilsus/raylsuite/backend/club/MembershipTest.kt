@@ -22,7 +22,6 @@ import kotlin.test.assertNotEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
-import kotlin.time.Duration
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
@@ -55,7 +54,13 @@ class MembershipTest {
         )
         application {
             install(ContentNegotiation) { json() }
-            club(env.store, env.memberships, issuer.verifier, operatorToken = null)
+            club(
+                env.store,
+                env.memberships,
+                CreditStore(db, { null }, paused = false, exposureCapSat = null),
+                issuer.verifier,
+                operatorToken = null
+            )
         }
         block(env)
     }
@@ -242,17 +247,4 @@ class MembershipTest {
                 }
         }
     }
-}
-
-/** Issues numbered fake invoices and remembers their amounts. */
-class FakeTreasury : Treasury {
-    val invoices = mutableMapOf<String, Long>()
-
-    override suspend fun createInvoice(
-        amountSats: Long,
-        description: String,
-        expiry: Duration
-    ): String = "lnbcrt-fake-${invoices.size + 1}".also { invoices[it] = amountSats }
-
-    override suspend fun watchPaidInvoices(onPaid: suspend (invoice: String) -> Unit) = Unit
 }

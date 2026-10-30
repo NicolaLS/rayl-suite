@@ -16,7 +16,14 @@ data class ClubConfig(
     /** Platforms whose apps may offer joining (`CLUB_JOIN_IN_APP`, D-16). */
     val joinPlatforms: Set<String> = DEFAULT_JOIN_PLATFORMS,
     /** `CLUB_TEST_TIERS=true` lets invites carry the $1 test tier; set on Regtest only. */
-    val allowTestTiers: Boolean = false
+    val allowTestTiers: Boolean = false,
+    /** `CLUB_PAUSED=true` is the kill switch: no new credit spends or joins (OP-03, D-20). */
+    val paused: Boolean = false,
+    /**
+     * `CLUB_EXPOSURE_CAP_SAT`: what all members may owe and have in flight together (D-05).
+     * Spending is off while it is unset.
+     */
+    val exposureCapSat: Long? = null
 ) {
     val tokenIssuer: String get() = "$supabaseUrl/auth/v1"
     val jwksUrl: String get() = "$supabaseUrl/auth/v1/.well-known/jwks.json"
@@ -38,7 +45,13 @@ data class ClubConfig(
                 operatorToken = env["CLUB_OPERATOR_TOKEN"]?.takeIf { it.isNotBlank() },
                 joinPlatforms =
                     env["CLUB_JOIN_IN_APP"]?.let(::parsePlatforms) ?: DEFAULT_JOIN_PLATFORMS,
-                allowTestTiers = env["CLUB_TEST_TIERS"].equals("true", ignoreCase = true)
+                allowTestTiers = env["CLUB_TEST_TIERS"].equals("true", ignoreCase = true),
+                paused = env["CLUB_PAUSED"].equals("true", ignoreCase = true),
+                exposureCapSat = env["CLUB_EXPOSURE_CAP_SAT"]?.takeIf { it.isNotBlank() }?.let {
+                    requireNotNull(it.trim().toLongOrNull()?.takeIf { cap -> cap >= 0 }) {
+                        "CLUB_EXPOSURE_CAP_SAT must be a whole number of sats"
+                    }
+                }
             )
         }
     }

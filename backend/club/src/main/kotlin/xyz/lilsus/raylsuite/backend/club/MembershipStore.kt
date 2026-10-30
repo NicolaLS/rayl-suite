@@ -42,7 +42,9 @@ class MembershipStore(
     private val treasury: () -> Treasury?,
     private val btcUsd: () -> BigDecimal?,
     /** Platforms whose apps may offer joining (D-16), e.g. `ios`, `android`. */
-    private val joinPlatforms: Set<String>
+    private val joinPlatforms: Set<String>,
+    /** The kill switch (D-20): joining answers [JoinResult.Unavailable]. */
+    private val paused: Boolean = false
 ) {
     /** The account as the app shows it; [platform] decides whether joining is offered. */
     suspend fun account(subject: UUID, platform: String?): ClubAccount = db.transaction {
@@ -59,6 +61,7 @@ class MembershipStore(
         if (tier.code !in invite.tierCodes || platform !in joinPlatforms) {
             return JoinResult.TierNotOffered
         }
+        if (paused) return JoinResult.Unavailable
         val price = btcUsd()?.takeIf { it.signum() > 0 } ?: return JoinResult.Unavailable
 
         // The invoice is issued outside the transaction; an unused one simply expires.
@@ -208,6 +211,9 @@ class MembershipStore(
                 tierCode = rows.getString("tier_code"),
                 status = rows.getString("status"),
                 creditLimitSat = rows.getObject("credit_limit_msat")?.let { (it as Long) / 1_000 },
+                creditAvailableSat = rows.getObject("credit_limit_msat")?.let { limit ->
+                    ((limit as Long) - usedMsat(accountId)).coerceAtLeast(0) / 1_000
+                },
                 termEnd = rows.getObject(
                     "term_end",
                     OffsetDateTime::class.java
@@ -224,14 +230,6 @@ class MembershipStore(
                     )
                 }
             )
-        }
-    }
-
-    /** Serializes joins and fee payments per account. */
-    private fun Connection.lockAccount(accountId: UUID) {
-        prepareStatement("select 1 from club_account where id = ? for update").use { statement ->
-            statement.setObject(1, accountId)
-            statement.executeQuery().close()
         }
     }
 
@@ -317,5 +315,13 @@ class MembershipStore(
         /** P-01: a fee quote, and its invoice, live ten minutes. */
         val QUOTE_LIFETIME = 10.minutes
         const val UNIQUE_VIOLATION = "23505"
+    }
+}
+
+/** Serializes joins, fee payments and credit spends per account. */
+internal fun Connection.lockAccount(accountId: UUID) {
+    prepareStatement("select 1 from club_account where id = ? for update").use { statement ->
+        statement.setObject(1, accountId)
+        statement.executeQuery().close()
     }
 }

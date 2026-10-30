@@ -69,3 +69,27 @@ create table if not exists club_posting (
     member_account_id uuid references club_account (id),
     amount_msat bigint not null
 );
+
+-- A payment the treasury made for a member on credit. While `paying`, its amount plus the quoted
+-- fee is reserved against the member's line; once `settled`, the ledger holds what is owed.
+create table if not exists club_credit_spend (
+    id uuid primary key,
+    account_id uuid not null references club_account (id),
+    membership_id uuid not null references club_membership (id),
+    -- Chosen by the app; a repeated request answers the original spend.
+    idempotency_key text not null,
+    invoice text not null,
+    amount_msat bigint not null check (amount_msat > 0),
+    reserved_fee_msat bigint not null check (reserved_fee_msat >= 0),
+    fee_msat bigint,
+    status text not null check (status in ('paying', 'settled', 'failed')),
+    -- The treasury wallet's payment id, once known; the reconciler looks the payment up by it.
+    payment_id text,
+    preimage text,
+    created_at timestamptz not null default now(),
+    resolved_at timestamptz,
+    unique (account_id, idempotency_key)
+);
+-- An invoice is paid with credit at most once.
+create unique index if not exists club_credit_spend_one_payment
+    on club_credit_spend (invoice) where status <> 'failed';

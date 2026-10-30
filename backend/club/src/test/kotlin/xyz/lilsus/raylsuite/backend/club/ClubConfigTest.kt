@@ -46,6 +46,22 @@ class ClubConfigTest {
     }
 
     @Test
+    fun readsTheKillSwitchAndTheExposureCap() {
+        val base = mapOf("DATABASE_URL" to "postgresql://u:p@h/db", "SUPABASE_URL" to "https://r")
+        val defaults = ClubConfig.fromEnvironment(base)!!
+        assertFalse(defaults.paused)
+        assertNull(defaults.exposureCapSat)
+        val set = ClubConfig.fromEnvironment(
+            base + mapOf("CLUB_PAUSED" to "TRUE", "CLUB_EXPOSURE_CAP_SAT" to " 1500000 ")
+        )!!
+        assertEquals(true, set.paused)
+        assertEquals(1_500_000, set.exposureCapSat)
+        assertFailsWith<IllegalArgumentException> {
+            ClubConfig.fromEnvironment(base + ("CLUB_EXPOSURE_CAP_SAT" to "1k"))
+        }
+    }
+
+    @Test
     fun rejectsNonPostgresUrls() {
         assertFailsWith<IllegalArgumentException> { DatabaseConfig.fromUrl("mysql://u:p@h/db") }
     }

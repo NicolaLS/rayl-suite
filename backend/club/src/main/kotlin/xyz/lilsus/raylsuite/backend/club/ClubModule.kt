@@ -4,6 +4,7 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.log
 import java.math.BigDecimal
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
@@ -21,10 +22,17 @@ fun Application.startClub(
 ) {
     val database = ClubDatabase.connect(config.database)
     val treasury = AtomicReference<Treasury?>(null)
-    val memberships = MembershipStore(database, treasury::get, btcUsd, config.joinPlatforms)
+    val memberships =
+        MembershipStore(database, treasury::get, btcUsd, config.joinPlatforms, config.paused)
+    val credit = CreditStore(database, treasury::get, config.paused, config.exposureCapSat)
+    if (config.paused) log.warn("Rayl Club is paused: no new credit spends or joins")
+    if (config.exposureCapSat == null) {
+        log.warn("Rayl Club credit is off: CLUB_EXPOSURE_CAP_SAT is not set")
+    }
     club(
         ClubStore(database, config.allowTestTiers),
         memberships,
+        credit,
         ClubTokenVerifier.forSupabase(config),
         config.operatorToken
     )
@@ -47,6 +55,22 @@ fun Application.startClub(
         }
         treasury.set(connected)
         log.info("Rayl Club treasury connected on ${treasuryConfig.network}")
+        reconcileSpends(credit)
+    }
+}
+
+/** Resolves credit spends left `paying` (after a restart or an unclear send) every minute. */
+private suspend fun Application.reconcileSpends(credit: CreditStore) {
+    while (true) {
+        try {
+            val resolved = credit.reconcile()
+            if (resolved > 0) log.info("Club credit spends reconciled: $resolved")
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            log.warn("Club credit reconciliation failed: ${e.message}")
+        }
+        delay(1.minutes)
     }
 }
 

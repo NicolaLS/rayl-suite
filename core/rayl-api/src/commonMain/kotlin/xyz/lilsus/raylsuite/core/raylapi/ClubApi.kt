@@ -26,6 +26,19 @@ object ClubApi {
      * the membership waits for its [ClubFeePayment].
      */
     const val MEMBERSHIPS_PATH = "/v1/club/memberships"
+
+    /**
+     * `POST` a [CreditQuoteRequest]: whether Club credit can pay an invoice, and its routing fee.
+     * Reserves nothing. A decline answers one of the credit [ClubApiError] codes.
+     */
+    const val CREDIT_QUOTES_PATH = "/v1/club/credit/quotes"
+
+    /**
+     * `POST` a [CreditSpendRequest]: the treasury pays the invoice and charges the member's line.
+     * Repeating a request with the same [CreditSpendRequest.idempotencyKey] answers the original
+     * [CreditSpend] and never pays twice.
+     */
+    const val CREDIT_SPENDS_PATH = "/v1/club/credit/spends"
 }
 
 object ClubMembershipStatus {
@@ -48,6 +61,26 @@ object ClubApiError {
     const val NOT_INVITED = "not_invited"
     const val TIER_NOT_OFFERED = "tier_not_offered"
     const val ALREADY_MEMBER = "already_member"
+
+    /** Credit declines. Only [INVOICE_INVALID] and [INVOICE_EXPIRED] concern the invoice itself. */
+    const val NOT_A_MEMBER = "not_a_member"
+    const val OVER_LIMIT = "over_limit"
+    const val INVOICE_INVALID = "invoice_invalid"
+    const val INVOICE_EXPIRED = "invoice_expired"
+
+    /** A Rayl Club invoice, such as the annual fee, cannot be paid with Club credit. */
+    const val OWN_INVOICE = "own_invoice"
+
+    /** The routing fee rose above [CreditSpendRequest.maxFeeMsat]; nothing was paid. */
+    const val FEE_CHANGED = "fee_changed"
+}
+
+object ClubCreditSpendStatus {
+    const val SETTLED = "settled"
+    const val FAILED = "failed"
+
+    /** Sent, outcome not known yet; the amount stays reserved until it is. */
+    const val PENDING = "pending"
 }
 
 /**
@@ -85,6 +118,8 @@ data class ClubMembership(
     val tierCode: String,
     val status: String,
     val creditLimitSat: Long? = null,
+    /** The limit less what is owed and what is reserved for payments in flight. */
+    val creditAvailableSat: Long? = null,
     val termEnd: String? = null,
     val payment: ClubFeePayment? = null
 )
@@ -111,3 +146,33 @@ data class ClubInvite(val tierCodes: List<String>, val feeWaived: Boolean)
 /** [code] as the member typed it; the backend ignores case, spaces, and dashes. */
 @Serializable
 data class RedeemInviteRequest(val code: String)
+
+/** [amountMsat] is required for an invoice without an amount and must match one that has it. */
+@Serializable
+data class CreditQuoteRequest(val invoice: String, val amountMsat: Long? = null)
+
+/** What paying with credit would charge the line: [amountMsat] plus [feeMsat]. */
+@Serializable
+data class CreditQuote(val amountMsat: Long, val feeMsat: Long)
+
+/**
+ * [idempotencyKey] is chosen by the app, one per confirmed payment. [maxFeeMsat] is the fee the
+ * member saw; a higher fee declines with [ClubApiError.FEE_CHANGED].
+ */
+@Serializable
+data class CreditSpendRequest(
+    val idempotencyKey: String,
+    val invoice: String,
+    val amountMsat: Long? = null,
+    val maxFeeMsat: Long
+)
+
+/** [status] is a [ClubCreditSpendStatus]; [feeMsat] and [preimage] are known once settled. */
+@Serializable
+data class CreditSpend(
+    val id: String,
+    val status: String,
+    val amountMsat: Long,
+    val feeMsat: Long? = null,
+    val preimage: String? = null
+)

@@ -45,7 +45,13 @@ class ClubRoutesTest {
         val memberships = MembershipStore(database, { null }, { null }, joinPlatforms = emptySet())
         application {
             install(ContentNegotiation) { json() }
-            club(store, memberships, issuer.verifier, operatorToken)
+            club(
+                store,
+                memberships,
+                CreditStore(database, { null }, paused = false, exposureCapSat = null),
+                issuer.verifier,
+                operatorToken
+            )
         }
         block(store)
     }
