@@ -23,7 +23,7 @@ fun Application.startClub(
     val treasury = AtomicReference<Treasury?>(null)
     val memberships = MembershipStore(database, treasury::get, btcUsd, config.joinPlatforms)
     club(
-        ClubStore(database),
+        ClubStore(database, config.allowTestTiers),
         memberships,
         ClubTokenVerifier.forSupabase(config),
         config.operatorToken

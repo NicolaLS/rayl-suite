@@ -376,6 +376,7 @@ private fun joinTitle(offer: ClubTierOffer): Int =
 @StringRes
 private fun tierName(code: String): Int = when (code) {
     "plus" -> R.string.rayl_club_tier_plus
+    "test" -> R.string.rayl_club_tier_test
     else -> R.string.rayl_club_tier_member
 }
 

@@ -14,7 +14,9 @@ data class ClubConfig(
     /** Bearer token for the operator endpoints; they are not served when it is null. */
     val operatorToken: String?,
     /** Platforms whose apps may offer joining (`CLUB_JOIN_IN_APP`, D-16). */
-    val joinPlatforms: Set<String> = DEFAULT_JOIN_PLATFORMS
+    val joinPlatforms: Set<String> = DEFAULT_JOIN_PLATFORMS,
+    /** `CLUB_TEST_TIERS=true` lets invites carry the $1 test tier; set on Regtest only. */
+    val allowTestTiers: Boolean = false
 ) {
     val tokenIssuer: String get() = "$supabaseUrl/auth/v1"
     val jwksUrl: String get() = "$supabaseUrl/auth/v1/.well-known/jwks.json"
@@ -35,7 +37,8 @@ data class ClubConfig(
                 supabaseUrl = supabaseUrl.trimEnd('/'),
                 operatorToken = env["CLUB_OPERATOR_TOKEN"]?.takeIf { it.isNotBlank() },
                 joinPlatforms =
-                    env["CLUB_JOIN_IN_APP"]?.let(::parsePlatforms) ?: DEFAULT_JOIN_PLATFORMS
+                    env["CLUB_JOIN_IN_APP"]?.let(::parsePlatforms) ?: DEFAULT_JOIN_PLATFORMS,
+                allowTestTiers = env["CLUB_TEST_TIERS"].equals("true", ignoreCase = true)
             )
         }
     }

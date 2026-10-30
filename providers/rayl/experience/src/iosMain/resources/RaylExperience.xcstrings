@@ -1013,6 +1013,29 @@
         }
       }
     },
+    "rayl_club_tier_test" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Test"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prueba"
+          }
+        }
+      }
+    },
     "rayl_club_valid_until" : {
       "extractionState" : "manual",
       "localizations" : {

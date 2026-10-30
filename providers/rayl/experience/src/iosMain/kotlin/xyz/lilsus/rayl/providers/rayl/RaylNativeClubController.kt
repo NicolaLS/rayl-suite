@@ -213,8 +213,13 @@ class RaylNativeClubController internal constructor(
         else -> text("rayl_balance_updating")
     }
 
-    private fun tierName(code: String): String =
-        text(if (code == "plus") "rayl_club_tier_plus" else "rayl_club_tier_member")
+    private fun tierName(code: String): String = text(
+        when (code) {
+            "plus" -> "rayl_club_tier_plus"
+            "test" -> "rayl_club_tier_test"
+            else -> "rayl_club_tier_member"
+        }
+    )
 
     private fun format(key: String, argument: String): String =
         nativeString(NativeStringResource("RaylExperience", key), argument)

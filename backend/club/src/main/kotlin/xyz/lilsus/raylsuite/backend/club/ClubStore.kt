@@ -29,7 +29,10 @@ data class OperatorInvite(
 )
 
 /** Club accounts and invites in Postgres. */
-class ClubStore(private val db: ClubDatabase) {
+class ClubStore(private val db: ClubDatabase, allowTestTiers: Boolean = false) {
+    /** Tier codes invites may carry; test tiers only where allowed (`CLUB_TEST_TIERS`). */
+    val inviteTierCodes: Set<String> = inviteTierCodes(allowTestTiers)
+
     /** The account for a Supabase user, created on first use. */
     suspend fun redeemInvite(subject: UUID, typedCode: String): RedeemResult {
         val code = InviteCodes.normalize(typedCode) ?: return RedeemResult.NotFound
@@ -47,8 +50,8 @@ class ClubStore(private val db: ClubDatabase) {
         note: String?,
         expiresAt: Instant?
     ): OperatorInvite {
-        require(tierCodes.isNotEmpty() && tierCodes.all(CLUB_TIER_CODES::contains)) {
-            "tierCodes must be a non-empty subset of $CLUB_TIER_CODES"
+        require(tierCodes.isNotEmpty() && tierCodes.all(inviteTierCodes::contains)) {
+            "tierCodes must be a non-empty subset of $inviteTierCodes"
         }
         return db.transaction {
             prepareStatement(

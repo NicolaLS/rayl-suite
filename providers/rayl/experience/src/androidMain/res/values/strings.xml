@@ -58,4 +58,5 @@
     <string name="rayl_club_error_not_invited">Redeem an invite before joining.</string>
     <string name="rayl_club_error_tier_not_offered">That membership isn\'t available to you.</string>
     <string name="rayl_club_error_already_member">You\'re already a member.</string>
+    <string name="rayl_club_tier_test">Test</string>
 </resources>

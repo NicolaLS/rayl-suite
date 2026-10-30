@@ -194,7 +194,7 @@ private fun Route.operatorInvites(store: ClubStore, operatorToken: String) {
         val request = runCatching { call.receive<CreateInviteRequest>() }.getOrNull()
         if (request == null ||
             request.tierCodes.isEmpty() ||
-            !request.tierCodes.all(CLUB_TIER_CODES::contains) ||
+            !request.tierCodes.all(store.inviteTierCodes::contains) ||
             (request.expiresInDays != null && request.expiresInDays <= 0)
         ) {
             return@post fail(HttpStatusCode.BadRequest, ClubApiError.INVALID_REQUEST)

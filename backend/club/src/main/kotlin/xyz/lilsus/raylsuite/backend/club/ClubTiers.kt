@@ -3,16 +3,28 @@ package xyz.lilsus.raylsuite.backend.club
 import java.math.BigDecimal
 import java.math.RoundingMode
 
-/** A tier's current terms; memberships snapshot them when they start. */
-data class ClubTier(val code: String, val feeUsdCents: Long, val lineUsdCents: Long)
+/**
+ * A tier's current terms; memberships snapshot them when they start. A [testOnly] tier can only
+ * be put on invites where test tiers are allowed (Regtest), and joining needs such an invite.
+ */
+data class ClubTier(
+    val code: String,
+    val feeUsdCents: Long,
+    val lineUsdCents: Long,
+    val testOnly: Boolean = false
+)
 
 /** Beta tiers (P-07): the line equals the fee, so the fee covers the credit risk. */
 val CLUB_TIERS: List<ClubTier> = listOf(
     ClubTier(code = "member", feeUsdCents = 60_00, lineUsdCents = 60_00),
-    ClubTier(code = "plus", feeUsdCents = 150_00, lineUsdCents = 150_00)
+    ClubTier(code = "plus", feeUsdCents = 150_00, lineUsdCents = 150_00),
+    // Cheap end-to-end testing on Regtest.
+    ClubTier(code = "test", feeUsdCents = 1_00, lineUsdCents = 1_00, testOnly = true)
 )
 
-val CLUB_TIER_CODES: Set<String> = CLUB_TIERS.map(ClubTier::code).toSet()
+/** The tier codes an operator may put on invites. */
+fun inviteTierCodes(allowTestTiers: Boolean): Set<String> =
+    CLUB_TIERS.filter { allowTestTiers || !it.testOnly }.map(ClubTier::code).toSet()
 
 fun clubTier(code: String): ClubTier? = CLUB_TIERS.firstOrNull { it.code == code }
 

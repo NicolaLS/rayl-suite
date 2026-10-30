@@ -58,4 +58,5 @@
     <string name="rayl_club_error_not_invited">Löse vor dem Beitritt eine Einladung ein.</string>
     <string name="rayl_club_error_tier_not_offered">Diese Mitgliedschaft ist für dich nicht verfügbar.</string>
     <string name="rayl_club_error_already_member">Du bist bereits Mitglied.</string>
+    <string name="rayl_club_tier_test">Test</string>
 </resources>

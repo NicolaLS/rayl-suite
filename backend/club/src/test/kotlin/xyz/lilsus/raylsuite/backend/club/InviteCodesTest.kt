@@ -1,5 +1,6 @@
 package xyz.lilsus.raylsuite.backend.club
 
+import java.math.BigDecimal
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -28,5 +29,14 @@ class InviteCodesTest {
         assertNull(InviteCodes.normalize("ABCD-EFGH-JKM0"))
         assertNull(InviteCodes.normalize("ABCD-EFGH-JKMI"))
         assertTrue(listOf('0', '1', 'I', 'L', 'O', 'U').none { it in InviteCodes.ALPHABET })
+    }
+}
+
+class ClubTiersTest {
+    @Test
+    fun theTestTierIsOnlyOfferedWhereTestTiersAreAllowed() {
+        assertEquals(setOf("member", "plus"), inviteTierCodes(allowTestTiers = false))
+        assertEquals(setOf("member", "plus", "test"), inviteTierCodes(allowTestTiers = true))
+        assertEquals(1_000, feeSats(clubTier("test")!!.feeUsdCents, BigDecimal(100_000)))
     }
 }
