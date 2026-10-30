@@ -17,11 +17,16 @@ import xyz.lilsus.rayl.providers.rayl.integration.club.ClubIdToken
 import xyz.lilsus.rayl.providers.rayl.integration.club.ClubNonce
 import xyz.lilsus.rayl.providers.rayl.integration.club.ClubSignInProvider
 import xyz.lilsus.rayl.providers.rayl.integration.club.ClubState
+import xyz.lilsus.rayl.providers.rayl.integration.club.ClubStatementState
 import xyz.lilsus.rayl.providers.rayl.integration.club.RaylClub
 import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.model.DisplayCurrency
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
+import xyz.lilsus.raylsuite.core.raylapi.ClubAmountDueKind
 import xyz.lilsus.raylsuite.core.raylapi.ClubMembershipStatus
+import xyz.lilsus.raylsuite.core.raylapi.ClubStatementLine
+import xyz.lilsus.raylsuite.core.raylapi.ClubStatementLineKind
+import xyz.lilsus.raylsuite.core.raylapi.ClubStatementSummary
 import xyz.lilsus.raylsuite.core.ui.format.currentAmountFormatter
 import xyz.lilsus.raylsuite.core.ui.resources.NativeStringResource
 import xyz.lilsus.raylsuite.core.ui.resources.nativeString
@@ -32,6 +37,31 @@ data class RaylNativeClubOffer(
     val name: String,
     val terms: String,
     val joinTitle: String
+)
+
+/** One spend or repayment on the statement screen; [id] is its position. */
+data class RaylNativeClubStatementLine(
+    val id: String,
+    val title: String,
+    val date: String?,
+    val amount: String
+)
+
+data class RaylNativeClubStatementSnapshot(
+    val title: String,
+    /** `loading`, `failed`, or `loaded`. */
+    val stage: String,
+    val error: String,
+    val retryTitle: String,
+    /** "Closed <date>"; null before the first statement. */
+    val closedTitle: String?,
+    val summary: String?,
+    /** Shown instead of the closed statement before the first one. */
+    val noStatement: String?,
+    val lines: List<RaylNativeClubStatementLine>,
+    val sinceTitle: String?,
+    val currentLines: List<RaylNativeClubStatementLine>,
+    val empty: String
 )
 
 data class RaylNativeClubSnapshot(
@@ -63,6 +93,14 @@ data class RaylNativeClubSnapshot(
     val creditLine: String?,
     val creditAvailable: String?,
     val validUntil: String?,
+    val owed: String?,
+    val statementLine: String?,
+    /** The repay button's title (D-22); null when nothing is due or an invoice is open. */
+    val repayTitle: String?,
+    /** The open repay invoice: its amount line and the invoice to pay or copy. */
+    val repaymentLine: String?,
+    val repaymentInvoice: String?,
+    val statementTitle: String,
     val memberIdLine: String?,
     val noMembership: String,
     val signOutTitle: String
@@ -72,7 +110,7 @@ data class RaylNativeClubSnapshot(
 class RaylNativeClubController internal constructor(
     private val club: RaylClub,
     private val languageChanges: Flow<*>,
-    private val onPayFee: (String) -> Unit
+    private val onPayInvoice: (String) -> Unit
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var appleNonce: ClubNonce? = null
@@ -105,7 +143,26 @@ class RaylNativeClubController internal constructor(
     /** Opens the usual payment confirmation for the pending fee invoice. */
     fun payFee() {
         val account = (club.state.value as? ClubState.SignedIn)?.account
-        account?.membership?.payment?.invoice?.let(onPayFee)
+        account?.membership?.payment?.invoice?.let(onPayInvoice)
+    }
+
+    /** Opens the repay invoice and goes straight to the payment confirmation. */
+    fun repay() = club.repay(onInvoice = onPayInvoice)
+
+    /** Opens the usual payment confirmation for the open repay invoice. */
+    fun payRepayment() {
+        val account = (club.state.value as? ClubState.SignedIn)?.account
+        account?.membership?.repayment?.invoice?.let(onPayInvoice)
+    }
+
+    fun loadStatement() = club.loadStatement()
+
+    fun observeStatement(onChange: (RaylNativeClubStatementSnapshot) -> Unit): () -> Unit {
+        val job = scope.launch {
+            combine(club.statement, languageChanges) { state, _ -> statementSnapshot(state) }
+                .collect(onChange)
+        }
+        return { job.cancel() }
     }
 
     fun reload() = club.reload()
@@ -190,6 +247,27 @@ class RaylNativeClubController internal constructor(
             validUntil = clubEpochSeconds(membership?.termEnd)?.takeIf { active }?.let {
                 format("rayl_club_valid_until", mediumDate(it))
             },
+            owed = membership?.balanceSat?.takeIf { active }?.let {
+                format("rayl_club_owed", sats(it))
+            },
+            statementLine = membership?.statement?.takeIf { active }?.let(::statementLine),
+            repayTitle = membership?.amountDue?.takeIf {
+                active && membership.repayment == null
+            }?.let { due ->
+                format(
+                    if (due.kind == ClubAmountDueKind.STATEMENT) {
+                        "rayl_club_pay_statement"
+                    } else {
+                        "rayl_club_repay"
+                    },
+                    sats(due.amountSat)
+                )
+            },
+            repaymentLine = membership?.repayment?.takeIf { active }?.let {
+                format("rayl_club_repayment_open", sats(it.amountSat))
+            },
+            repaymentInvoice = membership?.repayment?.takeIf { active }?.invoice,
+            statementTitle = text("rayl_club_statement"),
             memberIdLine = account?.memberId?.takeIf {
                 it.isNotEmpty()
             }?.let { format("rayl_club_member_id", it) },
@@ -216,6 +294,56 @@ class RaylNativeClubController internal constructor(
 
         else -> text("rayl_balance_updating")
     }
+
+    private fun statementSnapshot(state: ClubStatementState): RaylNativeClubStatementSnapshot {
+        val content = (state as? ClubStatementState.Loaded)?.statement
+        val statement = content?.statement
+        return RaylNativeClubStatementSnapshot(
+            title = text("rayl_club_statement"),
+            stage = when (state) {
+                ClubStatementState.Loading -> "loading"
+                is ClubStatementState.Failed -> "failed"
+                is ClubStatementState.Loaded -> "loaded"
+            },
+            error = text("rayl_club_error_unavailable"),
+            retryTitle = text("rayl_retry"),
+            closedTitle = clubEpochSeconds(statement?.periodEnd)?.let {
+                format("rayl_club_statement_closed", mediumDate(it))
+            },
+            summary = statement?.let(::statementLine),
+            noStatement = text("rayl_club_statement_none").takeIf {
+                content != null && statement == null
+            },
+            lines = content?.lines.orEmpty().mapIndexed(::statementLine),
+            sinceTitle = clubEpochSeconds(content?.currentPeriodStart)?.let {
+                format("rayl_club_statement_since", mediumDate(it))
+            },
+            currentLines = content?.currentLines.orEmpty().mapIndexed(::statementLine),
+            empty = text("rayl_club_statement_empty")
+        )
+    }
+
+    private fun statementLine(statement: ClubStatementSummary): String? {
+        if (statement.paid) return text("rayl_club_statement_paid")
+        val dueAt = clubEpochSeconds(statement.dueAt) ?: return null
+        return format("rayl_club_statement_due", sats(statement.remainingSat), mediumDate(dueAt))
+    }
+
+    private fun statementLine(index: Int, line: ClubStatementLine): RaylNativeClubStatementLine {
+        val repayment = line.kind == ClubStatementLineKind.REPAYMENT
+        val amount = sats(line.amountSat)
+        return RaylNativeClubStatementLine(
+            id = index.toString(),
+            title = text(
+                if (repayment) "rayl_club_statement_repayment" else "rayl_club_statement_spend"
+            ),
+            date = clubEpochSeconds(line.at)?.let(::mediumDate),
+            amount = if (repayment) "−$amount" else amount
+        )
+    }
+
+    private fun sats(amount: Long): String =
+        currentAmountFormatter().format(DisplayAmount(amount, DisplayCurrency.Satoshi))
 
     private fun available(amount: String): String = format("rayl_club_credit_available", amount)
 

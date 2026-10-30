@@ -126,7 +126,13 @@ private fun RaylSettingsTab(runtime: RaylRuntime) {
         state = rememberNavigationEventState(currentInfo = RaylSettingsNavigationInfo(destination)),
         isForwardEnabled = false,
         isBackEnabled = destination != RaylSettingsDestination.Root,
-        onBackCompleted = { destination = RaylSettingsDestination.Root }
+        onBackCompleted = {
+            destination = if (destination == RaylSettingsDestination.ClubStatement) {
+                RaylSettingsDestination.Club
+            } else {
+                RaylSettingsDestination.Root
+            }
+        }
     )
     when (destination) {
         RaylSettingsDestination.Root -> SettingsFlow(
@@ -148,8 +154,14 @@ private fun RaylSettingsTab(runtime: RaylRuntime) {
         RaylSettingsDestination.Club -> RaylClubScreen(
             club = runtime.club,
             googleWebClientId = runtime.environment.clubConfig().googleWebClientId,
-            onPayFee = runtime::payClubFee,
+            onPayInvoice = runtime::payClubInvoice,
+            onOpenStatement = { destination = RaylSettingsDestination.ClubStatement },
             onBack = { destination = RaylSettingsDestination.Root }
+        )
+
+        RaylSettingsDestination.ClubStatement -> RaylClubStatementScreen(
+            club = runtime.club,
+            onBack = { destination = RaylSettingsDestination.Club }
         )
 
         RaylSettingsDestination.AddFunds -> RaylAddFundsScreen(
@@ -379,7 +391,7 @@ private fun RaylAddFundsScreen(funding: RaylFunding, onBack: () -> Unit) {
     }
 }
 
-private enum class RaylSettingsDestination { Root, Club, AddFunds }
+private enum class RaylSettingsDestination { Root, Club, ClubStatement, AddFunds }
 
 private enum class RaylLeaveConfirmation { Leave, Erase }
 

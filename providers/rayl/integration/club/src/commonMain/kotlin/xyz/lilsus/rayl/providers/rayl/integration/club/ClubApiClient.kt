@@ -16,6 +16,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
 import xyz.lilsus.raylsuite.core.raylapi.ClubApi
 import xyz.lilsus.raylsuite.core.raylapi.ClubApiError
+import xyz.lilsus.raylsuite.core.raylapi.ClubStatement
 import xyz.lilsus.raylsuite.core.raylapi.CreditQuote
 import xyz.lilsus.raylsuite.core.raylapi.CreditQuoteRequest
 import xyz.lilsus.raylsuite.core.raylapi.CreditSpend
@@ -51,6 +52,9 @@ internal class ClubException(val error: ClubError) : Exception(error.name)
 /** The backend rejected the access token; a refresh may fix it. */
 internal class BackendUnauthorized : Exception()
 
+/** The backend had nothing to repay: the balance was paid meanwhile. */
+internal class NothingDue : Exception()
+
 /** The backend declined a credit request; [code] is a [ClubApiError] code, if it sent one. */
 internal class CreditDeclined(val code: String?) : Exception(code)
 
@@ -83,6 +87,22 @@ internal class ClubApiClient(
 
     suspend fun join(accessToken: String, tierCode: String): ClubAccount =
         post(accessToken, ClubApi.MEMBERSHIPS_PATH, json.encodeToString(JoinRequest(tierCode)))
+
+    /** The open repay invoice for what is due, issued if there isn't one; see [NothingDue]. */
+    suspend fun repay(accessToken: String): ClubAccount =
+        post(accessToken, ClubApi.REPAYMENTS_PATH, "{}")
+
+    suspend fun statement(accessToken: String): ClubStatement {
+        val response = clubRequest {
+            http.get(url(ClubApi.STATEMENT_PATH)) { bearerAuth(accessToken) }
+        }
+        val body = clubRequest { response.bodyAsText() }
+        if (response.status.isSuccess()) {
+            return clubRequest { json.decodeFromString<ClubStatement>(body) }
+        }
+        if (response.status == HttpStatusCode.Unauthorized) throw BackendUnauthorized()
+        throw ClubException(ClubError.Unavailable)
+    }
 
     suspend fun creditQuote(accessToken: String, invoice: String, amountMsat: Long?): CreditQuote {
         val response = clubRequest {
@@ -142,6 +162,7 @@ internal class ClubApiClient(
         }
         if (response.status == HttpStatusCode.Unauthorized) throw BackendUnauthorized()
         val code = runCatching { json.decodeFromString<RaylApiError>(body).error }.getOrNull()
+        if (code == ClubApiError.NOTHING_DUE) throw NothingDue()
         throw ClubException(
             when (code) {
                 ClubApiError.INVITE_NOT_FOUND -> ClubError.InviteNotFound

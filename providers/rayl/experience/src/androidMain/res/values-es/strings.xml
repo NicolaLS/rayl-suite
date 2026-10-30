@@ -60,4 +60,17 @@
     <string name="rayl_club_error_tier_not_offered">Esa membresía no está disponible para ti.</string>
     <string name="rayl_club_error_already_member">Ya eres miembro.</string>
     <string name="rayl_club_tier_test">Prueba</string>
+    <string name="rayl_club_owed">Saldo pendiente: %1$s</string>
+    <string name="rayl_club_statement_due">Extracto: %1$s, vence el %2$s</string>
+    <string name="rayl_club_statement_paid">Último extracto pagado</string>
+    <string name="rayl_club_pay_statement">Pagar extracto · %1$s</string>
+    <string name="rayl_club_repay">Pagar saldo · %1$s</string>
+    <string name="rayl_club_repayment_open">Pago de %1$s</string>
+    <string name="rayl_club_statement">Extracto</string>
+    <string name="rayl_club_statement_closed">Cerrado el %1$s</string>
+    <string name="rayl_club_statement_since">Desde el %1$s</string>
+    <string name="rayl_club_statement_spend">Pago</string>
+    <string name="rayl_club_statement_repayment">Abono</string>
+    <string name="rayl_club_statement_empty">Sin actividad</string>
+    <string name="rayl_club_statement_none">Aún no hay extracto. El primero se cierra a final de mes.</string>
 </resources>

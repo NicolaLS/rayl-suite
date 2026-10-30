@@ -132,10 +132,28 @@ private struct RaylClubView: View {
             case "member":
                 Text(snapshot.memberTitle)
                     .font(.title2.bold())
-                ForEach([snapshot.tierLine, snapshot.creditLine, snapshot.creditAvailable, snapshot.validUntil].compactMap { $0 }, id: \.self) {
+                ForEach([snapshot.tierLine, snapshot.creditLine, snapshot.creditAvailable, snapshot.validUntil, snapshot.owed, snapshot.statementLine].compactMap { $0 }, id: \.self) {
                     Text($0)
                 }
                 memberId(snapshot)
+                if let line = snapshot.repaymentLine, let invoice = snapshot.repaymentInvoice {
+                    Text(line)
+                    Button(snapshot.payWithRaylTitle) { model.controller.payRepayment() }
+                        .buttonStyle(.borderedProminent)
+                    Button(snapshot.copyInvoiceTitle) { UIPasteboard.general.string = invoice }
+                        .buttonStyle(.bordered)
+                    Text(snapshot.waitingTitle)
+                        .foregroundStyle(.secondary)
+                } else if let repayTitle = snapshot.repayTitle {
+                    Button(repayTitle) { model.controller.repay() }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(snapshot.busy)
+                }
+                NavigationLink(snapshot.statementTitle) {
+                    RaylClubStatementView(controller: model.controller)
+                }
+                .buttonStyle(.bordered)
+                errorText(snapshot)
                 signOut(snapshot)
             case "none":
                 // Joining is not offered in this app (D-16): status only, no directions elsewhere.
@@ -191,5 +209,85 @@ private struct RaylClubView: View {
     private func signOut(_ snapshot: RaylNativeClubSnapshot) -> some View {
         Button(snapshot.signOutTitle) { model.controller.signOut() }
             .disabled(snapshot.busy)
+    }
+}
+
+@MainActor
+final class RaylClubStatementModel: ObservableObject {
+    @Published private(set) var snapshot: RaylNativeClubStatementSnapshot?
+
+    let controller: RaylNativeClubController
+    private var cancel: (() -> Void)?
+
+    init(controller: RaylNativeClubController) {
+        self.controller = controller
+        cancel = controller.observeStatement { [weak self] in self?.snapshot = $0 }
+    }
+
+    deinit { cancel?() }
+}
+
+/** The latest statement and what happened since (US-20). Plain screen until designs exist. */
+private struct RaylClubStatementView: View {
+    @StateObject private var model: RaylClubStatementModel
+
+    init(controller: RaylNativeClubController) {
+        _model = StateObject(wrappedValue: RaylClubStatementModel(controller: controller))
+    }
+
+    var body: some View {
+        List {
+            if let snapshot = model.snapshot {
+                switch snapshot.stage {
+                case "failed":
+                    Text(snapshot.error)
+                        .foregroundStyle(.red)
+                    Button(snapshot.retryTitle) { model.controller.loadStatement() }
+                case "loaded":
+                    if let none = snapshot.noStatement {
+                        Text(none)
+                            .foregroundStyle(.secondary)
+                    }
+                    if let closed = snapshot.closedTitle {
+                        Section(closed) {
+                            if let summary = snapshot.summary {
+                                Text(summary)
+                            }
+                            lines(snapshot.lines, empty: snapshot.empty)
+                        }
+                    }
+                    Section(snapshot.sinceTitle ?? "") {
+                        lines(snapshot.currentLines, empty: snapshot.empty)
+                    }
+                default:
+                    ProgressView()
+                }
+            }
+        }
+        .navigationTitle(model.snapshot?.title ?? "")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear { model.controller.loadStatement() }
+    }
+
+    @ViewBuilder
+    private func lines(_ lines: [RaylNativeClubStatementLine], empty: String) -> some View {
+        if lines.isEmpty {
+            Text(empty)
+                .foregroundStyle(.secondary)
+        }
+        ForEach(lines, id: \.id) { line in
+            HStack {
+                VStack(alignment: .leading) {
+                    Text(line.title)
+                    if let date = line.date {
+                        Text(date)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                Spacer()
+                Text(line.amount)
+            }
+        }
     }
 }

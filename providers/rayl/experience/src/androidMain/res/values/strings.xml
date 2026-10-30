@@ -60,4 +60,17 @@
     <string name="rayl_club_error_tier_not_offered">That membership isn\'t available to you.</string>
     <string name="rayl_club_error_already_member">You\'re already a member.</string>
     <string name="rayl_club_tier_test">Test</string>
+    <string name="rayl_club_owed">Owed: %1$s</string>
+    <string name="rayl_club_statement_due">Statement: %1$s, due %2$s</string>
+    <string name="rayl_club_statement_paid">Last statement paid</string>
+    <string name="rayl_club_pay_statement">Pay statement · %1$s</string>
+    <string name="rayl_club_repay">Repay · %1$s</string>
+    <string name="rayl_club_repayment_open">Repayment of %1$s</string>
+    <string name="rayl_club_statement">Statement</string>
+    <string name="rayl_club_statement_closed">Closed %1$s</string>
+    <string name="rayl_club_statement_since">Since %1$s</string>
+    <string name="rayl_club_statement_spend">Payment</string>
+    <string name="rayl_club_statement_repayment">Repayment</string>
+    <string name="rayl_club_statement_empty">No activity</string>
+    <string name="rayl_club_statement_none">No statement yet. The first one closes at the end of the month.</string>
 </resources>

@@ -62,9 +62,11 @@ import xyz.lilsus.rayl.providers.rayl.integration.club.ClubState
 import xyz.lilsus.rayl.providers.rayl.integration.club.RaylClub
 import xyz.lilsus.raylsuite.core.model.DisplayAmount
 import xyz.lilsus.raylsuite.core.model.DisplayCurrency
+import xyz.lilsus.raylsuite.core.raylapi.ClubAmountDueKind
 import xyz.lilsus.raylsuite.core.raylapi.ClubFeePayment
 import xyz.lilsus.raylsuite.core.raylapi.ClubMembership
 import xyz.lilsus.raylsuite.core.raylapi.ClubMembershipStatus
+import xyz.lilsus.raylsuite.core.raylapi.ClubStatementSummary
 import xyz.lilsus.raylsuite.core.raylapi.ClubTierOffer
 import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRow
 import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRowDefaults
@@ -127,7 +129,8 @@ private fun clubStatus(state: ClubState): String {
 internal fun RaylClubScreen(
     club: RaylClub,
     googleWebClientId: String?,
-    onPayFee: (invoice: String) -> Unit,
+    onPayInvoice: (invoice: String) -> Unit,
+    onOpenStatement: () -> Unit,
     onBack: () -> Unit
 ) {
     val state by club.state.collectAsStateWithLifecycle()
@@ -153,7 +156,7 @@ internal fun RaylClubScreen(
             when (val current = state) {
                 ClubState.Restoring -> CircularProgressIndicator()
                 is ClubState.SignedOut -> SignedOut(club, current, googleWebClientId)
-                is ClubState.SignedIn -> SignedIn(club, current, onPayFee)
+                is ClubState.SignedIn -> SignedIn(club, current, onPayInvoice, onOpenStatement)
             }
         }
     }
@@ -216,7 +219,12 @@ private suspend fun signInWithGoogle(context: Context, club: RaylClub, webClient
 }
 
 @Composable
-private fun SignedIn(club: RaylClub, state: ClubState.SignedIn, onPayFee: (String) -> Unit) {
+private fun SignedIn(
+    club: RaylClub,
+    state: ClubState.SignedIn,
+    onPayInvoice: (String) -> Unit,
+    onOpenStatement: () -> Unit
+) {
     val account = state.account
     val membership = account?.membership
     val payment = membership?.payment
@@ -232,9 +240,15 @@ private fun SignedIn(club: RaylClub, state: ClubState.SignedIn, onPayFee: (Strin
 
         account.invite == null -> RedeemInvite(club, state)
 
-        membership?.status == ClubMembershipStatus.ACTIVE -> Member(membership, account.memberId)
+        membership?.status == ClubMembershipStatus.ACTIVE -> {
+            Member(membership, account.memberId)
+            Repay(club, state, membership, onPayInvoice)
+            OutlinedButton(onClick = onOpenStatement, modifier = Modifier.fillMaxWidth()) {
+                Text(stringResource(R.string.rayl_club_statement))
+            }
+        }
 
-        payment != null -> PayFee(payment, onPayFee)
+        payment != null -> PayFee(payment, onPayInvoice)
 
         account.offers.isNotEmpty() -> ChooseTier(club, state, account.offers)
 
@@ -278,8 +292,7 @@ private fun ChooseTier(club: RaylClub, state: ClubState.SignedIn, offers: List<C
 }
 
 @Composable
-private fun PayFee(payment: ClubFeePayment, onPayFee: (String) -> Unit) {
-    val context = LocalContext.current
+private fun PayFee(payment: ClubFeePayment, onPayInvoice: (String) -> Unit) {
     val formatter = rememberAmountFormatter()
     Text(
         text = stringResource(R.string.rayl_club_pay_title),
@@ -292,13 +305,61 @@ private fun PayFee(payment: ClubFeePayment, onPayFee: (String) -> Unit) {
             payment.feeUsd
         )
     )
-    Button(onClick = { onPayFee(payment.invoice) }, modifier = Modifier.fillMaxWidth()) {
+    OpenInvoice(payment.invoice, onPayInvoice)
+}
+
+/** The repay button for the amount due (D-22), or the repay invoice once it's open. */
+@Composable
+private fun Repay(
+    club: RaylClub,
+    state: ClubState.SignedIn,
+    membership: ClubMembership,
+    onPayInvoice: (String) -> Unit
+) {
+    val formatter = rememberAmountFormatter()
+    val repayment = membership.repayment
+    val due = membership.amountDue
+    when {
+        repayment != null -> {
+            Text(
+                stringResource(
+                    R.string.rayl_club_repayment_open,
+                    formatter.format(DisplayAmount(repayment.amountSat, DisplayCurrency.Satoshi))
+                )
+            )
+            OpenInvoice(repayment.invoice, onPayInvoice)
+        }
+
+        due != null -> Button(
+            enabled = !state.working,
+            onClick = { club.repay(onInvoice = onPayInvoice) },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                stringResource(
+                    if (due.kind == ClubAmountDueKind.STATEMENT) {
+                        R.string.rayl_club_pay_statement
+                    } else {
+                        R.string.rayl_club_repay
+                    },
+                    formatter.format(DisplayAmount(due.amountSat, DisplayCurrency.Satoshi))
+                )
+            )
+        }
+    }
+}
+
+/** Pay a Club invoice with Rayl or from another wallet, and wait for it to arrive. */
+@Composable
+private fun OpenInvoice(invoice: String, onPayInvoice: (String) -> Unit) {
+    val context = LocalContext.current
+    Button(onClick = { onPayInvoice(invoice) }, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.rayl_club_pay_with_rayl))
     }
     OutlinedButton(
         onClick = {
             context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(
-                ClipData.newPlainText("Lightning invoice", payment.invoice)
+                ClipData.newPlainText("Lightning invoice", invoice)
             )
         },
         modifier = Modifier.fillMaxWidth()
@@ -337,11 +398,38 @@ private fun Member(membership: ClubMembership, memberId: String) {
         )
     }
     clubEpochSeconds(membership.termEnd)?.let { seconds ->
-        val date = DateFormat.getMediumDateFormat(context).format(Date(seconds * 1_000))
-        Text(stringResource(R.string.rayl_club_valid_until, date))
+        Text(stringResource(R.string.rayl_club_valid_until, mediumDate(context, seconds)))
     }
+    membership.balanceSat?.let { owed ->
+        Text(
+            stringResource(
+                R.string.rayl_club_owed,
+                formatter.format(DisplayAmount(owed, DisplayCurrency.Satoshi))
+            )
+        )
+    }
+    membership.statement?.let { StatementStatus(it) }
     MemberId(memberId)
 }
+
+/** "Statement: N, due <date>", or that it's paid. */
+@Composable
+internal fun StatementStatus(statement: ClubStatementSummary) {
+    val context = LocalContext.current
+    val formatter = rememberAmountFormatter()
+    val remaining = formatter.format(DisplayAmount(statement.remainingSat, DisplayCurrency.Satoshi))
+    val dueAt = clubEpochSeconds(statement.dueAt)
+    when {
+        statement.paid -> Text(stringResource(R.string.rayl_club_statement_paid))
+
+        dueAt != null -> Text(
+            stringResource(R.string.rayl_club_statement_due, remaining, mediumDate(context, dueAt))
+        )
+    }
+}
+
+internal fun mediumDate(context: Context, epochSeconds: Long): String =
+    DateFormat.getMediumDateFormat(context).format(Date(epochSeconds * 1_000))
 
 @Composable
 private fun MemberId(memberId: String) {

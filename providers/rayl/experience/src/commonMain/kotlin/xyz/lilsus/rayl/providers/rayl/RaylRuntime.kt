@@ -97,8 +97,11 @@ internal class RaylRuntime(
         }
     }
 
-    /** Pays a Club fee invoice from the pocket through the usual payment confirmation. */
-    fun payClubFee(invoice: String) = RaylPaymentLinks.emit("lightning:$invoice")
+    /**
+     * Pays a Club fee or repay invoice through the usual payment confirmation. Credit refuses
+     * Club invoices, so the pocket pays.
+     */
+    fun payClubInvoice(invoice: String) = RaylPaymentLinks.emit("lightning:$invoice")
 
     fun retryPocket() {
         if (mutableExit.value == RaylExit.None) pocket.start()

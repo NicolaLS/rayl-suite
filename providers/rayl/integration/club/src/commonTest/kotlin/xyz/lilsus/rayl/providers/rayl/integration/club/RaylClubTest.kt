@@ -21,15 +21,25 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.IOException
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
+import xyz.lilsus.raylsuite.core.raylapi.ClubAmountDue
+import xyz.lilsus.raylsuite.core.raylapi.ClubAmountDueKind
 import xyz.lilsus.raylsuite.core.raylapi.ClubFeePayment
 import xyz.lilsus.raylsuite.core.raylapi.ClubInvite
 import xyz.lilsus.raylsuite.core.raylapi.ClubMembership
 import xyz.lilsus.raylsuite.core.raylapi.ClubMembershipStatus
+import xyz.lilsus.raylsuite.core.raylapi.ClubRepayment
+import xyz.lilsus.raylsuite.core.raylapi.ClubStatement
+import xyz.lilsus.raylsuite.core.raylapi.ClubStatementLine
+import xyz.lilsus.raylsuite.core.raylapi.ClubStatementLineKind
+import xyz.lilsus.raylsuite.core.raylapi.ClubStatementSummary
 import xyz.lilsus.raylsuite.core.settings.SecureStringStore
 
 private const val NOW = 1_800_000_000L
 private val ACCOUNT = ClubAccount(id = "account-1")
 private val INVITED = ClubAccount(id = "account-1", invite = ClubInvite(listOf("member"), false))
+private val ACTIVE = ACCOUNT.copy(
+    membership = ClubMembership("member", ClubMembershipStatus.ACTIVE, creditLimitSat = 60_000)
+)
 
 class RaylClubTest {
     @Test
@@ -274,12 +284,79 @@ class RaylClubTest {
         )
     }
 
+    @Test
+    fun repayingOpensTheInvoiceAndWatchesItUntilPaid() = runTest {
+        val club = activeMember()
+        val due = ClubAmountDue(503, ClubAmountDueKind.STATEMENT, "2026-11-14T00:00:00Z")
+        val open = ACTIVE.copy(
+            membership = ACTIVE.membership?.copy(
+                balanceSat = 503,
+                amountDue = due,
+                repayment = ClubRepayment("lnbcrt1repay", 503, "2026-11-01T13:00:00Z")
+            )
+        )
+        val paid = ACTIVE.copy(membership = ACTIVE.membership?.copy(balanceSat = 0))
+        backend.redeemResponse = HttpStatusCode.OK to json.encodeToString(open)
+        backend.meAccounts += listOf(open, paid)
+
+        val confirmations = mutableListOf<String>()
+        club.repay(onInvoice = confirmations::add)
+        club.state.first { (it as? ClubState.SignedIn)?.account == open }
+        assertEquals("{}", backend.bodies["/v1/club/repayments"])
+        // One tap reaches the payment confirmation.
+        assertEquals(listOf("lnbcrt1repay"), confirmations)
+
+        // Polling picks up the repayment without any action from the member.
+        club.state.first { (it as? ClubState.SignedIn)?.account == paid }
+    }
+
+    @Test
+    fun repayingWhenNothingIsDueReloadsTheAccount() = runTest {
+        val club = activeMember()
+        val paid = ACTIVE.copy(membership = ACTIVE.membership?.copy(balanceSat = 0))
+        backend.redeemResponse = HttpStatusCode.Conflict to """{"error":"nothing_due"}"""
+        backend.meAccounts += paid
+
+        val confirmations = mutableListOf<String>()
+        club.repay(onInvoice = confirmations::add)
+        assertEquals(ClubState.SignedIn(account = paid), club.settled())
+        assertEquals(emptyList(), confirmations)
+    }
+
+    @Test
+    fun theStatementLoadsOnDemand() = runTest {
+        val club = activeMember()
+        val statement = ClubStatement(
+            statement = ClubStatementSummary(
+                periodStart = "2026-10-01T00:00:00Z",
+                periodEnd = "2026-11-01T00:00:00Z",
+                closingSat = 503,
+                remainingSat = 503,
+                dueAt = "2026-11-15T00:00:00Z",
+                paid = false
+            ),
+            lines = listOf(ClubStatementLine(ClubStatementLineKind.SPEND, "2026-10-30T17:00:00Z", 503)),
+            currentPeriodStart = "2026-11-01T00:00:00Z"
+        )
+        backend.redeemResponse = HttpStatusCode.OK to json.encodeToString(statement)
+        club.loadStatement()
+        assertEquals(
+            ClubStatementState.Loaded(statement),
+            club.statement.first { it != ClubStatementState.Loading }
+        )
+
+        backend.redeemResponse = HttpStatusCode.ServiceUnavailable to """{"error":"club_unavailable"}"""
+        club.loadStatement()
+        assertEquals(
+            ClubStatementState.Failed(ClubError.Unavailable),
+            club.statement.first { it != ClubStatementState.Loading }
+        )
+    }
+
     private val backend = FakeBackend()
 
     private suspend fun TestScope.activeMember(): RaylClub {
-        backend.meAccounts += ACCOUNT.copy(
-            membership = ClubMembership("member", ClubMembershipStatus.ACTIVE, creditLimitSat = 60_000)
-        )
+        backend.meAccounts += ACTIVE
         return club(backend, MemoryStore(session("access-0", "refresh-0", NOW + 3600))).also {
             it.settled()
         }

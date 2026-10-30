@@ -22,13 +22,22 @@ import xyz.lilsus.raylsuite.core.network.createHttpClient
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
 import xyz.lilsus.raylsuite.core.raylapi.ClubApiError
 import xyz.lilsus.raylsuite.core.raylapi.ClubCreditSpendStatus
+import xyz.lilsus.raylsuite.core.raylapi.ClubMembership
 import xyz.lilsus.raylsuite.core.raylapi.ClubMembershipStatus
+import xyz.lilsus.raylsuite.core.raylapi.ClubStatement
 import xyz.lilsus.raylsuite.core.raylapi.CreditSpendRequest
 import xyz.lilsus.raylsuite.core.settings.SecureStringStore
 
 enum class ClubPlatform(internal val apiName: String) {
     Ios("ios"),
     Android("android")
+}
+
+/** The statement screen's content, loaded on demand by [RaylClub.loadStatement]. */
+sealed interface ClubStatementState {
+    data object Loading : ClubStatementState
+    data class Loaded(val statement: ClubStatement) : ClubStatementState
+    data class Failed(val error: ClubError) : ClubStatementState
 }
 
 sealed interface ClubState {
@@ -68,6 +77,9 @@ class RaylClub internal constructor(
     private val mutableState = MutableStateFlow<ClubState>(ClubState.Restoring)
     val state: StateFlow<ClubState> = mutableState.asStateFlow()
 
+    private val mutableStatement = MutableStateFlow<ClubStatementState>(ClubStatementState.Loading)
+    val statement: StateFlow<ClubStatementState> = mutableStatement.asStateFlow()
+
     init {
         session = readSession()
         mutableState.value = if (session == null) ClubState.SignedOut() else ClubState.SignedIn()
@@ -105,6 +117,38 @@ class RaylClub internal constructor(
 
     /** Starts a membership in an offered tier; a pending fee is then watched until paid. */
     fun join(tierCode: String) = signedInAction { authorized { api.join(it, tierCode) } }
+
+    /**
+     * Opens the repay invoice for the amount due (D-22), or the one already open, and hands it to
+     * [onInvoice] so one tap reaches the payment confirmation. It is then watched until paid,
+     * like a fee.
+     */
+    fun repay(onInvoice: (String) -> Unit = {}) = signedInAction(
+        then = { account -> account.membership?.repayment?.invoice?.let(onInvoice) }
+    ) {
+        authorized { token ->
+            try {
+                api.repay(token)
+            } catch (_: NothingDue) {
+                api.me(token)
+            }
+        }
+    }
+
+    /** Loads [statement] for the statement screen. */
+    fun loadStatement() {
+        if (state.value !is ClubState.SignedIn) return
+        mutableStatement.value = ClubStatementState.Loading
+        scope.launch {
+            mutableStatement.value = try {
+                ClubStatementState.Loaded(authorized(api::statement))
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                ClubStatementState.Failed((error as? ClubException)?.error ?: ClubError.Unavailable)
+            }
+        }
+    }
 
     override suspend fun quote(invoice: String, amountMsat: Long?): ClubCreditQuote {
         if (!hasActiveMembership()) return ClubCreditQuote.NotUsable
@@ -182,6 +226,7 @@ class RaylClub internal constructor(
         scope.launch {
             val ended = sessionLock.withLock {
                 mutableState.value = ClubState.SignedOut()
+                mutableStatement.value = ClubStatementState.Loading
                 session.also { clearSession() }
             }
             ended?.let { auth.signOut(it) }
@@ -193,20 +238,27 @@ class RaylClub internal constructor(
         http.close()
     }
 
-    private fun signedInAction(action: suspend () -> ClubAccount) {
+    /** Runs [action] while marked working; [then] gets the account it produced, once shown. */
+    private fun signedInAction(
+        then: (ClubAccount) -> Unit = {},
+        action: suspend () -> ClubAccount
+    ) {
         val current = state.value as? ClubState.SignedIn ?: return
         if (current.working) return
         mutableState.value = current.copy(working = true, error = null)
         scope.launch {
+            var produced: ClubAccount? = null
             settle(
                 try {
-                    ClubState.SignedIn(account = action())
+                    ClubState.SignedIn(account = action().also { produced = it })
                 } catch (error: CancellationException) {
                     throw error
                 } catch (error: Exception) {
                     failure(error, signingIn = false)
                 }
             )
+            val account = produced ?: return@launch
+            if ((state.value as? ClubState.SignedIn)?.account === account) then(account)
         }
     }
 
@@ -216,17 +268,16 @@ class RaylClub internal constructor(
             if (result is ClubState.SignedIn && session == null) return
             mutableState.value = result
         }
-        watchPendingPayment()
+        watchOpenInvoice()
     }
 
     /**
-     * While a fee invoice is open, re-reads the account until the backend reports the membership
-     * active or the invoice expires, so paying from the pocket (or any wallet) shows up by itself.
+     * While a fee or repay invoice is open, re-reads the account until the backend reports it
+     * paid or it expires, so paying from the pocket (or any wallet) shows up by itself.
      */
-    private fun watchPendingPayment() {
-        val pending = (state.value as? ClubState.SignedIn)?.account?.membership
-            ?.takeIf { it.status == ClubMembershipStatus.PENDING_PAYMENT && it.payment != null }
-        if (pending == null || paymentPoll?.isActive == true) return
+    private fun watchOpenInvoice() {
+        val membership = (state.value as? ClubState.SignedIn)?.account?.membership
+        if (!hasOpenInvoice(membership) || paymentPoll?.isActive == true) return
         paymentPoll = scope.launch {
             while (true) {
                 delay(paymentPollInterval)
@@ -244,14 +295,15 @@ class RaylClub internal constructor(
                         mutableState.value = ClubState.SignedIn(account = account)
                     }
                 }
-                val membership = account.membership
-                if (membership?.status != ClubMembershipStatus.PENDING_PAYMENT ||
-                    membership.payment == null
-                ) {
-                    return@launch
-                }
+                if (!hasOpenInvoice(account.membership)) return@launch
             }
         }
+    }
+
+    private fun hasOpenInvoice(membership: ClubMembership?): Boolean = when (membership?.status) {
+        ClubMembershipStatus.PENDING_PAYMENT -> membership.payment != null
+        ClubMembershipStatus.ACTIVE -> membership.repayment != null
+        else -> false
     }
 
     private suspend fun failure(error: Exception, signingIn: Boolean): ClubState {

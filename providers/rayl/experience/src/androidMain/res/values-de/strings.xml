@@ -60,4 +60,17 @@
     <string name="rayl_club_error_tier_not_offered">Diese Mitgliedschaft ist für dich nicht verfügbar.</string>
     <string name="rayl_club_error_already_member">Du bist bereits Mitglied.</string>
     <string name="rayl_club_tier_test">Test</string>
+    <string name="rayl_club_owed">Offener Betrag: %1$s</string>
+    <string name="rayl_club_statement_due">Abrechnung: %1$s, fällig am %2$s</string>
+    <string name="rayl_club_statement_paid">Letzte Abrechnung bezahlt</string>
+    <string name="rayl_club_pay_statement">Abrechnung bezahlen · %1$s</string>
+    <string name="rayl_club_repay">Zurückzahlen · %1$s</string>
+    <string name="rayl_club_repayment_open">Rückzahlung über %1$s</string>
+    <string name="rayl_club_statement">Abrechnung</string>
+    <string name="rayl_club_statement_closed">Abgeschlossen am %1$s</string>
+    <string name="rayl_club_statement_since">Seit %1$s</string>
+    <string name="rayl_club_statement_spend">Zahlung</string>
+    <string name="rayl_club_statement_repayment">Rückzahlung</string>
+    <string name="rayl_club_statement_empty">Keine Aktivität</string>
+    <string name="rayl_club_statement_none">Noch keine Abrechnung. Die erste wird am Monatsende erstellt.</string>
 </resources>

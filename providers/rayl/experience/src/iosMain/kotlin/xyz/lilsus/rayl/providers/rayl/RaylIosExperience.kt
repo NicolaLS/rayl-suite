@@ -81,7 +81,7 @@ class RaylIosExperience(
         RaylNativeClubController(
             club = runtime.club,
             languageChanges = runtime.languageRepository.preference,
-            onPayFee = runtime::payClubFee
+            onPayInvoice = runtime::payClubInvoice
         )
     }
 
