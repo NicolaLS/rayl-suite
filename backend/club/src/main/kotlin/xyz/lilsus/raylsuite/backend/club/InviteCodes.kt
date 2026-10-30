@@ -12,9 +12,9 @@ object InviteCodes {
     private const val LENGTH = 12
     private val random = SecureRandom()
 
-    /** A new normalized code. */
-    fun generate(): String = buildString(LENGTH) {
-        repeat(LENGTH) { append(ALPHABET[random.nextInt(ALPHABET.length)]) }
+    /** A new normalized code; member codes use a shorter [length]. */
+    fun generate(length: Int = LENGTH): String = buildString(length) {
+        repeat(length) { append(ALPHABET[random.nextInt(ALPHABET.length)]) }
     }
 
     /** The normalized form of a typed code, or null if it cannot be an invite code. */
@@ -23,5 +23,9 @@ object InviteCodes {
         return code.takeIf { it.length == LENGTH && it.all(ALPHABET::contains) }
     }
 
-    fun format(code: String): String = code.chunked(4).joinToString("-")
+    /** `XXXX-XXXX-XXXX` for invite codes; member codes split into two halves. */
+    fun format(code: String): String {
+        val group = if (code.length == LENGTH) 4 else (code.length + 1) / 2
+        return code.chunked(group).joinToString("-")
+    }
 }

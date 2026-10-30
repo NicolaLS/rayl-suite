@@ -10,6 +10,8 @@ kotlin {
 
 application {
     mainClass.set("xyz.lilsus.raylsuite.backend.rayl.RaylServerKt")
+    // The Club treasury's Breez SDK loads its native library through JNA.
+    applicationDefaultJvmArgs = listOf("--enable-native-access=ALL-UNNAMED")
 }
 
 dependencies {

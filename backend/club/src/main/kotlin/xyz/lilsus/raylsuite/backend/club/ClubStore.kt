@@ -10,9 +10,6 @@ import java.util.UUID
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
 import xyz.lilsus.raylsuite.core.raylapi.ClubInvite
 
-/** Beta tier codes (P-07); the tier catalog replaces this in S1. */
-val CLUB_TIER_CODES = setOf("member", "plus")
-
 sealed interface RedeemResult {
     data class Redeemed(val account: ClubAccount) : RedeemResult
     data object NotFound : RedeemResult
@@ -34,10 +31,6 @@ data class OperatorInvite(
 /** Club accounts and invites in Postgres. */
 class ClubStore(private val db: ClubDatabase) {
     /** The account for a Supabase user, created on first use. */
-    suspend fun account(subject: UUID): ClubAccount = db.transaction {
-        readAccount(ensureAccount(subject))
-    }
-
     suspend fun redeemInvite(subject: UUID, typedCode: String): RedeemResult {
         val code = InviteCodes.normalize(typedCode) ?: return RedeemResult.NotFound
         return try {
@@ -88,46 +81,6 @@ class ClubStore(private val db: ClubDatabase) {
             statement.executeQuery().use { rows ->
                 buildList { while (rows.next()) add(rows.operatorInvite()) }
             }
-        }
-    }
-
-    private fun Connection.ensureAccount(subject: UUID): UUID {
-        prepareStatement(
-            "insert into club_account (id, auth_subject) values (?, ?) on conflict (auth_subject) do nothing"
-        ).use { statement ->
-            statement.setObject(1, UUID.randomUUID())
-            statement.setObject(2, subject)
-            statement.executeUpdate()
-        }
-        return prepareStatement(
-            "select id from club_account where auth_subject = ?"
-        ).use { statement ->
-            statement.setObject(1, subject)
-            statement.executeQuery().use { rows ->
-                rows.next()
-                rows.getObject("id", UUID::class.java)
-            }
-        }
-    }
-
-    private fun Connection.readAccount(id: UUID): ClubAccount = prepareStatement(
-        """
-        select a.id, i.tier_codes, i.fee_waived
-        from club_account a left join club_invite i on i.redeemed_by = a.id
-        where a.id = ?
-        """
-    ).use { statement ->
-        statement.setObject(1, id)
-        statement.executeQuery().use { rows ->
-            rows.next()
-            val invite = rows.getArray("tier_codes")?.let { tiers ->
-                @Suppress("UNCHECKED_CAST")
-                ClubInvite(
-                    tierCodes = (tiers.array as Array<String>).toList(),
-                    feeWaived = rows.getBoolean("fee_waived")
-                )
-            }
-            ClubAccount(id = rows.getObject("id", UUID::class.java).toString(), invite = invite)
         }
     }
 
@@ -183,3 +136,53 @@ class ClubStore(private val db: ClubDatabase) {
         const val UNIQUE_VIOLATION = "23505"
     }
 }
+
+/** The account for a Supabase user, created (with a member code) on first use. */
+internal fun Connection.ensureAccount(subject: UUID): UUID {
+    prepareStatement(
+        """
+        insert into club_account (id, auth_subject, member_code) values (?, ?, ?)
+        on conflict (auth_subject) do nothing
+        """
+    ).use { statement ->
+        statement.setObject(1, UUID.randomUUID())
+        statement.setObject(2, subject)
+        statement.setString(3, InviteCodes.generate(MEMBER_CODE_LENGTH))
+        statement.executeUpdate()
+    }
+    return prepareStatement("select id from club_account where auth_subject = ?").use { statement ->
+        statement.setObject(1, subject)
+        statement.executeQuery().use { rows ->
+            rows.next()
+            rows.getObject("id", UUID::class.java)
+        }
+    }
+}
+
+/** The account with its member ID and redeemed invite; the caller adds the membership. */
+internal fun Connection.readAccount(id: UUID): ClubAccount = prepareStatement(
+    """
+    select a.id, a.member_code, i.tier_codes, i.fee_waived
+    from club_account a left join club_invite i on i.redeemed_by = a.id
+    where a.id = ?
+    """
+).use { statement ->
+    statement.setObject(1, id)
+    statement.executeQuery().use { rows ->
+        rows.next()
+        val invite = rows.getArray("tier_codes")?.let { tiers ->
+            @Suppress("UNCHECKED_CAST")
+            ClubInvite(
+                tierCodes = (tiers.array as Array<String>).toList(),
+                feeWaived = rows.getBoolean("fee_waived")
+            )
+        }
+        ClubAccount(
+            id = rows.getObject("id", UUID::class.java).toString(),
+            memberId = InviteCodes.format(rows.getString("member_code")),
+            invite = invite
+        )
+    }
+}
+
+private const val MEMBER_CODE_LENGTH = 10

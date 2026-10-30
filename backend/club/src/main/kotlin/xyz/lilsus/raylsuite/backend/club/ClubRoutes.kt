@@ -29,6 +29,7 @@ import kotlin.time.toJavaDuration
 import kotlinx.serialization.Serializable
 import xyz.lilsus.raylsuite.core.raylapi.ClubApi
 import xyz.lilsus.raylsuite.core.raylapi.ClubApiError
+import xyz.lilsus.raylsuite.core.raylapi.JoinRequest
 import xyz.lilsus.raylsuite.core.raylapi.RaylApiError
 import xyz.lilsus.raylsuite.core.raylapi.RedeemInviteRequest
 
@@ -57,7 +58,12 @@ data class ClubMember(val subject: UUID)
  * Installs the Club's routes. The host application provides JSON content negotiation and must
  * not install another [Authentication] provider named [MEMBER_AUTH].
  */
-fun Application.club(store: ClubStore, verifier: ClubTokenVerifier, operatorToken: String?) {
+fun Application.club(
+    store: ClubStore,
+    memberships: MembershipStore,
+    verifier: ClubTokenVerifier,
+    operatorToken: String?
+) {
     install(Authentication) {
         jwt(MEMBER_AUTH) {
             verifier(verifier.jwks, verifier.issuer) {
@@ -84,7 +90,36 @@ fun Application.club(store: ClubStore, verifier: ClubTokenVerifier, operatorToke
     routing {
         authenticate(MEMBER_AUTH) {
             get(ClubApi.ME_PATH) {
-                clubCall { call.respond(store.account(member())) }
+                clubCall { call.respond(memberships.account(member(), platform())) }
+            }
+            post(ClubApi.MEMBERSHIPS_PATH) {
+                val request = runCatching { call.receive<JoinRequest>() }.getOrNull()
+                    ?: return@post fail(HttpStatusCode.BadRequest, ClubApiError.INVALID_REQUEST)
+                clubCall {
+                    when (val result = memberships.join(member(), request.tierCode, platform())) {
+                        is JoinResult.Joined -> call.respond(result.account)
+
+                        JoinResult.NotInvited -> fail(
+                            HttpStatusCode.Forbidden,
+                            ClubApiError.NOT_INVITED
+                        )
+
+                        JoinResult.TierNotOffered -> fail(
+                            HttpStatusCode.Forbidden,
+                            ClubApiError.TIER_NOT_OFFERED
+                        )
+
+                        JoinResult.AlreadyMember -> fail(
+                            HttpStatusCode.Conflict,
+                            ClubApiError.ALREADY_MEMBER
+                        )
+
+                        JoinResult.Unavailable -> fail(
+                            HttpStatusCode.ServiceUnavailable,
+                            ClubApiError.UNAVAILABLE
+                        )
+                    }
+                }
             }
             post(ClubApi.REDEEM_INVITE_PATH) {
                 val request = runCatching { call.receive<RedeemInviteRequest>() }.getOrNull()
@@ -94,7 +129,9 @@ fun Application.club(store: ClubStore, verifier: ClubTokenVerifier, operatorToke
                     )
                 clubCall {
                     when (val result = store.redeemInvite(member(), request.code)) {
-                        is RedeemResult.Redeemed -> call.respond(result.account)
+                        is RedeemResult.Redeemed -> call.respond(
+                            memberships.account(member(), platform())
+                        )
 
                         RedeemResult.NotFound -> fail(
                             HttpStatusCode.NotFound,
@@ -192,6 +229,9 @@ private fun OperatorInvite.view() = InviteView(
 )
 
 private fun RoutingContext.member(): UUID = checkNotNull(call.principal<ClubMember>()).subject
+
+private fun RoutingContext.platform(): String? =
+    call.request.queryParameters[ClubApi.PLATFORM_PARAMETER]
 
 private suspend fun RoutingContext.fail(status: HttpStatusCode, error: String) =
     call.respond(status, RaylApiError(error))

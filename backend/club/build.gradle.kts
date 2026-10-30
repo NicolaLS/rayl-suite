@@ -16,6 +16,7 @@ dependencies {
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.hikari)
     implementation(libs.postgresql)
+    implementation(libs.breez.sdk.spark.jvm)
     testImplementation(kotlin("test-junit"))
     testImplementation(libs.ktor.server.testHost)
     testImplementation(libs.ktor.server.contentNegotiation)

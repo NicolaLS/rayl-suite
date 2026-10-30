@@ -42,9 +42,10 @@ class ClubRoutesTest {
         block: suspend ApplicationTestBuilder.(ClubStore) -> Unit
     ) = testApplication {
         val store = ClubStore(database)
+        val memberships = MembershipStore(database, { null }, { null }, joinPlatforms = emptySet())
         application {
             install(ContentNegotiation) { json() }
-            club(store, issuer.verifier, operatorToken)
+            club(store, memberships, issuer.verifier, operatorToken)
         }
         block(store)
     }

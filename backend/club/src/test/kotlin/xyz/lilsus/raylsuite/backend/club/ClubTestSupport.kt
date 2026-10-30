@@ -24,7 +24,7 @@ object TestPostgres {
     suspend fun freshDatabase(): ClubDatabase = ClubDatabase(dataSource).also { db ->
         db.applySchema()
         db.transaction {
-            createStatement().use { it.execute("truncate club_invite, club_account cascade") }
+            createStatement().use { it.execute(TRUNCATE_ALL) }
         }
     }
 }
@@ -85,3 +85,6 @@ class TestIssuer(val issuer: String = "https://test-ref.supabase.co/auth/v1") {
         }
     }
 }
+
+private const val TRUNCATE_ALL =
+    "truncate club_posting, club_journal_entry, club_fee_quote, club_membership, club_invite, club_account"

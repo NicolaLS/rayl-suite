@@ -22,11 +22,8 @@ import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import xyz.lilsus.raylsuite.backend.club.ClubConfig
-import xyz.lilsus.raylsuite.backend.club.ClubDatabase
-import xyz.lilsus.raylsuite.backend.club.ClubStore
-import xyz.lilsus.raylsuite.backend.club.ClubTokenVerifier
-import xyz.lilsus.raylsuite.backend.club.applySchemaWhenReachable
-import xyz.lilsus.raylsuite.backend.club.club
+import xyz.lilsus.raylsuite.backend.club.TreasuryConfig
+import xyz.lilsus.raylsuite.backend.club.startClub
 import xyz.lilsus.raylsuite.core.raylapi.BitcoinPrices
 import xyz.lilsus.raylsuite.core.raylapi.RaylApi
 import xyz.lilsus.raylsuite.core.raylapi.RaylApiError
@@ -52,17 +49,8 @@ fun main() {
         if (clubConfig == null) {
             log.info("Rayl Club disabled: DATABASE_URL and SUPABASE_URL are not both set")
         } else {
-            val database = ClubDatabase.connect(clubConfig.database)
-            club(
-                ClubStore(database),
-                ClubTokenVerifier.forSupabase(clubConfig),
-                clubConfig.operatorToken
-            )
-            launch {
-                database.applySchemaWhenReachable {
-                    log.warn("Club schema not applied yet: ${it.message}")
-                }
-                log.info("Rayl Club schema applied")
+            startClub(clubConfig, TreasuryConfig.fromEnvironment()) {
+                board.current()?.prices?.get("USD")?.toBigDecimal()
             }
         }
         launch {

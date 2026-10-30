@@ -12,19 +12,30 @@ data class ClubConfig(
     /** The Supabase project URL, e.g. `https://<ref>.supabase.co`. */
     val supabaseUrl: String,
     /** Bearer token for the operator endpoints; they are not served when it is null. */
-    val operatorToken: String?
+    val operatorToken: String?,
+    /** Platforms whose apps may offer joining (`CLUB_JOIN_IN_APP`, D-16). */
+    val joinPlatforms: Set<String> = DEFAULT_JOIN_PLATFORMS
 ) {
     val tokenIssuer: String get() = "$supabaseUrl/auth/v1"
     val jwksUrl: String get() = "$supabaseUrl/auth/v1/.well-known/jwks.json"
 
     companion object {
+        private val DEFAULT_JOIN_PLATFORMS = setOf("ios", "android")
+
+        /** `ios,android`, a single platform, or `none` (login-only everywhere). */
+        private fun parsePlatforms(value: String): Set<String> = value.split(',').map {
+            it.trim().lowercase()
+        }.filter { it.isNotEmpty() && it != "none" }.toSet()
+
         fun fromEnvironment(env: Map<String, String> = System.getenv()): ClubConfig? {
             val databaseUrl = env["DATABASE_URL"]?.takeIf { it.isNotBlank() } ?: return null
             val supabaseUrl = env["SUPABASE_URL"]?.takeIf { it.isNotBlank() } ?: return null
             return ClubConfig(
                 database = DatabaseConfig.fromUrl(databaseUrl),
                 supabaseUrl = supabaseUrl.trimEnd('/'),
-                operatorToken = env["CLUB_OPERATOR_TOKEN"]?.takeIf { it.isNotBlank() }
+                operatorToken = env["CLUB_OPERATOR_TOKEN"]?.takeIf { it.isNotBlank() },
+                joinPlatforms =
+                    env["CLUB_JOIN_IN_APP"]?.let(::parsePlatforms) ?: DEFAULT_JOIN_PLATFORMS
             )
         }
     }
