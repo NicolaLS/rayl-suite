@@ -137,37 +137,29 @@ private struct RaylWalletSettingsActions: View {
         _club = StateObject(wrappedValue: RaylClubModel(controller: clubController))
     }
 
+    /**
+     * Several views rather than one stack: `NativeSettingsView` hosts this in a single `List`
+     * section, and each control must be its own row. A row holding several buttons fires all of
+     * them on a tap, which used to confirm "Erase Rayl Pocket" from any of these rows.
+     */
     var body: some View {
         if let snapshot = model.snapshot {
-            VStack(alignment: .leading, spacing: 12) {
-                RaylClubRow(model: club)
-                Divider()
-                if snapshot.pocketFailed {
-                    Button { model.controller.retryPocket() } label: { spendingPower(snapshot) }
-                } else {
-                    NavigationLink { RaylAddFundsView(model: model) } label: { spendingPower(snapshot) }
-                }
-                Divider()
-                Button {
-                    confirmation = .leave
-                } label: {
-                    detail(
-                        snapshot.useAnotherWalletTitle,
-                        snapshot.useAnotherWalletBody,
-                        systemImage: "rectangle.portrait.and.arrow.right"
-                    )
-                }
-                .disabled(snapshot.isSubmitting)
-                if snapshot.canErase {
-                    Divider()
-                    Button(role: .destructive) {
-                        confirmation = .erase
-                    } label: {
-                        detail(snapshot.eraseTitle, snapshot.eraseBody, systemImage: "trash")
-                    }
-                    .disabled(snapshot.isSubmitting)
-                }
+            RaylClubRow(model: club)
+            if snapshot.pocketFailed {
+                Button { model.controller.retryPocket() } label: { spendingPower(snapshot) }
+            } else {
+                NavigationLink { RaylAddFundsView(model: model) } label: { spendingPower(snapshot) }
             }
+            Button {
+                confirmation = .leave
+            } label: {
+                detail(
+                    snapshot.useAnotherWalletTitle,
+                    snapshot.useAnotherWalletBody,
+                    systemImage: "rectangle.portrait.and.arrow.right"
+                )
+            }
+            .disabled(snapshot.isSubmitting)
             .alert(
                 confirmation == .erase ? snapshot.eraseTitle : snapshot.useAnotherWalletTitle,
                 isPresented: Binding(
@@ -187,6 +179,14 @@ private struct RaylWalletSettingsActions: View {
                 }
             } message: { pending in
                 Text(pending == .erase ? snapshot.eraseBody : snapshot.useAnotherWalletBody)
+            }
+            if snapshot.canErase {
+                Button(role: .destructive) {
+                    confirmation = .erase
+                } label: {
+                    detail(snapshot.eraseTitle, snapshot.eraseBody, systemImage: "trash")
+                }
+                .disabled(snapshot.isSubmitting)
             }
         } else {
             ProgressView()
