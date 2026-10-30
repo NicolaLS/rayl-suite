@@ -7,6 +7,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+import xyz.lilsus.rayl.providers.rayl.integration.club.ClubPlatform
 import xyz.lilsus.rayl.providers.rayl.integration.club.RaylClub
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketStatus
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.createIosRaylPocket
@@ -49,7 +50,7 @@ class RaylIosExperience(
         environment = environment,
         pocket = RaylEarlyStart.take { createIosRaylPocket(environment.pocketConfig(breezApiKey)) },
         club = environment.clubConfig().let { club ->
-            RaylClub.create(club, createSecureSettings(club.storageName))
+            RaylClub.create(club, createSecureSettings(club.storageName), ClubPlatform.Ios)
         },
         haptics = createHapticFeedbackManager()
     )
@@ -77,7 +78,11 @@ class RaylIosExperience(
     }
     private val walletSettingsController = lazy { RaylNativeWalletSettingsController(runtime) }
     private val clubController = lazy {
-        RaylNativeClubController(runtime.club, runtime.languageRepository.preference)
+        RaylNativeClubController(
+            club = runtime.club,
+            languageChanges = runtime.languageRepository.preference,
+            onPayFee = runtime::payClubFee
+        )
     }
 
     /** `tabs` at once: the pocket connects in the background, so the camera never waits for it. */

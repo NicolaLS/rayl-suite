@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import kotlin.random.Random
 import xyz.lilsus.rayl.providers.rayl.experience.R
+import xyz.lilsus.rayl.providers.rayl.integration.club.ClubPlatform
 import xyz.lilsus.rayl.providers.rayl.integration.club.RaylClub
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketStatus
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.createAndroidRaylPocket
@@ -64,7 +65,11 @@ fun RaylExperience(
                     createAndroidRaylPocket(context, environment.pocketConfig(breezApiKey))
                 },
                 club = environment.clubConfig().let { club ->
-                    RaylClub.create(club, createSecureSettings(context, club.storageName))
+                    RaylClub.create(
+                        club,
+                        createSecureSettings(context, club.storageName),
+                        ClubPlatform.Android
+                    )
                 },
                 haptics = haptics,
                 onFundingInvoice = { invoice ->

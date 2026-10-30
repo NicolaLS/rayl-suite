@@ -15,6 +15,7 @@ import kotlin.coroutines.cancellation.CancellationException
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
 import xyz.lilsus.raylsuite.core.raylapi.ClubApi
 import xyz.lilsus.raylsuite.core.raylapi.ClubApiError
+import xyz.lilsus.raylsuite.core.raylapi.JoinRequest
 import xyz.lilsus.raylsuite.core.raylapi.RaylApiError
 import xyz.lilsus.raylsuite.core.raylapi.RedeemInviteRequest
 
@@ -34,7 +35,10 @@ enum class ClubError {
     InviteNotFound,
     InviteUsed,
     InviteExpired,
-    AlreadyInvited
+    AlreadyInvited,
+    NotInvited,
+    TierNotOffered,
+    AlreadyMember
 }
 
 internal class ClubException(val error: ClubError) : Exception(error.name)
@@ -54,19 +58,36 @@ internal suspend inline fun <T> clubRequest(block: () -> T): T = try {
 }
 
 /** The app side of [ClubApi]. */
-internal class ClubApiClient(private val http: HttpClient, private val baseUrl: String) {
+internal class ClubApiClient(
+    private val http: HttpClient,
+    private val baseUrl: String,
+    /** `ios` or `android`: the backend decides per platform whether joining is offered. */
+    private val platform: String
+) {
     suspend fun me(accessToken: String): ClubAccount =
-        account(clubRequest { http.get(baseUrl + ClubApi.ME_PATH) { bearerAuth(accessToken) } })
+        account(clubRequest { http.get(url(ClubApi.ME_PATH)) { bearerAuth(accessToken) } })
 
-    suspend fun redeem(accessToken: String, code: String): ClubAccount = account(
-        clubRequest {
-            http.post(baseUrl + ClubApi.REDEEM_INVITE_PATH) {
-                bearerAuth(accessToken)
-                contentType(ContentType.Application.Json)
-                setBody(json.encodeToString(RedeemInviteRequest(code)))
-            }
-        }
+    suspend fun redeem(accessToken: String, code: String): ClubAccount = post(
+        accessToken,
+        ClubApi.REDEEM_INVITE_PATH,
+        json.encodeToString(RedeemInviteRequest(code))
     )
+
+    suspend fun join(accessToken: String, tierCode: String): ClubAccount =
+        post(accessToken, ClubApi.MEMBERSHIPS_PATH, json.encodeToString(JoinRequest(tierCode)))
+
+    private fun url(path: String) = "$baseUrl$path?${ClubApi.PLATFORM_PARAMETER}=$platform"
+
+    private suspend fun post(accessToken: String, path: String, body: String): ClubAccount =
+        account(
+            clubRequest {
+                http.post(url(path)) {
+                    bearerAuth(accessToken)
+                    contentType(ContentType.Application.Json)
+                    setBody(body)
+                }
+            }
+        )
 
     private suspend fun account(response: HttpResponse): ClubAccount {
         val body = clubRequest { response.bodyAsText() }
@@ -81,6 +102,9 @@ internal class ClubApiClient(private val http: HttpClient, private val baseUrl: 
                 ClubApiError.INVITE_USED -> ClubError.InviteUsed
                 ClubApiError.INVITE_EXPIRED -> ClubError.InviteExpired
                 ClubApiError.ALREADY_INVITED -> ClubError.AlreadyInvited
+                ClubApiError.NOT_INVITED -> ClubError.NotInvited
+                ClubApiError.TIER_NOT_OFFERED -> ClubError.TierNotOffered
+                ClubApiError.ALREADY_MEMBER -> ClubError.AlreadyMember
                 else -> ClubError.Unavailable
             }
         )

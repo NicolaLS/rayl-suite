@@ -148,6 +148,7 @@ private fun RaylSettingsTab(runtime: RaylRuntime) {
         RaylSettingsDestination.Club -> RaylClubScreen(
             club = runtime.club,
             googleWebClientId = runtime.environment.clubConfig().googleWebClientId,
+            onPayFee = runtime::payClubFee,
             onBack = { destination = RaylSettingsDestination.Root }
         )
 

@@ -21,7 +21,10 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.IOException
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
+import xyz.lilsus.raylsuite.core.raylapi.ClubFeePayment
 import xyz.lilsus.raylsuite.core.raylapi.ClubInvite
+import xyz.lilsus.raylsuite.core.raylapi.ClubMembership
+import xyz.lilsus.raylsuite.core.raylapi.ClubMembershipStatus
 import xyz.lilsus.raylsuite.core.settings.SecureStringStore
 
 private const val NOW = 1_800_000_000L
@@ -165,6 +168,32 @@ class RaylClubTest {
     }
 
     @Test
+    fun joiningWatchesThePendingFeeUntilTheMembershipIsActive() = runTest {
+        val pending = ACCOUNT.copy(
+            membership = ClubMembership(
+                tierCode = "member",
+                status = ClubMembershipStatus.PENDING_PAYMENT,
+                payment = ClubFeePayment("lnbcrt1fee", 60_000, "60", "2026-10-30T12:10:00Z")
+            )
+        )
+        val active = ACCOUNT.copy(
+            membership = ClubMembership("member", ClubMembershipStatus.ACTIVE, creditLimitSat = 60_000)
+        )
+        val backend = FakeBackend()
+        val club = club(backend, MemoryStore(session("access-0", "refresh-0", NOW + 3600)))
+        club.settled()
+
+        backend.redeemResponse = HttpStatusCode.OK to json.encodeToString(pending)
+        backend.meAccounts += listOf(pending, active)
+        club.join("member")
+        club.state.first { (it as? ClubState.SignedIn)?.account == pending }
+        assertEquals("""{"tierCode":"member"}""", backend.bodies["/v1/club/memberships"])
+
+        // Polling picks up the payment without any action from the member.
+        club.state.first { (it as? ClubState.SignedIn)?.account == active }
+    }
+
+    @Test
     fun theNonceHashIsTheHexSha256OfTheRawNonce() {
         val nonce = ClubNonce.generate()
         assertEquals(64, nonce.raw.length)
@@ -180,7 +209,8 @@ class RaylClubTest {
         store = store,
         http = HttpClient(MockEngine { backend.handle(this, it) }),
         scope = backgroundScope,
-        now = { NOW }
+        now = { NOW },
+        platform = ClubPlatform.Ios
     )
 
     /** Waits until no sign-in or account request is in flight. */
@@ -208,8 +238,17 @@ private class FakeBackend(
     val authorizations = mutableListOf<String>()
     val loggedOut = CompletableDeferred<Unit>()
 
+    /** Answers for successive `me` calls; [ACCOUNT] once empty. */
+    val meAccounts = mutableListOf<ClubAccount>()
+
     suspend fun handle(scope: MockRequestHandleScope, request: HttpRequestData): HttpResponseData {
-        val path = request.url.encodedPathAndQuery
+        // Club paths carry ?platform=…; Supabase token paths are told apart by grant_type.
+        val path = if (request.url.encodedPath.startsWith("/v1/club/")) {
+            assertEquals("ios", request.url.parameters["platform"])
+            request.url.encodedPath
+        } else {
+            request.url.encodedPathAndQuery
+        }
         paths += path
         (request.body as? TextContent)?.let { bodies[path] = it.text }
         if (offline) throw IOException("offline")
@@ -222,25 +261,19 @@ private class FakeBackend(
                 loggedOut.complete(Unit)
             }
 
+            path == "/v1/club/me" -> {
+                authorizations += request.headers[HttpHeaders.Authorization].orEmpty()
+                val status = meStatuses.removeFirstOrNull() ?: HttpStatusCode.OK
+                if (status == HttpStatusCode.OK) {
+                    scope.json(status, json.encodeToString(meAccounts.removeFirstOrNull() ?: ACCOUNT))
+                } else {
+                    scope.json(status, """{"error":"unauthorized"}""")
+                }
+            }
+
             path.startsWith("/v1/club/") -> {
                 authorizations += request.headers[HttpHeaders.Authorization].orEmpty()
-                when (path) {
-                    "/v1/club/me" -> {
-                        val status = meStatuses.removeFirstOrNull() ?: HttpStatusCode.OK
-                        scope.json(
-                            status,
-                            if (status ==
-                                HttpStatusCode.OK
-                            ) {
-                                json.encodeToString(ACCOUNT)
-                            } else {
-                                """{"error":"unauthorized"}"""
-                            }
-                        )
-                    }
-
-                    else -> scope.json(redeemResponse.first, redeemResponse.second)
-                }
+                scope.json(redeemResponse.first, redeemResponse.second)
             }
 
             else -> scope.respond("", HttpStatusCode.NotFound)

@@ -3,10 +3,14 @@ package xyz.lilsus.rayl.providers.rayl.integration.club
 import io.ktor.client.HttpClient
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,7 +20,13 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import xyz.lilsus.raylsuite.core.network.createHttpClient
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
+import xyz.lilsus.raylsuite.core.raylapi.ClubMembershipStatus
 import xyz.lilsus.raylsuite.core.settings.SecureStringStore
+
+enum class ClubPlatform(internal val apiName: String) {
+    Ios("ios"),
+    Android("android")
+}
 
 sealed interface ClubState {
     /** Reading the saved session. */
@@ -42,10 +52,13 @@ class RaylClub internal constructor(
     private val store: SecureStringStore,
     private val http: HttpClient,
     private val scope: CoroutineScope,
-    private val now: () -> Long
+    private val now: () -> Long,
+    platform: ClubPlatform,
+    private val paymentPollInterval: Duration = 3.seconds
 ) {
     private val auth = SupabaseAuth(http, config, now)
-    private val api = ClubApiClient(http, config.backendUrl)
+    private val api = ClubApiClient(http, config.backendUrl, platform.apiName)
+    private var paymentPoll: Job? = null
     private val sessionLock = Mutex()
     private var session: ClubSession? = null
 
@@ -87,6 +100,9 @@ class RaylClub internal constructor(
 
     fun redeem(code: String) = signedInAction { authorized { api.redeem(it, code) } }
 
+    /** Starts a membership in an offered tier; a pending fee is then watched until paid. */
+    fun join(tierCode: String) = signedInAction { authorized { api.join(it, tierCode) } }
+
     fun dismissError() = mutableState.update {
         when (it) {
             is ClubState.SignedOut -> it.copy(error = null)
@@ -96,6 +112,7 @@ class RaylClub internal constructor(
     }
 
     fun signOut() {
+        paymentPoll?.cancel()
         scope.launch {
             val ended = sessionLock.withLock {
                 mutableState.value = ClubState.SignedOut()
@@ -128,9 +145,47 @@ class RaylClub internal constructor(
     }
 
     /** Publishes [result] unless the member signed out while it was in flight. */
-    private suspend fun settle(result: ClubState) = sessionLock.withLock {
-        if (result is ClubState.SignedIn && session == null) return@withLock
-        mutableState.value = result
+    private suspend fun settle(result: ClubState) {
+        sessionLock.withLock {
+            if (result is ClubState.SignedIn && session == null) return
+            mutableState.value = result
+        }
+        watchPendingPayment()
+    }
+
+    /**
+     * While a fee invoice is open, re-reads the account until the backend reports the membership
+     * active or the invoice expires, so paying from the pocket (or any wallet) shows up by itself.
+     */
+    private fun watchPendingPayment() {
+        val pending = (state.value as? ClubState.SignedIn)?.account?.membership
+            ?.takeIf { it.status == ClubMembershipStatus.PENDING_PAYMENT && it.payment != null }
+        if (pending == null || paymentPoll?.isActive == true) return
+        paymentPoll = scope.launch {
+            while (true) {
+                delay(paymentPollInterval)
+                val current = state.value as? ClubState.SignedIn ?: return@launch
+                if (current.working) continue
+                val account = try {
+                    authorized(api::me)
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (_: Exception) {
+                    continue
+                }
+                sessionLock.withLock {
+                    if (session != null && state.value is ClubState.SignedIn) {
+                        mutableState.value = ClubState.SignedIn(account = account)
+                    }
+                }
+                val membership = account.membership
+                if (membership?.status != ClubMembershipStatus.PENDING_PAYMENT ||
+                    membership.payment == null
+                ) {
+                    return@launch
+                }
+            }
+        }
     }
 
     private suspend fun failure(error: Exception, signingIn: Boolean): ClubState {
@@ -184,12 +239,14 @@ class RaylClub internal constructor(
         private const val REFRESH_MARGIN_SECONDS = 60
 
         /** [store] must be dedicated to the Club and named [ClubConfig.storageName]. */
-        fun create(config: ClubConfig, store: SecureStringStore): RaylClub = RaylClub(
-            config = config,
-            store = store,
-            http = createHttpClient(),
-            scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
-            now = { Clock.System.now().epochSeconds }
-        )
+        fun create(config: ClubConfig, store: SecureStringStore, platform: ClubPlatform): RaylClub =
+            RaylClub(
+                config = config,
+                store = store,
+                http = createHttpClient(),
+                scope = CoroutineScope(SupervisorJob() + Dispatchers.Main),
+                now = { Clock.System.now().epochSeconds },
+                platform = platform
+            )
     }
 }

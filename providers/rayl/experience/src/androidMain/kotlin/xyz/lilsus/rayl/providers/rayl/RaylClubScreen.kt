@@ -1,6 +1,9 @@
 package xyz.lilsus.rayl.providers.rayl
 
+import android.content.ClipData
+import android.content.ClipboardManager
 import android.content.Context
+import android.text.format.DateFormat
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -48,6 +51,7 @@ import androidx.credentials.exceptions.GetCredentialException
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import java.util.Date
 import kotlinx.coroutines.launch
 import xyz.lilsus.rayl.providers.rayl.experience.R
 import xyz.lilsus.rayl.providers.rayl.integration.club.ClubError
@@ -56,10 +60,16 @@ import xyz.lilsus.rayl.providers.rayl.integration.club.ClubNonce
 import xyz.lilsus.rayl.providers.rayl.integration.club.ClubSignInProvider
 import xyz.lilsus.rayl.providers.rayl.integration.club.ClubState
 import xyz.lilsus.rayl.providers.rayl.integration.club.RaylClub
-import xyz.lilsus.raylsuite.core.raylapi.ClubInvite
+import xyz.lilsus.raylsuite.core.model.DisplayAmount
+import xyz.lilsus.raylsuite.core.model.DisplayCurrency
+import xyz.lilsus.raylsuite.core.raylapi.ClubFeePayment
+import xyz.lilsus.raylsuite.core.raylapi.ClubMembership
+import xyz.lilsus.raylsuite.core.raylapi.ClubMembershipStatus
+import xyz.lilsus.raylsuite.core.raylapi.ClubTierOffer
 import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRow
 import xyz.lilsus.raylsuite.core.ui.components.AppSettingsRowDefaults
 import xyz.lilsus.raylsuite.core.ui.components.BackIconButton
+import xyz.lilsus.raylsuite.core.ui.format.rememberAmountFormatter
 
 /** The Rayl Club row in Rayl's settings, with the member's status. */
 @Composable
@@ -67,7 +77,7 @@ internal fun RaylClubRow(club: RaylClub, onOpen: () -> Unit) {
     val state by club.state.collectAsStateWithLifecycle()
     AppSettingsRow(
         title = stringResource(R.string.rayl_club),
-        subtitle = stringResource(clubStatus(state)),
+        subtitle = clubStatus(state),
         icon = Icons.Filled.WorkspacePremium,
         onClick = onOpen
     ) {
@@ -80,23 +90,40 @@ internal fun RaylClubRow(club: RaylClub, onOpen: () -> Unit) {
     }
 }
 
-@StringRes
-private fun clubStatus(state: ClubState): Int = when (state) {
-    ClubState.Restoring -> R.string.rayl_balance_updating
+@Composable
+private fun clubStatus(state: ClubState): String {
+    val account = (state as? ClubState.SignedIn)?.account
+    val membership = account?.membership
+    return when {
+        state is ClubState.SignedOut -> stringResource(R.string.rayl_club_status_signed_out)
 
-    is ClubState.SignedOut -> R.string.rayl_club_status_signed_out
+        account == null -> stringResource(R.string.rayl_balance_updating)
 
-    is ClubState.SignedIn -> when {
-        state.account == null -> R.string.rayl_balance_updating
-        state.account?.invite == null -> R.string.rayl_club_status_invite_needed
-        else -> R.string.rayl_club_status_invited
+        account.invite == null -> stringResource(R.string.rayl_club_status_invite_needed)
+
+        membership?.status == ClubMembershipStatus.ACTIVE ->
+            stringResource(
+                R.string.rayl_club_status_member,
+                stringResource(tierName(membership.tierCode))
+            )
+
+        membership?.payment != null -> stringResource(R.string.rayl_club_status_pending)
+
+        account.offers.isNotEmpty() -> stringResource(R.string.rayl_club_status_choose)
+
+        else -> stringResource(R.string.rayl_club_no_membership)
     }
 }
 
 /** Sign in, redeem an invite, and see the invite's tiers. Plain S0 screens until designs exist. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun RaylClubScreen(club: RaylClub, googleWebClientId: String?, onBack: () -> Unit) {
+internal fun RaylClubScreen(
+    club: RaylClub,
+    googleWebClientId: String?,
+    onPayFee: (invoice: String) -> Unit,
+    onBack: () -> Unit
+) {
     val state by club.state.collectAsStateWithLifecycle()
     Scaffold(
         topBar = {
@@ -120,7 +147,7 @@ internal fun RaylClubScreen(club: RaylClub, googleWebClientId: String?, onBack: 
             when (val current = state) {
                 ClubState.Restoring -> CircularProgressIndicator()
                 is ClubState.SignedOut -> SignedOut(club, current, googleWebClientId)
-                is ClubState.SignedIn -> SignedIn(club, current)
+                is ClubState.SignedIn -> SignedIn(club, current, onPayFee)
             }
         }
     }
@@ -183,8 +210,10 @@ private suspend fun signInWithGoogle(context: Context, club: RaylClub, webClient
 }
 
 @Composable
-private fun SignedIn(club: RaylClub, state: ClubState.SignedIn) {
+private fun SignedIn(club: RaylClub, state: ClubState.SignedIn, onPayFee: (String) -> Unit) {
     val account = state.account
+    val membership = account?.membership
+    val payment = membership?.payment
     when {
         account == null && state.working -> CircularProgressIndicator()
 
@@ -197,11 +226,115 @@ private fun SignedIn(club: RaylClub, state: ClubState.SignedIn) {
 
         account.invite == null -> RedeemInvite(club, state)
 
-        else -> Invited(checkNotNull(account.invite))
+        membership?.status == ClubMembershipStatus.ACTIVE -> Member(membership, account.memberId)
+
+        payment != null -> PayFee(payment, onPayFee)
+
+        account.offers.isNotEmpty() -> ChooseTier(club, state, account.offers)
+
+        // Joining is not offered in this app (D-16): status only, no directions elsewhere.
+        else -> {
+            Text(stringResource(R.string.rayl_club_no_membership))
+            MemberId(account.memberId)
+        }
     }
+    if (account != null && account.invite != null) state.error?.let { ClubErrorText(it) }
     TextButton(onClick = club::signOut, enabled = !state.working) {
         Text(stringResource(R.string.rayl_club_sign_out))
     }
+}
+
+@Composable
+private fun ChooseTier(club: RaylClub, state: ClubState.SignedIn, offers: List<ClubTierOffer>) {
+    Text(
+        text = stringResource(R.string.rayl_club_choose_title),
+        style = MaterialTheme.typography.headlineSmall
+    )
+    offers.forEach { offer ->
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = stringResource(tierName(offer.tierCode)),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(text = stringResource(R.string.rayl_club_offer, offer.feeUsd, offer.creditLineUsd))
+            Button(
+                enabled = !state.working,
+                onClick = { club.join(offer.tierCode) },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(joinTitle(offer)))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PayFee(payment: ClubFeePayment, onPayFee: (String) -> Unit) {
+    val context = LocalContext.current
+    val formatter = rememberAmountFormatter()
+    Text(
+        text = stringResource(R.string.rayl_club_pay_title),
+        style = MaterialTheme.typography.headlineSmall
+    )
+    Text(
+        stringResource(
+            R.string.rayl_club_pay_amount,
+            formatter.format(DisplayAmount(payment.amountSat, DisplayCurrency.Satoshi)),
+            payment.feeUsd
+        )
+    )
+    Button(onClick = { onPayFee(payment.invoice) }, modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.rayl_club_pay_with_rayl))
+    }
+    OutlinedButton(
+        onClick = {
+            context.getSystemService(ClipboardManager::class.java)?.setPrimaryClip(
+                ClipData.newPlainText("Lightning invoice", payment.invoice)
+            )
+        },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(stringResource(R.string.rayl_copy_invoice))
+    }
+    Text(
+        text = stringResource(R.string.rayl_waiting_for_payment),
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+}
+
+@Composable
+private fun Member(membership: ClubMembership, memberId: String) {
+    val context = LocalContext.current
+    val formatter = rememberAmountFormatter()
+    Text(
+        text = stringResource(R.string.rayl_club_member_title),
+        style = MaterialTheme.typography.headlineSmall
+    )
+    Text(stringResource(R.string.rayl_club_tier, stringResource(tierName(membership.tierCode))))
+    membership.creditLimitSat?.let { limit ->
+        Text(
+            stringResource(
+                R.string.rayl_club_credit_line,
+                formatter.format(DisplayAmount(limit, DisplayCurrency.Satoshi))
+            )
+        )
+    }
+    clubEpochSeconds(membership.termEnd)?.let { seconds ->
+        val date = DateFormat.getMediumDateFormat(context).format(Date(seconds * 1_000))
+        Text(stringResource(R.string.rayl_club_valid_until, date))
+    }
+    MemberId(memberId)
+}
+
+@Composable
+private fun MemberId(memberId: String) {
+    Text(
+        text = stringResource(R.string.rayl_club_member_id, memberId),
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
 }
 
 @Composable
@@ -236,17 +369,9 @@ private fun RedeemInvite(club: RaylClub, state: ClubState.SignedIn) {
     }
 }
 
-@Composable
-private fun Invited(invite: ClubInvite) {
-    Text(
-        text = stringResource(R.string.rayl_club_invited_title),
-        style = MaterialTheme.typography.headlineSmall
-    )
-    Text(text = stringResource(R.string.rayl_club_invited_body), textAlign = TextAlign.Center)
-    val tiers = invite.tierCodes.map { stringResource(tierName(it)) }.joinToString()
-    Text(text = stringResource(R.string.rayl_club_tiers, tiers))
-    if (invite.feeWaived) Text(text = stringResource(R.string.rayl_club_fee_waived))
-}
+@StringRes
+private fun joinTitle(offer: ClubTierOffer): Int =
+    if (offer.feeWaived) R.string.rayl_club_join_free else R.string.rayl_club_join
 
 @StringRes
 private fun tierName(code: String): Int = when (code) {
@@ -267,6 +392,9 @@ private fun ClubErrorText(error: ClubError) {
                 ClubError.InviteUsed -> R.string.rayl_club_error_invite_used
                 ClubError.InviteExpired -> R.string.rayl_club_error_invite_expired
                 ClubError.AlreadyInvited -> R.string.rayl_club_error_already_invited
+                ClubError.NotInvited -> R.string.rayl_club_error_not_invited
+                ClubError.TierNotOffered -> R.string.rayl_club_error_tier_not_offered
+                ClubError.AlreadyMember -> R.string.rayl_club_error_already_member
             }
         ),
         color = MaterialTheme.colorScheme.error,

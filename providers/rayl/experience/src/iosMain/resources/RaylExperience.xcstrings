@@ -162,6 +162,52 @@
         }
       }
     },
+    "rayl_club_choose_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wähle deine Mitgliedschaft"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose your membership"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige tu membresía"
+          }
+        }
+      }
+    },
+    "rayl_club_credit_line" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kreditrahmen: %1$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Credit line: %1$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Línea de crédito: %1$@"
+          }
+        }
+      }
+    },
     "rayl_club_error_already_invited" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -181,6 +227,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tu cuenta ya tiene una invitación."
+          }
+        }
+      }
+    },
+    "rayl_club_error_already_member" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist bereits Mitglied."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're already a member."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya eres miembro."
           }
         }
       }
@@ -277,6 +346,29 @@
         }
       }
     },
+    "rayl_club_error_not_invited" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Löse vor dem Beitritt eine Einladung ein."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Redeem an invite before joining."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Canjea una invitación antes de unirte."
+          }
+        }
+      }
+    },
     "rayl_club_error_session" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -323,6 +415,29 @@
         }
       }
     },
+    "rayl_club_error_tier_not_offered" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Mitgliedschaft ist für dich nicht verfügbar."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "That membership isn't available to you."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esa membresía no está disponible para ti."
+          }
+        }
+      }
+    },
     "rayl_club_error_unavailable" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -342,29 +457,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Rayl Club no está disponible ahora. Inténtalo más tarde."
-          }
-        }
-      }
-    },
-    "rayl_club_fee_waived" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Die Gebühr für dein erstes Jahr entfällt."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Your first year's fee is waived."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La cuota de tu primer año es gratuita."
           }
         }
       }
@@ -438,48 +530,209 @@
         }
       }
     },
-    "rayl_club_invited_body" : {
+    "rayl_club_join" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Mitgliedschaften starten bald. Deine Einladung ist in deinem Konto gespeichert."
+            "value" : "Beitreten"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Memberships open soon. Your invite is saved to your account."
+            "value" : "Join"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las membresías abrirán pronto. Tu invitación está guardada en tu cuenta."
+            "value" : "Unirse"
           }
         }
       }
     },
-    "rayl_club_invited_title" : {
+    "rayl_club_join_free" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Du bist eingeladen"
+            "value" : "Beitreten, erstes Jahr kostenlos"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "You're invited"
+            "value" : "Join, first year free"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tienes una invitación"
+            "value" : "Unirse, primer año gratis"
+          }
+        }
+      }
+    },
+    "rayl_club_member_id" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitglieds-ID: %1$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Member ID: %1$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ID de miembro: %1$@"
+          }
+        }
+      }
+    },
+    "rayl_club_member_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Du bist Mitglied"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "You're a member"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eres miembro"
+          }
+        }
+      }
+    },
+    "rayl_club_no_membership" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Keine aktive Mitgliedschaft."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No active membership."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No tienes una membresía activa."
+          }
+        }
+      }
+    },
+    "rayl_club_offer" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ $ pro Jahr, %2$@ $ Kreditrahmen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "$%1$@ a year, $%2$@ credit line"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ US$ al año, línea de crédito de %2$@ US$"
+          }
+        }
+      }
+    },
+    "rayl_club_pay_amount" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ (%2$@ $)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ ($%2$@)"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ (%2$@ US$)"
+          }
+        }
+      }
+    },
+    "rayl_club_pay_title" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jahresgebühr bezahlen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay your annual fee"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Paga tu cuota anual"
+          }
+        }
+      }
+    },
+    "rayl_club_pay_with_rayl" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mit Rayl bezahlen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pay with Rayl"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagar con Rayl"
           }
         }
       }
@@ -576,6 +829,29 @@
         }
       }
     },
+    "rayl_club_status_choose" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitgliedschaft wählen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Choose a membership"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Elige una membresía"
+          }
+        }
+      }
+    },
     "rayl_club_status_invite_needed" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -599,25 +875,48 @@
         }
       }
     },
-    "rayl_club_status_invited" : {
+    "rayl_club_status_member" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Einladung angenommen"
+            "value" : "%1$@-Mitglied"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invite accepted"
+            "value" : "%1$@ member"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Invitación aceptada"
+            "value" : "Miembro %1$@"
+          }
+        }
+      }
+    },
+    "rayl_club_status_pending" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gebührenzahlung ausstehend"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fee payment pending"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pago de la cuota pendiente"
           }
         }
       }
@@ -641,6 +940,29 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Inicia sesión para unirte"
+          }
+        }
+      }
+    },
+    "rayl_club_tier" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mitgliedschaft: %1$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membership: %1$@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Membresía: %1$@"
           }
         }
       }
@@ -691,25 +1013,25 @@
         }
       }
     },
-    "rayl_club_tiers" : {
+    "rayl_club_valid_until" : {
       "extractionState" : "manual",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stufen: %1$@"
+            "value" : "Gültig bis %1$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tiers: %1$@"
+            "value" : "Valid until %1$@"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Niveles: %1$@"
+            "value" : "Válida hasta el %1$@"
           }
         }
       }

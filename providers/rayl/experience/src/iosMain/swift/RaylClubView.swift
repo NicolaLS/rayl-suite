@@ -96,17 +96,51 @@ private struct RaylClubView: View {
                 .buttonStyle(.bordered)
                 .disabled(snapshot.busy || code.trimmingCharacters(in: .whitespaces).isEmpty)
                 signOut(snapshot)
-            case "invited":
-                Text(snapshot.invitedTitle)
+            case "choose":
+                Text(snapshot.chooseTitle)
                     .font(.title2.bold())
-                Text(snapshot.invitedBody)
-                    .multilineTextAlignment(.center)
-                if let tiers = snapshot.tiers {
-                    Text(tiers)
+                ForEach(snapshot.offers, id: \.tierCode) { offer in
+                    VStack(spacing: 8) {
+                        Text(offer.name)
+                            .font(.headline)
+                        Text(offer.terms)
+                            .foregroundStyle(.secondary)
+                        Button(offer.joinTitle) { model.controller.join(tierCode: offer.tierCode) }
+                            .buttonStyle(.borderedProminent)
+                            .disabled(snapshot.busy)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                if let feeWaived = snapshot.feeWaived {
-                    Text(feeWaived)
+                errorText(snapshot)
+                signOut(snapshot)
+            case "pay":
+                Text(snapshot.payTitle)
+                    .font(.title2.bold())
+                if let amount = snapshot.payAmount {
+                    Text(amount)
                 }
+                Button(snapshot.payWithRaylTitle) { model.controller.payFee() }
+                    .buttonStyle(.borderedProminent)
+                if let invoice = snapshot.invoice {
+                    Button(snapshot.copyInvoiceTitle) { UIPasteboard.general.string = invoice }
+                        .buttonStyle(.bordered)
+                }
+                Text(snapshot.waitingTitle)
+                    .foregroundStyle(.secondary)
+                errorText(snapshot)
+                signOut(snapshot)
+            case "member":
+                Text(snapshot.memberTitle)
+                    .font(.title2.bold())
+                ForEach([snapshot.tierLine, snapshot.creditLine, snapshot.validUntil].compactMap { $0 }, id: \.self) {
+                    Text($0)
+                }
+                memberId(snapshot)
+                signOut(snapshot)
+            case "none":
+                // Joining is not offered in this app (D-16): status only, no directions elsewhere.
+                Text(snapshot.noMembership)
+                memberId(snapshot)
                 signOut(snapshot)
             default:
                 ProgressView()
@@ -143,6 +177,14 @@ private struct RaylClubView: View {
             Text(error)
                 .foregroundStyle(.red)
                 .multilineTextAlignment(.center)
+        }
+    }
+
+    @ViewBuilder
+    private func memberId(_ snapshot: RaylNativeClubSnapshot) -> some View {
+        if let line = snapshot.memberIdLine {
+            Text(line)
+                .foregroundStyle(.secondary)
         }
     }
 
