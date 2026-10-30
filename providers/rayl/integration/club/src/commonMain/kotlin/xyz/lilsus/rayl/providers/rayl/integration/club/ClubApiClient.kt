@@ -1,6 +1,7 @@
 package xyz.lilsus.rayl.providers.rayl.integration.club
 
 import io.ktor.client.HttpClient
+import io.ktor.client.plugins.timeout
 import io.ktor.client.request.bearerAuth
 import io.ktor.client.request.get
 import io.ktor.client.request.post
@@ -15,6 +16,10 @@ import kotlin.coroutines.cancellation.CancellationException
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
 import xyz.lilsus.raylsuite.core.raylapi.ClubApi
 import xyz.lilsus.raylsuite.core.raylapi.ClubApiError
+import xyz.lilsus.raylsuite.core.raylapi.CreditQuote
+import xyz.lilsus.raylsuite.core.raylapi.CreditQuoteRequest
+import xyz.lilsus.raylsuite.core.raylapi.CreditSpend
+import xyz.lilsus.raylsuite.core.raylapi.CreditSpendRequest
 import xyz.lilsus.raylsuite.core.raylapi.JoinRequest
 import xyz.lilsus.raylsuite.core.raylapi.RaylApiError
 import xyz.lilsus.raylsuite.core.raylapi.RedeemInviteRequest
@@ -46,6 +51,9 @@ internal class ClubException(val error: ClubError) : Exception(error.name)
 /** The backend rejected the access token; a refresh may fix it. */
 internal class BackendUnauthorized : Exception()
 
+/** The backend declined a credit request; [code] is a [ClubApiError] code, if it sent one. */
+internal class CreditDeclined(val code: String?) : Exception(code)
+
 /** Maps transport failures to [ClubError.Network]. */
 internal suspend inline fun <T> clubRequest(block: () -> T): T = try {
     block()
@@ -75,6 +83,44 @@ internal class ClubApiClient(
 
     suspend fun join(accessToken: String, tierCode: String): ClubAccount =
         post(accessToken, ClubApi.MEMBERSHIPS_PATH, json.encodeToString(JoinRequest(tierCode)))
+
+    suspend fun creditQuote(accessToken: String, invoice: String, amountMsat: Long?): CreditQuote {
+        val response = clubRequest {
+            http.post(url(ClubApi.CREDIT_QUOTES_PATH)) {
+                bearerAuth(accessToken)
+                contentType(ContentType.Application.Json)
+                setBody(json.encodeToString(CreditQuoteRequest(invoice, amountMsat)))
+            }
+        }
+        return credit(response)
+    }
+
+    /** Waits longer than other calls: the backend waits up to 30 s for the payment to settle. */
+    suspend fun creditSpend(accessToken: String, request: CreditSpendRequest): CreditSpend {
+        val response = clubRequest {
+            http.post(url(ClubApi.CREDIT_SPENDS_PATH)) {
+                bearerAuth(accessToken)
+                contentType(ContentType.Application.Json)
+                setBody(json.encodeToString(request))
+                timeout {
+                    requestTimeoutMillis = SPEND_TIMEOUT_MILLIS
+                    socketTimeoutMillis = SPEND_TIMEOUT_MILLIS
+                }
+            }
+        }
+        return credit(response)
+    }
+
+    private suspend inline fun <reified T> credit(response: HttpResponse): T {
+        val body = clubRequest { response.bodyAsText() }
+        if (response.status.isSuccess()) return clubRequest { json.decodeFromString<T>(body) }
+        if (response.status == HttpStatusCode.Unauthorized) throw BackendUnauthorized()
+        throw CreditDeclined(
+            runCatching {
+                json.decodeFromString<RaylApiError>(body).error
+            }.getOrNull()
+        )
+    }
 
     private fun url(path: String) = "$baseUrl$path?${ClubApi.PLATFORM_PARAMETER}=$platform"
 
@@ -108,5 +154,9 @@ internal class ClubApiClient(
                 else -> ClubError.Unavailable
             }
         )
+    }
+
+    private companion object {
+        const val SPEND_TIMEOUT_MILLIS = 45_000L
     }
 }

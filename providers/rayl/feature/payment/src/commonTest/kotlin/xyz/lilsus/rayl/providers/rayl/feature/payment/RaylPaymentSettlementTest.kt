@@ -13,6 +13,9 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlinx.coroutines.test.runTest
+import xyz.lilsus.rayl.providers.rayl.integration.club.ClubCredit
+import xyz.lilsus.rayl.providers.rayl.integration.club.ClubCreditOutcome
+import xyz.lilsus.rayl.providers.rayl.integration.club.ClubCreditQuote
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketPayOutcome
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketPayments
 import xyz.lilsus.rayl.providers.rayl.integration.pocket.PocketQuote
@@ -69,6 +72,58 @@ class RaylPaymentSettlementTest {
         assertIs<SettlementOutcome.Failed>(settlement.settle(ready.payment))
     }
 
+    @Test
+    fun clubCreditPaysFirst() = runTest {
+        val pocket = FakePocket(PocketQuoteResult.Quoted(Quote(feeSats = 1)))
+        val credit = FakeCredit(ClubCreditQuote.Quoted(amountMsat = 21_000, feeMsat = 3_000))
+        val settlement = RaylPaymentSettlement(pocket, credit)
+
+        val ready = settlement.prepare(payment(amountOverrideMsats = 21_000))
+            as SettlementPreparation.Ready<RaylPayment>
+        assertEquals(0, pocket.quotes)
+        assertEquals(21_000L, credit.quotedAmountMsat)
+
+        credit.outcome = ClubCreditOutcome.Paid(feeMsat = 2_000, preimage = "00")
+        assertEquals(SettlementOutcome.Paid(2_000, "00"), settlement.settle(ready.payment))
+        assertEquals(3_000L, credit.spends.single().maxFeeMsat)
+
+        // Confirming the same prepared payment again reuses its idempotency key.
+        credit.outcome = ClubCreditOutcome.Unknown
+        assertIs<SettlementOutcome.Unknown>(settlement.settle(ready.payment))
+        credit.outcome = ClubCreditOutcome.Failed
+        assertIs<SettlementOutcome.Failed>(settlement.settle(ready.payment))
+        assertEquals(1, credit.spends.map { it.idempotencyKey }.distinct().size)
+    }
+
+    @Test
+    fun thePocketPaysWhenCreditCannot() = runTest {
+        val pocket = FakePocket(PocketQuoteResult.Quoted(Quote(feeSats = 1)))
+        val credit = FakeCredit(ClubCreditQuote.NotUsable)
+        val settlement = RaylPaymentSettlement(pocket, credit)
+
+        val ready = settlement.prepare(payment()) as SettlementPreparation.Ready<RaylPayment>
+        assertEquals(1, pocket.quotes)
+
+        pocket.outcome = PocketPayOutcome.Paid(feeSats = 1, preimage = "00")
+        assertEquals(SettlementOutcome.Paid(1_000, "00"), settlement.settle(ready.payment))
+        assertEquals(emptyList(), credit.spends)
+    }
+
+    @Test
+    fun anInvoiceCreditRejectsIsNotTriedWithThePocket() = runTest {
+        val pocket = FakePocket(PocketQuoteResult.Quoted(Quote(feeSats = 0)))
+        val settlement =
+            RaylPaymentSettlement(pocket, FakeCredit(ClubCreditQuote.InvoiceRejected(expired = true)))
+
+        val prepared = settlement.prepare(payment())
+
+        assertEquals(
+            PaymentUiError.InvalidInvoice("Invoice has expired"),
+            (prepared as SettlementPreparation.Unavailable).error
+        )
+        assertEquals(0, pocket.quotes)
+    }
+
     private fun providerError(preparation: SettlementPreparation<RaylPayment>) =
         ((preparation as SettlementPreparation.Unavailable).error as PaymentUiError.Provider).error
 
@@ -105,4 +160,22 @@ private class FakePocket(private val quoteResult: PocketQuoteResult) : PocketPay
     }
 
     override suspend fun pay(quote: PocketQuote): PocketPayOutcome = outcome
+}
+
+private class FakeCredit(private val quote: ClubCreditQuote) : ClubCredit {
+    class Spend(val maxFeeMsat: Long, val idempotencyKey: String)
+
+    var quotedAmountMsat: Long? = null
+    val spends = mutableListOf<Spend>()
+    var outcome: ClubCreditOutcome = ClubCreditOutcome.Failed
+
+    override suspend fun quote(invoice: String, amountMsat: Long?): ClubCreditQuote {
+        quotedAmountMsat = amountMsat
+        return quote
+    }
+
+    override suspend fun spend(invoice: String, amountMsat: Long?, maxFeeMsat: Long, idempotencyKey: String): ClubCreditOutcome {
+        spends += Spend(maxFeeMsat, idempotencyKey)
+        return outcome
+    }
 }

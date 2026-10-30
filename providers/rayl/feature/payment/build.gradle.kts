@@ -11,6 +11,7 @@ kotlin {
         commonMain.dependencies {
             api(project(":feature:payment-flow"))
             api(project(":providers:rayl:integration:pocket"))
+            api(project(":providers:rayl:integration:club"))
             implementation(project(":core:ui"))
             implementation(libs.bitcoin.kmp)
             implementation(libs.kotlinx.coroutines.core)

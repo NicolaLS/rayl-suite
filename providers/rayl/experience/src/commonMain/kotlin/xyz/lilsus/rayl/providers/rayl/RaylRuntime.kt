@@ -63,7 +63,7 @@ internal class RaylRuntime(
     val bitcoinPriceProvider = RaylBitcoinPriceProvider()
     private val lnurlPayClient = KtorLnurlPayClient(networkConnectivity)
     val paymentCoordinator = PaymentFlowCoordinator(
-        settlement = RaylPaymentSettlement(pocket),
+        settlement = RaylPaymentSettlement(pocket, club),
         lnurlPayClient = lnurlPayClient,
         bitcoinPriceProvider = bitcoinPriceProvider,
         currencyPreferences = currencyPreferences,

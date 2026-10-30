@@ -92,6 +92,7 @@ internal fun RaylClubRow(club: RaylClub, onOpen: () -> Unit) {
 
 @Composable
 private fun clubStatus(state: ClubState): String {
+    val formatter = rememberAmountFormatter()
     val account = (state as? ClubState.SignedIn)?.account
     val membership = account?.membership
     return when {
@@ -101,11 +102,16 @@ private fun clubStatus(state: ClubState): String {
 
         account.invite == null -> stringResource(R.string.rayl_club_status_invite_needed)
 
-        membership?.status == ClubMembershipStatus.ACTIVE ->
+        // Next to the pocket's spending power (US-11).
+        membership?.status == ClubMembershipStatus.ACTIVE -> membership.creditAvailableSat?.let {
             stringResource(
-                R.string.rayl_club_status_member,
-                stringResource(tierName(membership.tierCode))
+                R.string.rayl_club_credit_available,
+                formatter.format(DisplayAmount(it, DisplayCurrency.Satoshi))
             )
+        } ?: stringResource(
+            R.string.rayl_club_status_member,
+            stringResource(tierName(membership.tierCode))
+        )
 
         membership?.payment != null -> stringResource(R.string.rayl_club_status_pending)
 
@@ -319,6 +325,14 @@ private fun Member(membership: ClubMembership, memberId: String) {
             stringResource(
                 R.string.rayl_club_credit_line,
                 formatter.format(DisplayAmount(limit, DisplayCurrency.Satoshi))
+            )
+        )
+    }
+    membership.creditAvailableSat?.let { available ->
+        Text(
+            stringResource(
+                R.string.rayl_club_credit_available,
+                formatter.format(DisplayAmount(available, DisplayCurrency.Satoshi))
             )
         )
     }

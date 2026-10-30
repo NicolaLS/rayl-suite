@@ -194,6 +194,98 @@ class RaylClubTest {
     }
 
     @Test
+    fun creditIsNotTriedWithoutAnActiveMembership() = runTest {
+        val backend = FakeBackend()
+        val club = club(backend, MemoryStore(session("access-0", "refresh-0", NOW + 3600)))
+        club.settled()
+
+        assertEquals(ClubCreditQuote.NotUsable, club.quote("lnbcrt1x", null))
+        assertTrue(backend.paths.none { it.startsWith("/v1/club/credit") })
+    }
+
+    @Test
+    fun creditQuotesFallBackToThePocketUnlessTheInvoiceIsAtFault() = runTest {
+        val club = activeMember()
+        suspend fun quote(status: HttpStatusCode, body: String): ClubCreditQuote {
+            backend.redeemResponse = status to body
+            return club.quote("lnbcrt1x", 21_000)
+        }
+
+        assertEquals(
+            ClubCreditQuote.Quoted(amountMsat = 21_000, feeMsat = 3_000),
+            quote(HttpStatusCode.OK, """{"amountMsat":21000,"feeMsat":3000}""")
+        )
+        assertEquals(
+            """{"invoice":"lnbcrt1x","amountMsat":21000}""",
+            backend.bodies["/v1/club/credit/quotes"]
+        )
+        assertEquals(
+            ClubCreditQuote.NotUsable,
+            quote(HttpStatusCode.Conflict, """{"error":"over_limit"}""")
+        )
+        assertEquals(
+            ClubCreditQuote.NotUsable,
+            quote(HttpStatusCode.ServiceUnavailable, """{"error":"club_unavailable"}""")
+        )
+        assertEquals(
+            ClubCreditQuote.InvoiceRejected(expired = false),
+            quote(HttpStatusCode.UnprocessableEntity, """{"error":"invoice_invalid"}""")
+        )
+        assertEquals(
+            ClubCreditQuote.InvoiceRejected(expired = true),
+            quote(HttpStatusCode.Gone, """{"error":"invoice_expired"}""")
+        )
+    }
+
+    @Test
+    fun aSpendIsOnlyFailedWhenTheBackendDeclinedItBeforeSending() = runTest {
+        val club = activeMember()
+        suspend fun spend(status: HttpStatusCode, body: String): ClubCreditOutcome {
+            backend.redeemResponse = status to body
+            return club.spend("lnbcrt1x", null, maxFeeMsat = 3_000, idempotencyKey = "key-1")
+        }
+
+        assertEquals(
+            ClubCreditOutcome.Paid(feeMsat = 2_000, preimage = "aa"),
+            spend(
+                HttpStatusCode.OK,
+                """{"id":"s","status":"settled","amountMsat":1000,"feeMsat":2000,"preimage":"aa"}"""
+            )
+        )
+        assertEquals(
+            """{"idempotencyKey":"key-1","invoice":"lnbcrt1x","maxFeeMsat":3000}""",
+            backend.bodies["/v1/club/credit/spends"]
+        )
+        assertEquals(
+            ClubCreditOutcome.Unknown,
+            spend(HttpStatusCode.OK, """{"id":"s","status":"pending","amountMsat":1000}""")
+        )
+        assertEquals(
+            ClubCreditOutcome.Failed,
+            spend(HttpStatusCode.OK, """{"id":"s","status":"failed","amountMsat":1000}""")
+        )
+        assertEquals(
+            ClubCreditOutcome.Failed,
+            spend(HttpStatusCode.Conflict, """{"error":"fee_changed"}""")
+        )
+        assertEquals(
+            ClubCreditOutcome.Unknown,
+            spend(HttpStatusCode.ServiceUnavailable, """{"error":"club_unavailable"}""")
+        )
+    }
+
+    private val backend = FakeBackend()
+
+    private suspend fun TestScope.activeMember(): RaylClub {
+        backend.meAccounts += ACCOUNT.copy(
+            membership = ClubMembership("member", ClubMembershipStatus.ACTIVE, creditLimitSat = 60_000)
+        )
+        return club(backend, MemoryStore(session("access-0", "refresh-0", NOW + 3600))).also {
+            it.settled()
+        }
+    }
+
+    @Test
     fun theNonceHashIsTheHexSha256OfTheRawNonce() {
         val nonce = ClubNonce.generate()
         assertEquals(64, nonce.raw.length)

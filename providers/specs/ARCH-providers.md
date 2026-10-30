@@ -34,7 +34,9 @@ through the Breez SDK: it generates the pocket key on first use, keeps it in
 device-only platform storage, quotes and pays invoices, and creates funding
 invoices. It shares no code with the Spark provider, and its key outlives the
 provider session as defined by
-[SPEC-wallet-lifecycle](../../specs/SPEC-wallet-lifecycle.md).
+[SPEC-wallet-lifecycle](../../specs/SPEC-wallet-lifecycle.md). Rayl's payment settlement
+asks [`integration/club`](../rayl/integration/club) first: a Rayl Club member's payment is made
+by the Club's treasury against their credit line, and the pocket pays whenever credit can't.
 
 Spark defines wallet and payment interfaces in
 [`application`](../spark/application): `WalletAccess` controls wallet/session

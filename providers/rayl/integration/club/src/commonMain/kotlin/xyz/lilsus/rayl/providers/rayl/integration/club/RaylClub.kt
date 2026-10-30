@@ -20,7 +20,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import xyz.lilsus.raylsuite.core.network.createHttpClient
 import xyz.lilsus.raylsuite.core.raylapi.ClubAccount
+import xyz.lilsus.raylsuite.core.raylapi.ClubApiError
+import xyz.lilsus.raylsuite.core.raylapi.ClubCreditSpendStatus
 import xyz.lilsus.raylsuite.core.raylapi.ClubMembershipStatus
+import xyz.lilsus.raylsuite.core.raylapi.CreditSpendRequest
 import xyz.lilsus.raylsuite.core.settings.SecureStringStore
 
 enum class ClubPlatform(internal val apiName: String) {
@@ -45,7 +48,7 @@ sealed interface ClubState {
 /**
  * The member's Rayl Club session and account. The session belongs to the person rather than a
  * wallet connection: it survives leaving Rayl for the wallet chooser and ends only through
- * [signOut] (SPEC-wallet-lifecycle).
+ * [signOut] (SPEC-wallet-lifecycle). As [ClubCredit], it pays invoices with the member's credit.
  */
 class RaylClub internal constructor(
     config: ClubConfig,
@@ -55,7 +58,7 @@ class RaylClub internal constructor(
     private val now: () -> Long,
     platform: ClubPlatform,
     private val paymentPollInterval: Duration = 3.seconds
-) {
+) : ClubCredit {
     private val auth = SupabaseAuth(http, config, now)
     private val api = ClubApiClient(http, config.backendUrl, platform.apiName)
     private var paymentPoll: Job? = null
@@ -102,6 +105,69 @@ class RaylClub internal constructor(
 
     /** Starts a membership in an offered tier; a pending fee is then watched until paid. */
     fun join(tierCode: String) = signedInAction { authorized { api.join(it, tierCode) } }
+
+    override suspend fun quote(invoice: String, amountMsat: Long?): ClubCreditQuote {
+        if (!hasActiveMembership()) return ClubCreditQuote.NotUsable
+        return try {
+            val quote = authorized { api.creditQuote(it, invoice, amountMsat) }
+            ClubCreditQuote.Quoted(quote.amountMsat, quote.feeMsat)
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: CreditDeclined) {
+            when (error.code) {
+                ClubApiError.INVOICE_INVALID -> ClubCreditQuote.InvoiceRejected(expired = false)
+                ClubApiError.INVOICE_EXPIRED -> ClubCreditQuote.InvoiceRejected(expired = true)
+                else -> ClubCreditQuote.NotUsable
+            }
+        } catch (_: Exception) {
+            ClubCreditQuote.NotUsable
+        }
+    }
+
+    override suspend fun spend(
+        invoice: String,
+        amountMsat: Long?,
+        maxFeeMsat: Long,
+        idempotencyKey: String
+    ): ClubCreditOutcome {
+        val request = CreditSpendRequest(idempotencyKey, invoice, amountMsat, maxFeeMsat)
+        val outcome = try {
+            val spend = authorized { api.creditSpend(it, request) }
+            when (spend.status) {
+                ClubCreditSpendStatus.SETTLED ->
+                    ClubCreditOutcome.Paid(spend.feeMsat ?: 0, spend.preimage)
+
+                ClubCreditSpendStatus.FAILED -> ClubCreditOutcome.Failed
+
+                else -> ClubCreditOutcome.Unknown
+            }
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: CreditDeclined) {
+            // Declines are decided before the treasury sends; anything else may come after it.
+            if (error.code in DECLINED_BEFORE_SENDING) {
+                ClubCreditOutcome.Failed
+            } else {
+                ClubCreditOutcome.Unknown
+            }
+        } catch (error: ClubException) {
+            // Rejected tokens twice: the backend never processed the request.
+            if (error.error == ClubError.SessionExpired) {
+                ClubCreditOutcome.Failed
+            } else {
+                ClubCreditOutcome.Unknown
+            }
+        } catch (_: Exception) {
+            ClubCreditOutcome.Unknown
+        }
+        // The available credit changed, or may have.
+        if (outcome != ClubCreditOutcome.Failed) reload()
+        return outcome
+    }
+
+    private fun hasActiveMembership(): Boolean =
+        (state.value as? ClubState.SignedIn)?.account?.membership?.status ==
+            ClubMembershipStatus.ACTIVE
 
     fun dismissError() = mutableState.update {
         when (it) {
@@ -237,6 +303,15 @@ class RaylClub internal constructor(
     companion object {
         private const val SESSION_KEY = "session"
         private const val REFRESH_MARGIN_SECONDS = 60
+        private val DECLINED_BEFORE_SENDING = setOf(
+            ClubApiError.INVALID_REQUEST,
+            ClubApiError.NOT_A_MEMBER,
+            ClubApiError.OVER_LIMIT,
+            ClubApiError.INVOICE_INVALID,
+            ClubApiError.INVOICE_EXPIRED,
+            ClubApiError.OWN_INVOICE,
+            ClubApiError.FEE_CHANGED
+        )
 
         /** [store] must be dedicated to the Club and named [ClubConfig.storageName]. */
         fun create(config: ClubConfig, store: SecureStringStore, platform: ClubPlatform): RaylClub =

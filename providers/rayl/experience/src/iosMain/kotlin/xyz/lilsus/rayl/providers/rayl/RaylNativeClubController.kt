@@ -61,6 +61,7 @@ data class RaylNativeClubSnapshot(
     val memberTitle: String,
     val tierLine: String?,
     val creditLine: String?,
+    val creditAvailable: String?,
     val validUntil: String?,
     val memberIdLine: String?,
     val noMembership: String,
@@ -183,6 +184,9 @@ class RaylNativeClubController internal constructor(
                     formatter.format(DisplayAmount(it, DisplayCurrency.Satoshi))
                 )
             },
+            creditAvailable = membership?.creditAvailableSat?.takeIf { active }?.let {
+                available(formatter.format(DisplayAmount(it, DisplayCurrency.Satoshi)))
+            },
             validUntil = clubEpochSeconds(membership?.termEnd)?.takeIf { active }?.let {
                 format("rayl_club_valid_until", mediumDate(it))
             },
@@ -199,10 +203,10 @@ class RaylNativeClubController internal constructor(
 
         "invite" -> text("rayl_club_status_invite_needed")
 
-        "member" -> format(
-            "rayl_club_status_member",
-            tierName(account?.membership?.tierCode.orEmpty())
-        )
+        // Next to the pocket's spending power (US-11).
+        "member" -> account?.membership?.creditAvailableSat?.let {
+            available(currentAmountFormatter().format(DisplayAmount(it, DisplayCurrency.Satoshi)))
+        } ?: format("rayl_club_status_member", tierName(account?.membership?.tierCode.orEmpty()))
 
         "pay" -> text("rayl_club_status_pending")
 
@@ -212,6 +216,8 @@ class RaylNativeClubController internal constructor(
 
         else -> text("rayl_balance_updating")
     }
+
+    private fun available(amount: String): String = format("rayl_club_credit_available", amount)
 
     private fun tierName(code: String): String = text(
         when (code) {

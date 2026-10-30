@@ -185,6 +185,29 @@
         }
       }
     },
+    "rayl_club_credit_available" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ verfügbar"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ available"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ disponibles"
+          }
+        }
+      }
+    },
     "rayl_club_credit_line" : {
       "extractionState" : "manual",
       "localizations" : {

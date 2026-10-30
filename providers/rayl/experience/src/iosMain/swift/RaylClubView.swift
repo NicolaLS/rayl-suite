@@ -132,7 +132,7 @@ private struct RaylClubView: View {
             case "member":
                 Text(snapshot.memberTitle)
                     .font(.title2.bold())
-                ForEach([snapshot.tierLine, snapshot.creditLine, snapshot.validUntil].compactMap { $0 }, id: \.self) {
+                ForEach([snapshot.tierLine, snapshot.creditLine, snapshot.creditAvailable, snapshot.validUntil].compactMap { $0 }, id: \.self) {
                     Text($0)
                 }
                 memberId(snapshot)

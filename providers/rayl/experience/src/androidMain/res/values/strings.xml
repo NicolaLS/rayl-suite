@@ -52,6 +52,7 @@
     <string name="rayl_club_member_title">You\'re a member</string>
     <string name="rayl_club_tier">Membership: %1$s</string>
     <string name="rayl_club_credit_line">Credit line: %1$s</string>
+    <string name="rayl_club_credit_available">%1$s available</string>
     <string name="rayl_club_valid_until">Valid until %1$s</string>
     <string name="rayl_club_member_id">Member ID: %1$s</string>
     <string name="rayl_club_no_membership">No active membership.</string>
